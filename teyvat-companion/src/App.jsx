@@ -708,7 +708,7 @@ export default function App() {
   function exportTracker() {
     const payload = {...persisted, exportedAt:new Date().toISOString(), format:'teyvat-companion-backup-v1'};
     const blob = new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
-    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download=`teyvat-companion-backup-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(url); setToast('Backup exported');
+    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download=`teyvat-companion-backup-${new Date().toISOString().slice(0,10)}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); setToast('Backup exported');
   }
   function importTrackerObject(obj) {
     if (!obj || typeof obj !== 'object' || (!obj.characters && !obj.account)) { setToast('That file does not look like a Teyvat Companion backup'); return; }
