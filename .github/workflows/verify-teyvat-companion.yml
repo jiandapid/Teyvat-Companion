@@ -22,6 +22,9 @@ jobs:
       - name: Run core regression tests
         working-directory: teyvat-companion
         run: npm test
+      - name: Check Vercel API function syntax
+        working-directory: teyvat-companion
+        run: node --check api/enka.js
       - name: Build Vite app
         working-directory: teyvat-companion
         run: npm run build
