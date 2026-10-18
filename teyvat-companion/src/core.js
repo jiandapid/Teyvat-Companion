@@ -376,7 +376,7 @@ function optimizerStatKey(raw) {
 function optimizerMainOptions(profile, slot) {
   const raw = profile?.stats?.[slot];
   if (!raw) return [];
-  return String(raw).split(/(?:\\s+or\\s+)|[\\/,;]/i).map(value => optimizerStatKey(value)).filter(value => value && value !== 'unknown');
+  return String(raw).split(/\s+or\s+|\/|,|;/i).map(value => optimizerStatKey(value)).filter(value => value && value !== 'unknown');
 }
 
 function optimizerPreferredSets(profile) {
