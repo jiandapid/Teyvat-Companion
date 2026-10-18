@@ -322,6 +322,53 @@ export default function App() {
   </div>;
 
 
+  const askLocalAdvisor = (e) => {
+    e.preventDefault();
+    const question = advisorQuestion.trim().toLowerCase();
+    if (!question) {
+      setAdvisorAnswer('Type a question first, then I can use your saved tracker information to suggest a next step.');
+      return;
+    }
+    const owned = persisted.characters.filter(c => c.owned);
+    const missing = persisted.materials.filter(m => Number(m.required || 0) > Number(m.owned || 0));
+    const openGoals = persisted.goals.filter(g => !g.done);
+    const underLevelled = owned.filter(c => Number(c.level || 1) < 80).sort((a,b) => Number(a.level || 1) - Number(b.level || 1));
+    let answer = '';
+    if (/farm|material|ascen|talent|boss|mora|resin|book|weapon material/.test(question)) {
+      if (missing.length) {
+        const topGaps = missing.slice(0,3).map(m => `${m.name}: ${Math.max(0, Number(m.required || 0) - Number(m.owned || 0))} still needed`).join('; ');
+        answer = `Start with the gaps you have actually tracked: ${topGaps}. Check the in-game upgrade screen for exact costs before spending Resin; the planner only knows the quantities you entered.`;
+      } else if (!advisorTrackedMaterials.length) {
+        answer = 'Your planner has no quantified material requirements yet. Open Materials & Farming, add exact material names and required/owned amounts from the in-game screens, then ask again and I can summarize what is missing.';
+      } else {
+        answer = 'All material rows with a required quantity are currently covered in your tracker. Before farming something new, verify the planned character or talent target in-game and update any rows that are still estimates.';
+      }
+    } else if (/team|comp|squad|party|synerg/.test(question)) {
+      if (owned.length < 2) {
+        answer = `You have ${owned.length} character${owned.length === 1 ? '' : 's'} marked as owned. Update your roster in Characters first; team suggestions are only as useful as the ownership and role information you track.`;
+      } else {
+        const names = owned.slice(0,8).map(c => c.name).join(', ');
+        answer = `Your saved roster includes ${owned.length} owned characters, including ${names}${owned.length > 8 ? ', and more' : ''}. Open Builds & Teams to compare lineups. I won't label a team "best" from roster data alone: reactions, enemy, investment, and current guide data all matter.`;
+      }
+    } else if (/level|build|upgrade|priorit|who|focus|next/.test(question)) {
+      if (openGoals.length) {
+        answer = `You have ${openGoals.length} active goal${openGoals.length === 1 ? '' : 's'}. Start with "${openGoals[0].title}", then check its associated character and material requirements so you don't spread resources across too many targets.`;
+      } else if (underLevelled.length) {
+        const c = underLevelled[0];
+        answer = `${c.name} is one of your lowest-level owned characters at level ${Number(c.level || 1)}. If they are part of a team you use often, review their role, weapon, talents, and artifacts before committing to a level-90 target. Otherwise, choose a character you actively use and add a goal in Account Tracker.`;
+      } else {
+        answer = 'You have no active upgrade goals saved, and none of your owned characters is below level 80 in the tracker. Pick the character you use most, add a goal in Account Tracker, and record its real material costs to create a focused plan.';
+      }
+    } else if (/account|sync|login|cloud|password|device/.test(question)) {
+      answer = 'This version saves progress in this browser with local storage, so it does not yet sync between devices. Do not enter your HoYoverse password, verification codes, cookies, or tokens. Secure login and cloud saves are a separate upgrade and are not active yet.';
+    } else if (/map|location|route|specialty|ore|chest|collect/.test(question)) {
+      answer = 'Use Interactive Map for your personal region/category markers and collection notes, then open the official HoYoLAB map for geographic locations. Your current personal markers are planning notes, not verified in-game coordinates.';
+    } else {
+      answer = `I can currently summarize the data saved in this browser: ${owned.length} owned characters, ${openGoals.length} active goals, and ${missing.length} material rows with a recorded shortage. Try asking what to farm, which goal to do next, how to approach teams, or how account syncing works. This is a local rules-based preview, not a connected generative AI model yet.`;
+    }
+    setAdvisorAnswer(answer);
+  };
+
   const advisorPage = <div className="page-content">
     <SectionHeader eyebrow="STRATEGY DESK" title="Teyvat Advisor" subtitle="Turn the roster and tracker information you have saved into a clearer next step." actions={<button className="button secondary" onClick={()=>navigate('materials')}><PackageOpen size={15}/> Plan materials</button>}/>
     <div className="advisor-hero">
@@ -389,53 +436,6 @@ export default function App() {
     <div className="reset-zone"><div><strong>Reset local workspace</strong><p>Remove all custom progress and return to the starter example. Export a backup first if you want to keep your data.</p></div><button className="button danger-outline" onClick={()=>{if(window.confirm('Reset your Teyvat Companion data in this browser? Export a backup first if you want to keep it.')){localStorage.removeItem(STORAGE_KEY);setPersisted({characters:STARTER_CHARACTERS.map(c=>({...c})),materials:MATERIAL_STARTER.map(m=>({...m})),teams:STARTER_TEAMS.map(t=>({...t})),goals:[],mapMarkers:[],account:{ar:58,worldLevel:8,abyss:'Not set',primogems:0,wishes:0,pity:0,uid:'',nickname:''},tasks:TASK_STARTER.map(t=>({...t})),enkaSnapshot:null,lastUpdated:null});setToast('Workspace reset');}}}><Trash2 size={14}/> Reset workspace</button></div>
   </div>;
 
-
-  const askLocalAdvisor = (e) => {
-    e.preventDefault();
-    const question = advisorQuestion.trim().toLowerCase();
-    if (!question) {
-      setAdvisorAnswer('Type a question first, then I can use your saved tracker information to suggest a next step.');
-      return;
-    }
-    const owned = persisted.characters.filter(c => c.owned);
-    const missing = persisted.materials.filter(m => Number(m.required || 0) > Number(m.owned || 0));
-    const openGoals = persisted.goals.filter(g => !g.done);
-    const underLevelled = owned.filter(c => Number(c.level || 1) < 80).sort((a,b) => Number(a.level || 1) - Number(b.level || 1));
-    let answer = '';
-    if (/farm|material|ascen|talent|boss|mora|resin|book|weapon material/.test(question)) {
-      if (missing.length) {
-        const topGaps = missing.slice(0,3).map(m => `${m.name}: ${Math.max(0, Number(m.required || 0) - Number(m.owned || 0))} still needed`).join('; ');
-        answer = `Start with the gaps you have actually tracked: ${topGaps}. Check the in-game upgrade screen for exact costs before spending Resin; the planner only knows the quantities you entered.`;
-      } else if (!advisorTrackedMaterials.length) {
-        answer = 'Your planner has no quantified material requirements yet. Open Materials & Farming, add exact material names and required/owned amounts from the in-game screens, then ask again and I can summarize what is missing.';
-      } else {
-        answer = 'All material rows with a required quantity are currently covered in your tracker. Before farming something new, verify the planned character or talent target in-game and update any rows that are still estimates.';
-      }
-    } else if (/team|comp|squad|party|synerg/.test(question)) {
-      if (owned.length < 2) {
-        answer = `You have ${owned.length} character${owned.length === 1 ? '' : 's'} marked as owned. Update your roster in Characters first; team suggestions are only as useful as the ownership and role information you track.`;
-      } else {
-        const names = owned.slice(0,8).map(c => c.name).join(', ');
-        answer = `Your saved roster includes ${owned.length} owned characters, including ${names}${owned.length > 8 ? ', and more' : ''}. Open Builds & Teams to compare lineups. I won't label a team "best" from roster data alone: reactions, enemy, investment, and current guide data all matter.`;
-      }
-    } else if (/level|build|upgrade|priorit|who|focus|next/.test(question)) {
-      if (openGoals.length) {
-        answer = `You have ${openGoals.length} active goal${openGoals.length === 1 ? '' : 's'}. Start with "${openGoals[0].title}", then check its associated character and material requirements so you don't spread resources across too many targets.`;
-      } else if (underLevelled.length) {
-        const c = underLevelled[0];
-        answer = `${c.name} is one of your lowest-level owned characters at level ${Number(c.level || 1)}. If they are part of a team you use often, review their role, weapon, talents, and artifacts before committing to a level-90 target. Otherwise, choose a character you actively use and add a goal in Account Tracker.`;
-      } else {
-        answer = 'You have no active upgrade goals saved, and none of your owned characters is below level 80 in the tracker. Pick the character you use most, add a goal in Account Tracker, and record its real material costs to create a focused plan.';
-      }
-    } else if (/account|sync|login|cloud|password|device/.test(question)) {
-      answer = 'This version saves progress in this browser with local storage, so it does not yet sync between devices. Do not enter your HoYoverse password, verification codes, cookies, or tokens. Secure login and cloud saves are a separate upgrade and are not active yet.';
-    } else if (/map|location|route|specialty|ore|chest|collect/.test(question)) {
-      answer = 'Use Interactive Map for your personal region/category markers and collection notes, then open the official HoYoLAB map for geographic locations. Your current personal markers are planning notes, not verified in-game coordinates.';
-    } else {
-      answer = `I can currently summarize the data saved in this browser: ${owned.length} owned characters, ${openGoals.length} active goals, and ${missing.length} material rows with a recorded shortage. Try asking what to farm, which goal to do next, how to approach teams, or how account syncing works. This is a local rules-based preview, not a connected generative AI model yet.`;
-    }
-    setAdvisorAnswer(answer);
-  };
 
   const pageContent = {'dashboard':dashboardPage,'characters':charactersPage,'teams':teamsPage,'materials':materialsPage,'map':mapPage,'account':accountPage,'advisor':advisorPage,'guides':guidesPage,'settings':settingsPage}[page] || dashboardPage;
 
