@@ -561,15 +561,12 @@ export default function App() {
     }
     setSyncLoading(true); setSyncError('');
     try {
-      const response = await fetch('https://enka.network/api/uid/' + encodeURIComponent(uid) + '/');
-      if (!response.ok) {
-        if (response.status === 400) throw new Error('That UID format was rejected. Check the digits and your game server.');
-        if (response.status === 404) throw new Error('No accessible profile was found. Check the UID and whether Character Details is enabled on your in-game showcase.');
-        if (response.status === 429) throw new Error('Enka is rate-limiting requests. Wait a while before refreshing.');
-        if (response.status === 424) throw new Error('The game data provider is temporarily unavailable after a game update.');
-        throw new Error('Enka returned HTTP ' + response.status + '. Try again later.');
-      }
-      const data = await response.json();
+      const response = await fetch('/api/enka?uid=' + encodeURIComponent(uid), { headers: { Accept: 'application/json' } });
+      let data;
+      try { data = await response.json(); }
+      catch { throw new Error('The sync endpoint returned a non-JSON response. Confirm the latest Vercel deployment includes the /api/enka function.'); }
+      if (!response.ok) throw new Error(data?.error || ('Showcase sync failed with HTTP ' + response.status + '.'));
+      if (!data || typeof data !== 'object') throw new Error('The sync endpoint returned an empty response.');
       const ttlSeconds = enkaTtlSeconds(data?.ttl);
       const nextFetchAt = Date.now() + ttlSeconds * 1000;
       saveState(prev => ({...prev, enkaNextFetchAt: nextFetchAt}));
