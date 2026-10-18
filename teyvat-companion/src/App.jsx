@@ -103,7 +103,9 @@ function asRecordArray(value) {
 
 function normalizeAmbrDetail(detail) {
   const upgrade = detail?.upgrade || {};
-  const rawTalents = detail?.talent || detail?.talents || [];
+  const fallbackActive = asRecordArray(detail?.skillTalents).map(talent => ({ ...talent, type: talent.type || talent.unlock || 'Active talent' }));
+  const fallbackPassive = asRecordArray(detail?.passiveTalents).map(talent => ({ ...talent, type: 'Passive talent' }));
+  const rawTalents = detail?.talent || detail?.talents || [...fallbackActive, ...fallbackPassive];
   return {
     ...detail,
     talents: asRecordArray(rawTalents).map(talent => ({ ...talent, upgrades: asRecordArray(talent?.promote || talent?.upgrades || talent?.upgrade) })),
@@ -312,9 +314,68 @@ export default function App() {
           .filter(item => item?.name || item?.title || item?.id);
         source = 'genshin.dev fallback (coverage may be incomplete)';
       }
+
+      // Traveler's element variants are often modelled as separate records by Genshin data providers.
+      // Supplement the Project Amber index with public variant entries when missing.
+      let travelerSupplement = [];
+      try {
+        const variantResponse = await fetch('https://genshin.jmp.blue/characters/all?lang=en');
+        if (variantResponse.ok) {
+          const rawVariants = await variantResponse.json();
+          travelerSupplement = (Array.isArray(rawVariants) ? rawVariants : Object.entries(rawVariants || {}).map(([id, value]) => ({ id, ...value })));
+        }
+      } catch (error) {
+        console.warn('Traveler variant supplement unavailable', error);
+      }
+      const isTravelerRecord = record => {
+        const route = slugify(record?.route || record?.id || record?.name);
+        const label = String(record?.name || '').trim().toLowerCase();
+        return /^(traveler|aether|lumine|playerboy|playergirl)(-|$)/i.test(route) || ['traveler','aether','lumine'].includes(label);
+      };
+      const travelerIcon = records.find(isTravelerRecord)?.icon || records.find(isTravelerRecord)?.image || '';
+      const travelerForms = ['Anemo','Geo','Electro','Dendro','Hydro','Pyro'];
+      for (const elementName of travelerForms) {
+        const exists = records.some(record => isTravelerRecord(record) && normalizeElement(record.element || record.vision || record.visionType || record.vision_key) === elementName);
+        if (exists) continue;
+        const variant = travelerSupplement.find(record => {
+          const route = slugify(record?.id || record?.route || record?.name);
+          return route === 'traveler-' + elementName.toLowerCase();
+        });
+        if (variant) {
+          records.push({
+            ...variant,
+            id: 'traveler-' + elementName.toLowerCase(),
+            route: 'traveler-' + elementName.toLowerCase(),
+            name: 'Traveler',
+            element: elementName,
+            vision: elementName,
+            weapon: 'Sword',
+            weaponType: 'Sword',
+            rarity: 5,
+            icon: variant.icon || travelerIcon,
+            _catalogSource: 'genshin.dev Traveler variant supplement',
+          });
+        } else {
+          // Keep the element selectable even if the upstream detail record is absent.
+          // No unverified talent/material numbers are fabricated for this placeholder.
+          records.push({
+            id: 'traveler-' + elementName.toLowerCase(),
+            route: 'traveler-' + elementName.toLowerCase(),
+            name: 'Traveler',
+            element: elementName,
+            vision: elementName,
+            weapon: 'Sword',
+            weaponType: 'Sword',
+            rarity: 5,
+            icon: travelerIcon,
+            _catalogSource: 'Traveler variant placeholder — detailed data unavailable',
+          });
+        }
+      }
+
       if (!records.length) throw new Error('The data source returned no characters.');
       const knownCharacters = characters;
-      const mapped = records.map((item, i) => {
+      const mappedRecords = records.map((item, i) => {
         const name = item.name || item.title || item.route || item.id || `Character ${i + 1}`;
         const routeId = item.route || item.id || name;
         const routeKey = slugify(routeId);
@@ -364,9 +425,10 @@ export default function App() {
           portraitImage: existing?.portraitImage || '',
           imageType: gachaImage ? 'gacha-splash' : (iconImage ? 'character-icon-fallback' : 'portrait-fallback'),
           gameData,
-          source,
+          source: item._catalogSource || source,
         };
       });
+      const mapped = [...new Map(mappedRecords.map(record => [record.id, record])).values()];
       saveState(prev => {
         const byId = new Map(prev.characters.map(c => [c.id, c]));
         for (const fresh of mapped) {
