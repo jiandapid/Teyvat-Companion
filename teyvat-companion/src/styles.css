@@ -228,3 +228,15 @@
 .sync-message{align-items:flex-start}
 .sync-message .text-action{flex-shrink:0}
 @media(max-width:760px){.official-map-connect{grid-template-columns:42px minmax(0,1fr);gap:12px;padding:14px}.official-map-emblem{width:40px;height:40px}.official-map-connect>.button{grid-column:1/-1;justify-content:center}.official-map-copy h2{font-size:14px}}
+
+.build-synced-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.build-synced-grid>div{padding:10px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.015);min-width:0}
+.build-synced-grid span{display:block;color:var(--text-secondary);font-size:9px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+.build-synced-grid strong{display:block;color:var(--text-primary);font-size:10px;line-height:1.55;overflow-wrap:anywhere}
+.build-synced-grid small{display:block;color:var(--text-secondary);font-size:9px;margin-top:4px}
+.build-synced-artifacts{margin-top:14px}
+.build-synced-artifact{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 12px;padding:10px 0;border-top:1px solid var(--border);font-size:10px}
+.build-synced-artifact strong{display:block;color:var(--text-primary);line-height:1.5}
+.build-synced-artifact small{display:block;color:var(--text-secondary);font-size:9px;line-height:1.6;margin-top:3px}
+.build-synced-artifact>span{color:var(--gold);font-size:9px;text-align:right}
+.build-synced-artifact>small{grid-column:1/-1}
