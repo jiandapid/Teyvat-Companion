@@ -60,8 +60,14 @@ const normalizeWeapon = raw => {
 const ambrAssetUrl = raw => {
   let value = String(raw ?? '').trim();
   if (!value) return '';
-  if (/^https?:\\/\\//i.test(value)) return value;
-  value = value.replace(/^\\/*assets\\/UI\\//i, '').replace(/^\\//, '').replace(/\\.(png|webp|jpe?g)$/i, '');
+  if (value.startsWith('http')) return value;
+  if (value.startsWith('/')) value = value.slice(1);
+  if (value.startsWith('assets/UI/')) value = value.slice('assets/UI/'.length);
+  const lower = value.toLowerCase();
+  if (lower.endsWith('.png')) value = value.slice(0, -4);
+  else if (lower.endsWith('.webp')) value = value.slice(0, -5);
+  else if (lower.endsWith('.jpg')) value = value.slice(0, -4);
+  else if (lower.endsWith('.jpeg')) value = value.slice(0, -5);
   return 'https://gi.yatta.moe/assets/UI/' + value + '.png';
 };
 const gachaArtworkFromIcon = raw => {
@@ -330,11 +336,11 @@ export default function App() {
         const rawRarity = Number(item.rank ?? item.rarity ?? item.stars ?? 0);
         const rarity = rawRarity === 4 || rawRarity === 5 ? rawRarity : (existing?.rarity || 0);
         const icon = item.icon || item.img?.icon || item.image || '';
-        const iconImage = /^https?:\\/\\//i.test(String(icon)) ? String(icon) : ambrAssetUrl(icon);
+        const iconImage = String(icon).startsWith('http') ? String(icon) : ambrAssetUrl(icon);
         const gachaImage = gachaArtworkFromIcon(icon);
         const image = gachaImage || existing?.image || iconImage || `https://genshin.jmp.blue/characters/${id}/portrait`;
         const apiIdValue = String(item.id ?? existing?.apiId ?? '');
-        const apiId = /^\\d+$/.test(apiIdValue) ? apiIdValue : (existing?.apiId || '');
+        const apiId = apiIdValue.length > 0 && [...apiIdValue].every(char => char >= '0' && char <= '9') ? apiIdValue : (existing?.apiId || '');
         const gameData = existing?.gameData || (item.upgrade || item.skillTalents || item.ascension_materials ? normalizeAmbrDetail(item) : null);
         return {
           ...existing,
