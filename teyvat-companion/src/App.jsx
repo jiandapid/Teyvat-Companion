@@ -686,6 +686,56 @@ export default function App() {
   function importFromText(e) {
     e.preventDefault(); try { importTrackerObject(JSON.parse(importText)); } catch { setToast('Could not parse JSON. Paste a valid backup file.'); }
   }
+  async function importGoodFile(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setGoodImportMessage('');
+    try {
+      if (file.size > 15 * 1024 * 1024) throw new Error('This file is larger than 15 MB. Export a smaller GOOD inventory file and retry.');
+      const imported = parseGoodInventory(await file.text());
+      const matchedCharacters = imported.characters.map(item => ({
+        ...item,
+        characterId: matchGoodCharacterKey(item.key, characters)?.id || '',
+      }));
+      const matchedWeapons = imported.weapons.map(item => ({
+        ...item,
+        characterId: item.location ? (matchGoodCharacterKey(item.location, characters)?.id || '') : '',
+      }));
+      const matchedArtifacts = imported.artifacts.map(item => ({
+        ...item,
+        characterId: item.location ? (matchGoodCharacterKey(item.location, characters)?.id || '') : '',
+      }));
+      const inventory = {
+        ...imported,
+        characters: matchedCharacters,
+        weapons: matchedWeapons,
+        artifacts: matchedArtifacts,
+        summary: { ...imported.summary, matchedCharacters: matchedCharacters.filter(item => item.characterId).length },
+      };
+      saveState(prev => ({
+        ...prev,
+        goodInventory: inventory,
+        characters: prev.characters.map(character => {
+          const item = matchedCharacters.find(entry => entry.characterId && entry.characterId === character.id);
+          if (!item) return character;
+          return {
+            ...character,
+            owned: true,
+            level: item.level,
+            constellation: item.constellation,
+            talents: [item.talent.auto, item.talent.skill, item.talent.burst],
+            goodInventorySyncedAt: inventory.importedAt,
+          };
+        }),
+      }));
+      setGoodImportMessage('Imported GOOD v' + inventory.version + ': ' + inventory.summary.characters + ' characters, ' + inventory.summary.weapons + ' weapons and ' + inventory.summary.artifacts + ' artifacts. Matched ' + inventory.summary.matchedCharacters + ' characters to your catalogue; your planned build fields were preserved.');
+      setToast('GOOD inventory imported');
+    } catch (error) {
+      setGoodImportMessage('Import failed: ' + (error?.message || 'Could not read this GOOD file.') + ' Your existing inventory and tracker were not changed.');
+    } finally {
+      event.target.value = '';
+    }
+  }
 
   const sidebar = <>
     <div className="brand-lockup"><div className="brand-mark"><Compass size={22}/><span className="brand-spark">✦</span></div><div className="brand-text"><strong>TEYVAT<span> COMPANION</span></strong><small>YOUR ADVENTURE, OPTIMIZED</small></div></div>
