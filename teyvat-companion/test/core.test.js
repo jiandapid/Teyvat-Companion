@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { enkaTtlSeconds, isValidGenshinUid, mergeEnkaShowcaseCharacter } from '../src/core.js';
+import { enkaTtlSeconds, isValidGenshinUid, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter } from '../src/core.js';
 import { CHARACTER_BUILD_GUIDES } from '../src/builds.js';
 import { MATERIAL_STARTER, NAV_ITEMS, STARTER_CHARACTERS, STARTER_TEAMS } from '../src/data.js';
 
@@ -100,4 +100,36 @@ test('each curated build profile has the minimum structure needed by the UI', ()
     assert.ok(Array.isArray(guide.talentOrder), id + ' is missing talent order');
     assert.ok(guide.stats && guide.stats.sands && guide.stats.goblet && guide.stats.circlet, id + ' is missing main stats');
   }
+});
+
+test('catalogue refresh keeps stable IDs and removes alias duplicates', () => {
+  const previous = [
+    { id: 'kazuha', name: 'Kaedehara Kazuha', owned: true, level: 90, weaponName: 'Favonius Sword', notes: 'Build him next', rarity: 5 },
+    { id: 'kaedehara-kazuha', name: 'Kaedehara Kazuha', owned: true, level: 70, artifact: 'Viridescent Venerer', rarity: 5 },
+  ];
+  const fresh = [
+    { id: 'kaedehara-kazuha', name: 'Kaedehara Kazuha', apiId: '10000047', element: 'Anemo', weapon: 'Sword', rarity: 5, image: 'fresh-art.png', source: 'test source' },
+  ];
+  const merged = mergeCharacterCatalogue(previous, fresh);
+  assert.equal(merged.length, 1, 'alias slugs must not create duplicate character cards');
+  assert.equal(merged[0].id, 'kazuha', 'keep the starter ID used by saved teams and goals');
+  assert.equal(merged[0].level, 90);
+  assert.equal(merged[0].owned, true);
+  assert.equal(merged[0].weaponName, 'Favonius Sword');
+  assert.equal(merged[0].notes, 'Build him next');
+  assert.equal(merged[0].image, 'fresh-art.png');
+  assert.equal(merged[0].apiId, '10000047');
+});
+
+test('catalogue merge keeps different Traveler element rows separate', () => {
+  const previous = [
+    { id: 'traveler-anemo', name: 'Traveler (Anemo)', element: 'Anemo', owned: true },
+    { id: 'traveler-geo', name: 'Traveler (Geo)', element: 'Geo', owned: false },
+  ];
+  const merged = mergeCharacterCatalogue(previous, [
+    { id: 'traveler-anemo', name: 'Traveler (Anemo)', element: 'Anemo', owned: true },
+    { id: 'traveler-geo', name: 'Traveler (Geo)', element: 'Geo', owned: false },
+  ]);
+  assert.equal(merged.length, 2);
+  assert.deepEqual(merged.map(c => c.id), ['traveler-anemo', 'traveler-geo']);
 });
