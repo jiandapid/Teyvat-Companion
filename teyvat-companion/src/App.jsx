@@ -635,13 +635,13 @@ export default function App() {
   const mapPage = <div className="page-content">
     <SectionHeader eyebrow="EXPLORATION PLANNER" title="Teyvat Map & Routes" subtitle="Explore the real world map above, then manage your personal regional notes and collection checklist below." actions={<a className="button primary link-button" href="https://act.hoyolab.com/ys/app/interactive-map/index.html" target="_blank" rel="noreferrer"><Globe2 size={15}/> Open official interactive map <ExternalLink size={13}/></a>}/>
 
-    <div className="map-warning"><Info size={16}/><span>The interactive world map below is provided by a separate community project. Your personal markers and checklists remain in Teyvat Companion; the embedded map may keep its own progress separately.</span></div>
+    <div className="map-warning"><Info size={16}/><span>The embedded interactive map is explicitly designed to be embedded in websites. Your personal markers stay in Teyvat Companion, while the embedded map may keep its own collection progress separately.</span></div>
     <section className="panel real-map-panel">
       <div className="real-map-heading">
         <div><div className="eyebrow">TEYVAT · REAL WORLD MAP</div><h3>Explore every region</h3><p>Pan, zoom, switch resource layers, and use the community map's own collection and route tools.</p></div>
-        <div className="real-map-actions"><a className="button primary link-button" href="https://genshin-map-beta.netlify.app/" target="_blank" rel="noreferrer"><Globe2 size={15}/> Open community map <ExternalLink size={13}/></a><a className="button secondary link-button" href="https://act.hoyolab.com/ys/app/interactive-map/index.html" target="_blank" rel="noreferrer">Official HoYoLAB map <ExternalLink size={13}/></a></div>
+        <div className="real-map-actions"><a className="button primary link-button" href="https://genshin-impact-map.appsample.com/" target="_blank" rel="noreferrer"><Globe2 size={15}/> Open community map <ExternalLink size={13}/></a><a className="button secondary link-button" href="https://act.hoyolab.com/ys/app/interactive-map/index.html" target="_blank" rel="noreferrer">Official HoYoLAB map <ExternalLink size={13}/></a></div>
       </div>
-      <div className="real-map-frame"><iframe title="Interactive Genshin Impact Teyvat map" src="https://genshin-map-beta.netlify.app/" loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen /></div>
+      <div className="real-map-frame"><iframe title="Interactive Genshin Impact Teyvat map" src="https://genshin-impact-map.appsample.com/location?no_heading=1" loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen /></div>
       <div className="real-map-note"><Info size={14}/><span>If this embedded map is blocked by the provider or your browser, use <a href="https://genshin-map-beta.netlify.app/" target="_blank" rel="noreferrer">Open community map</a> above. This map is community-maintained and its marker coverage may differ from the official HoYoLAB map.</span></div>
     </section>
 
