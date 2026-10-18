@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { ELEMENTS, ELEMENT_META, MATERIAL_STARTER, NAV_ITEMS, STARTER_CHARACTERS, STARTER_TEAMS } from './data';
 import { CHARACTER_BUILD_ALIASES, CHARACTER_BUILD_GUIDES, CREATOR_CHANNELS } from './builds';
+import { enkaTtlSeconds, isValidGenshinUid, mergeEnkaShowcaseCharacter } from './core';
 
 const ICONS = { LayoutDashboard, Users, Swords, PackageOpen, MapPinned, ChartNoAxesCombined, PlayCircle, Settings2, Bot, BookOpen };
 const STORAGE_KEY = 'teyvat-companion-v1';
@@ -586,7 +587,7 @@ export default function App() {
 
   async function syncPublicShowcase() {
     const uid = String(persisted.account.uid || '').trim();
-    if (!/^\\d{9,10}$/.test(uid)) { setSyncError('Enter a valid 9–10 digit Genshin UID first.'); return; }
+    if (!isValidGenshinUid(uid)) { setSyncError('Enter a valid 9–10 digit Genshin UID first.'); return; }
     if (syncNextFetchAt > Date.now()) {
       setSyncError('Enka.Network asks us to wait until ' + new Date(syncNextFetchAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) + ' before requesting this UID again. Your saved data is unchanged.');
       return;
@@ -602,8 +603,7 @@ export default function App() {
         throw new Error('Enka returned HTTP ' + response.status + '. Try again later.');
       }
       const data = await response.json();
-      const providerTtl = Number(data?.ttl);
-      const ttlSeconds = Number.isFinite(providerTtl) && providerTtl > 0 ? Math.ceil(providerTtl) : 60;
+      const ttlSeconds = enkaTtlSeconds(data?.ttl);
       const nextFetchAt = Date.now() + ttlSeconds * 1000;
       saveState(prev => ({...prev, enkaNextFetchAt: nextFetchAt}));
       const info = data.playerInfo || {};
@@ -681,24 +681,7 @@ export default function App() {
         const updatedCharacters = prev.characters.map(character => {
           const imported = showcase.find(item => item.characterId && item.characterId === character.id);
           if (!imported) return character;
-          return {
-            ...character,
-            owned: true,
-            ...(imported.level ? {level: imported.level} : {}),
-            ...(imported.constellation != null ? {constellation: imported.constellation} : {}),
-            // Keep the user's planned/manual build fields intact; actual showcase gear stays in enkaBuild.
-            enkaBuild: {
-              syncedAt: snapshot.fetchedAt,
-              avatarId: imported.avatarId,
-              level: imported.level,
-              constellation: imported.constellation,
-              talentLevels: imported.talents,
-              weapon: imported.weapon,
-              weaponLevel: imported.weaponLevel,
-              artifacts: imported.artifacts,
-              friendship: imported.friendship,
-            },
-          };
+          return mergeEnkaShowcaseCharacter(character, imported, snapshot.fetchedAt);
         });
         return {
           ...prev,
@@ -743,14 +726,14 @@ export default function App() {
   const sidebar = <>
     <div className="brand-lockup"><div className="brand-mark"><Compass size={22}/><span className="brand-spark">✦</span></div><div className="brand-text"><strong>TEYVAT<span> COMPANION</span></strong><small>YOUR ADVENTURE, OPTIMIZED</small></div></div>
     <div className="side-caption">WORKSPACE</div>
-    <nav className="primary-nav">{NAV_ITEMS.map(item=>{const Icon=ICONS[item.icon] || Compass;return <button key={item.id} className={`nav-item ${(page===item.id || (item.id==='builds' && page==='character-build-detail'))?'active':''}`} onClick={()=>navigate(item.id)}><Icon size={18}/><span>{item.label}</span>{item.id==='materials' && materialStats.missing>0 && <i className="nav-count">{Math.min(99,materialStats.missing)}</i>}</button>;})}</nav>
+    <nav className="primary-nav">{NAV_ITEMS.map(item=>{const Icon=ICONS[item.icon] || Compass;return <button key={item.id} className={`nav-item ${item.id==='builds'?'build-nav':''} ${(page===item.id || (item.id==='builds' && page==='character-build-detail'))?'active':''}`} onClick={()=>navigate(item.id)}><Icon size={18}/><span>{item.label}</span>{item.id==='builds'&&<i className="build-nav-badge">BUILD LAB</i>}{item.id==='materials' && materialStats.missing>0 && <i className="nav-count">{Math.min(99,materialStats.missing)}</i>}</button>;})}</nav>
     <div className="sidebar-spacer"/>
     <div className="side-quest-card"><div className="quest-top"><span className="quest-gem"><Gem size={17}/></span><span className="eyebrow">YOUR NEXT MILESTONE</span></div><strong>{persisted.goals.length ? persisted.goals[0].title : 'Set your next goal'}</strong><p>{persisted.goals.length ? `${persisted.goals.filter(g=>g.done).length} of ${persisted.goals.length} goals complete` : 'Turn your roster into a clear upgrade plan.'}</p><button className="text-action" onClick={()=>navigate('account')}>View progression <ArrowRight size={14}/></button></div>
     <div className="sidebar-bottom"><div className="local-badge"><span className="live-dot"/> <span>Local tracker active</span></div><button className="user-mini" onClick={()=>navigate('settings')}><div className="user-avatar">{(persisted.account.nickname || 'T').slice(0,1).toUpperCase()}</div><div><strong>{persisted.account.nickname || 'Traveler'}</strong><small>Personal workspace</small></div><MoreHorizontal size={18}/></button></div>
   </>;
 
   const dashboardPage = <div className="page-content">
-    <SectionHeader eyebrow={`${new Date().toLocaleDateString('en-US',{weekday:'long'}).toUpperCase()} · ADVENTURE OVERVIEW`} title={`Welcome back${persisted.account.nickname ? `, ${persisted.account.nickname}` : ', Traveler'}.`} subtitle="A little progress each day goes a long way across Teyvat." actions={<button className="button primary" onClick={()=>navigate('materials')}><Plus size={16}/> Plan an upgrade</button>}/>
+    <SectionHeader eyebrow={`${new Date().toLocaleDateString('en-US',{weekday:'long'}).toUpperCase()} · ADVENTURE OVERVIEW`} title={`Welcome back${persisted.account.nickname ? `, ${persisted.account.nickname}` : ', Traveler'}.`} subtitle="A little progress each day goes a long way across Teyvat." actions={<><button className="button primary" onClick={()=>navigate('builds')}><BookOpen size={15}/> Character Builds</button><button className="button secondary" onClick={()=>navigate('materials')}><Plus size={16}/> Plan an upgrade</button></>}/>
     <div className="hero-banner">
       <div className="hero-text"><div className="hero-kicker"><Sparkles size={14}/> YOUR ADVENTURE AT A GLANCE</div><h2>Make every resin<br/><em>count.</em></h2><p>See your next best step, keep materials organized, and build a roster that works for you.</p><div className="hero-actions"><button className="button gold" onClick={()=>navigate('account')}>Review account <ArrowRight size={15}/></button><button className="button glass" onClick={()=>navigate('characters')}>Explore characters</button></div></div>
       <div className="hero-art"><div className="orb orb-one"/><div className="orb orb-two"/><div className="hero-ring ring-one"/><div className="hero-ring ring-two"/><div className="hero-symbol">✦</div><div className="hero-landscape"><span/><span/><span/><span/></div><div className="hero-label label-top">ADVENTURE RANK <b>{persisted.account.ar}</b></div><div className="hero-label label-bottom">WORLD LEVEL <b>{persisted.account.worldLevel}</b></div></div>
@@ -1046,7 +1029,7 @@ export default function App() {
   return <div className="app-shell">
     <aside className={`sidebar ${mobileNav?'mobile-open':''}`}>{sidebar}</aside>
     {mobileNav&&<button className="mobile-backdrop" aria-label="Close menu" onClick={()=>setMobileNav(false)}/>}
-    <main className="main-area"><header className="topbar"><div className="topbar-left"><button className="mobile-menu icon-button" onClick={()=>setMobileNav(true)} aria-label="Open menu"><Menu size={20}/></button><div className="breadcrumb"><span>TEYVAT</span><ChevronRight size={14}/><strong>{page==='character-build-detail' ? (buildCharacter ? buildCharacter.name + ' Build' : 'Character Build') : (NAV_ITEMS.find(n=>n.id===page)?.label || 'Dashboard')}</strong></div></div><div className="topbar-actions"><div className="global-search"><Search size={16}/><input value={globalSearch} onChange={e=>{setGlobalSearch(e.target.value);if(e.target.value) setPage('characters');}} placeholder="Find characters…"/><kbd>⌘ K</kbd></div><div className="topbar-divider"/><button className="icon-button quick-settings" title="Settings" onClick={()=>navigate('settings')}><Settings2 size={18}/></button><button className="topbar-profile" title="Account tracker" onClick={()=>navigate('account')}><span className="user-avatar">{(persisted.account.nickname || 'T').slice(0,1).toUpperCase()}</span><span className="rank-chip">AR {persisted.account.ar}</span><ChevronDown size={14}/></button></div></header><div key={page} className="page-animate">{pageContent}</div><footer className="global-footer"><span>✦ Teyvat Companion</span><span>Unofficial fan-made companion · Not affiliated with HoYoverse</span><span>Made for Travelers <span className="footer-heart">♡</span></span></footer></main>
+    <main className="main-area"><header className="topbar"><div className="topbar-left"><button className="mobile-menu icon-button" onClick={()=>setMobileNav(true)} aria-label="Open menu"><Menu size={20}/></button><div className="breadcrumb"><span>TEYVAT</span><ChevronRight size={14}/><strong>{page==='character-build-detail' ? (buildCharacter ? buildCharacter.name + ' Build' : 'Character Build') : (NAV_ITEMS.find(n=>n.id===page)?.label || 'Dashboard')}</strong></div></div><div className="topbar-actions"><div className="global-search"><Search size={16}/><input value={globalSearch} onChange={e=>{setGlobalSearch(e.target.value);if(e.target.value) setPage('characters');}} placeholder="Find characters…"/><kbd>⌘ K</kbd></div><button className="button secondary topbar-build-shortcut" onClick={()=>navigate('builds')} title="Open Character Builds"><BookOpen size={15}/><span>Builds</span></button><div className="topbar-divider"/><button className="icon-button quick-settings" title="Settings" onClick={()=>navigate('settings')}><Settings2 size={18}/></button><button className="topbar-profile" title="Account tracker" onClick={()=>navigate('account')}><span className="user-avatar">{(persisted.account.nickname || 'T').slice(0,1).toUpperCase()}</span><span className="rank-chip">AR {persisted.account.ar}</span><ChevronDown size={14}/></button></div></header><div key={page} className="page-animate">{pageContent}</div><footer className="global-footer"><span>✦ Teyvat Companion</span><span>Unofficial fan-made companion · Not affiliated with HoYoverse</span><span>Made for Travelers <span className="footer-heart">♡</span></span></footer></main>
     {activeCharacter && <CharacterModal character={characters.find(c=>c.id===activeCharacter.id)||activeCharacter} onClose={()=>setActiveCharacter(null)} onUpdate={updateCharacter} onGoal={addGoalForCharacter} onMaterials={addCharacterMaterialsToPlan} onToast={setToast} detailsLoading={characterDataLoadingId===activeCharacter.id} detailsError={characterDataError} materialLookup={gameMaterialLookupRef.current} onRetryDetails={openCharacter} onOpenBuild={openBuildPage}/>}
     {showImport && <div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&setShowImport(false)}><div className="import-modal panel"><button className="modal-close icon-button" onClick={()=>setShowImport(false)}><X size={18}/></button><div className="modal-icon"><FileJson size={21}/></div><div className="eyebrow">RESTORE WORKSPACE</div><h2>Import a backup</h2><p>Paste the contents of a Teyvat Companion JSON backup, or select a file below.</p><button className="button secondary full-width" onClick={()=>uploadRef.current?.click()}><Upload size={15}/> Choose JSON backup file</button><input ref={uploadRef} className="hidden-input" type="file" accept="application/json,.json" onChange={async e=>{const file=e.target.files?.[0];if(!file)return;try{importTrackerObject(JSON.parse(await file.text()));}catch{setToast('Could not read that JSON backup.');}e.target.value='';}}/><div className="import-divider"><span>OR PASTE JSON</span></div><form onSubmit={importFromText}><textarea value={importText} onChange={e=>setImportText(e.target.value)} rows="7" placeholder={'{\n  "format": "teyvat-companion-backup-v1", ...\n}'} required/><button className="button primary full-width" type="submit"><Upload size={15}/> Import tracker data</button></form><p className="modal-footnote"><Info size={13}/> Import replaces the current tracker state. Export your current data first if needed.</p></div></div>}
     {toast&&<div className="toast"><CheckCircle2 size={16}/>{toast}</div>}
