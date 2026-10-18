@@ -44,6 +44,53 @@ const formatNumber = n => Number(n || 0).toLocaleString('en-US');
 const slugify = value => String(value || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const youtubeSearch = (topic, creator = '') => `https://www.youtube.com/results?search_query=${encodeURIComponent(`${creator} Genshin Impact ${topic}`)}`;
 
+const AMBR_API_ROOT = 'https://gi.yatta.moe/api/v2';
+let ambrVersionPromise = null;
+async function fetchAmbrData(endpoint) {
+  if (!ambrVersionPromise) {
+    ambrVersionPromise = fetch(`${AMBR_API_ROOT}/static/version`).then(async response => {
+      if (!response.ok) throw new Error(`Project Amber version endpoint returned ${response.status}`);
+      const payload = await response.json();
+      if (!payload?.data?.vh) throw new Error('Project Amber did not return a data version.');
+      return payload.data.vh;
+    }).catch(error => { ambrVersionPromise = null; throw error; });
+  }
+  const version = await ambrVersionPromise;
+  const response = await fetch(`${AMBR_API_ROOT}/en/${endpoint}?vh=${encodeURIComponent(version)}`);
+  if (!response.ok) throw new Error(`Project Amber returned ${response.status} for ${endpoint}`);
+  const payload = await response.json();
+  if (!payload || payload.data == null) throw new Error(`Project Amber returned no data for ${endpoint}`);
+  return payload.data;
+}
+
+function asRecordArray(value) {
+  if (Array.isArray(value)) return value;
+  if (value && typeof value === 'object') return Object.values(value);
+  return [];
+}
+
+function normalizeAmbrDetail(detail) {
+  const upgrade = detail?.upgrade || {};
+  const rawTalents = detail?.talent || detail?.talents || [];
+  return {
+    ...detail,
+    talents: asRecordArray(rawTalents).map(talent => ({ ...talent, upgrades: asRecordArray(talent?.promote || talent?.upgrades || talent?.upgrade) })),
+    constellations: asRecordArray(detail?.constellation || detail?.constellations),
+    ascensionMaterials: asRecordArray(detail?.ascension || detail?.ascension_materials),
+    upgrade: { ...upgrade, promotes: asRecordArray(upgrade?.promote || upgrade?.promotes) },
+  };
+}
+
+function normalizeCostItems(value) {
+  if (Array.isArray(value)) return value.map(item => ({ id: String(item?.id ?? item?.itemId ?? ''), count: Number(item?.count ?? item?.amount ?? item?.value ?? 0) })).filter(item => item.id && item.count > 0);
+  if (value && typeof value === 'object') return Object.entries(value).map(([id, count]) => ({ id: String(id), count: Number(count?.count ?? count?.amount ?? count) || 0 })).filter(item => item.id && item.count > 0);
+  return [];
+}
+
+function materialNameFor(id, lookup) {
+  return lookup?.[String(id)]?.name || lookup?.[String(id)]?.name2 || `Material ID ${id}`;
+}
+
 function ElementGlyph({ element, size = 'normal' }) {
   const meta = ELEMENT_META[element] || { icon:'✧', color:'#dbc998', soft:'rgba(219,201,152,.15)' };
   return <span className={`element-glyph ${size}`} style={{'--el-color':meta.color,'--el-soft':meta.soft}}>{meta.icon}</span>;
@@ -105,6 +152,9 @@ export default function App() {
   const [showImport, setShowImport] = useState(false);
   const [advisorQuestion, setAdvisorQuestion] = useState('');
   const [advisorAnswer, setAdvisorAnswer] = useState('');
+  const [characterDataLoadingId, setCharacterDataLoadingId] = useState('');
+  const [characterDataError, setCharacterDataError] = useState('');
+  const gameMaterialLookupRef = useRef({});
   const uploadRef = useRef(null);
 
   const characters = persisted.characters;
@@ -123,7 +173,23 @@ export default function App() {
   const updateCharacter = (id, changes) => saveState(prev => ({...prev, characters:prev.characters.map(c => c.id === id ? {...c,...changes} : c)}));
   const updateAccount = (field, value) => saveState(prev => ({...prev, account:{...prev.account,[field]:value}}));
   const toggleTask = id => saveState(prev => ({...prev, tasks:prev.tasks.map(t => t.id === id ? {...t,done:!t.done} : t)}));
-  const openCharacter = character => setActiveCharacter(character);
+  const openCharacter = async character => {
+    setActiveCharacter(character);
+    setCharacterDataError('');
+    if (!character.apiId || character.gameData) return;
+    setCharacterDataLoadingId(character.id);
+    try {
+      const detail = normalizeAmbrDetail(await fetchAmbrData(`avatar/${encodeURIComponent(character.apiId)}`));
+      if (!detail || (!detail.upgrade?.promotes?.length && !detail.talents?.length)) throw new Error('No talent or ascension details were included.');
+      const enriched = { ...character, gameData: detail, gameDataFetchedAt: new Date().toISOString() };
+      saveState(prev => ({ ...prev, characters: prev.characters.map(c => c.id === character.id ? { ...c, gameData: detail, gameDataFetchedAt: enriched.gameDataFetchedAt } : c) }));
+      setActiveCharacter(prev => prev?.id === character.id ? enriched : prev);
+    } catch (error) {
+      setCharacterDataError(`Could not load detailed game data: ${error.message}. You can still use the guide links below or try again after refreshing the catalogue.`);
+    } finally {
+      setCharacterDataLoadingId(current => current === character.id ? '' : current);
+    }
+  };
   const navigate = id => { setPage(id); setMobileNav(false); setGlobalSearch(''); };
 
   const visibleCharacters = useMemo(() => {
@@ -184,32 +250,121 @@ export default function App() {
     saveState(prev=>({...prev,mapMarkers:[marker,...prev.mapMarkers]})); setNewMarker({name:'',region:mapRegion,type:'Local specialty',note:''}); setToast('Personal map marker added');
   };
 
+
   async function loadPublicCharacterData() {
-    setIsLoadingData(true); setDataNotice('');
+    setIsLoadingData(true);
+    setDataNotice('');
     try {
-      const response = await fetch('https://genshin.jmp.blue/characters/all?lang=en');
-      if (!response.ok) throw new Error(`Game data service returned ${response.status}`);
-      const raw = await response.json();
-      const records = Array.isArray(raw) ? raw : Object.entries(raw || {}).map(([id, value]) => ({id,...value}));
-      if (!records.length) throw new Error('The service returned no character records.');
+      let records = [];
+      let source = 'Project Amber';
+      let materialPayload = null;
+      try {
+        const avatarPayload = await fetchAmbrData('avatar');
+        materialPayload = await fetchAmbrData('material').catch(() => null);
+        const items = avatarPayload?.items || avatarPayload?.data?.items || {};
+        records = Object.entries(items).map(([key, item]) => ({ ...item, id: item?.id ?? key }));
+        records = records.filter(item => item?.name && Number(item?.rank ?? item?.rarity ?? 0) >= 4 && (item?.weaponType || item?.weapon_type || item?.weapon));
+        if (records.length < 70) throw new Error(`The character index returned only ${records.length} usable records.`);
+        const itemIndex = materialPayload?.items || materialPayload?.data?.items || {};
+        gameMaterialLookupRef.current = Object.fromEntries(Object.entries(itemIndex).map(([key, item]) => [
+          String(item?.id ?? key),
+          { name: item?.name || item?.name2 || item?.route || `Material ${key}`, icon: item?.icon || item?.iconPath || '' },
+        ]));
+      } catch (primaryError) {
+        const response = await fetch('https://genshin.jmp.blue/characters/all?lang=en');
+        if (!response.ok) throw new Error(`Primary character data unavailable (${primaryError.message}) and fallback returned ${response.status}`);
+        const raw = await response.json();
+        records = (Array.isArray(raw) ? raw : Object.entries(raw || {}).map(([id, value]) => ({ id, ...value })))
+          .filter(item => item?.name || item?.title || item?.id);
+        source = 'genshin.dev fallback (coverage may be incomplete)';
+      }
+      if (!records.length) throw new Error('The data source returned no characters.');
+      const knownCharacters = characters;
       const mapped = records.map((item, i) => {
-        const name = item.name || item.title || item.id || `Character ${i+1}`;
-        const id = slugify(item.id || name);
-        const existing = characters.find(c => c.id === id || c.name.toLowerCase() === String(name).toLowerCase());
-        const visionRaw = item.vision || item.element || item.visionType || '';
-        const element = ['Pyro','Hydro','Anemo','Electro','Dendro','Cryo','Geo'].find(el => String(visionRaw).toLowerCase().includes(el.toLowerCase())) || existing?.element || 'Unknown';
-        const weapon = item.weapon || item.weaponType || existing?.weapon || 'Unknown';
-        const rarity = Number(item.rarity || item.stars || existing?.rarity || 4);
-        return {...existing, id, name, element, weapon, rarity, role:existing?.role || 'Unassigned', region:item.region || item.nation || existing?.region || 'Unknown', owned:existing?.owned || false, level:existing?.level || 1, talents:existing?.talents || [1,1,1], constellation:existing?.constellation || 0, image:`https://genshin.jmp.blue/characters/${id}/portrait`, source:'genshin.dev public dataset'};
+        const name = item.name || item.title || item.route || item.id || `Character ${i + 1}`;
+        const routeId = item.route || item.id || name;
+        const id = slugify(routeId);
+        const normalizedName = String(name).toLowerCase().replace(/[^a-z0-9]/g, '');
+        const existing = knownCharacters.find(c =>
+          (item.id != null && c.apiId != null && String(c.apiId) === String(item.id)) ||
+          c.id === id ||
+          String(c.name || '').toLowerCase().replace(/[^a-z0-9]/g, '') === normalizedName
+        );
+        const rawElement = item.element || item.vision || item.visionType || item.vision_key || '';
+        const elementKey = String(rawElement).toLowerCase();
+        const element = ['Pyro','Hydro','Anemo','Electro','Dendro','Cryo','Geo'].find(el => elementKey.includes(el.toLowerCase())) || existing?.element || 'Unknown';
+        const rawWeapon = item.weaponType || item.weapon_type || item.weapon || 'Unknown';
+        const weaponMap = { sword:'Sword', claymore:'Claymore', polearm:'Polearm', catalyst:'Catalyst', bow:'Bow' };
+        const weapon = weaponMap[String(rawWeapon).toLowerCase()] || rawWeapon;
+        const rarity = Number(item.rank || item.rarity || item.stars || existing?.rarity || 4);
+        const icon = item.icon || item.image || '';
+        const image = existing?.image || (String(icon).startsWith('http') ? icon : icon ? `https://gi.yatta.moe/assets/UI/${icon}.png` : `https://genshin.jmp.blue/characters/${id}/portrait`);
+        const gameData = existing?.gameData || (item.upgrade || item.skillTalents || item.ascension_materials ? normalizeAmbrDetail(item) : null);
+        return {
+          ...existing,
+          id,
+          apiId: String(item.id ?? existing?.apiId ?? ''),
+          name,
+          title: item.title || existing?.title || '',
+          element,
+          weapon,
+          rarity,
+          role: existing?.role || 'Unassigned',
+          region: item.region || item.nation || item.native || existing?.region || 'Unknown',
+          owned: existing?.owned ?? false,
+          level: existing?.level ?? 1,
+          talents: existing?.talents || [1,1,1],
+          constellation: existing?.constellation ?? 0,
+          image,
+          gameData,
+          source,
+        };
       });
-      const byId = new Map(characters.map(c=>[c.id,c])); mapped.forEach(c=>byId.set(c.id,{...byId.get(c.id),...c, owned:byId.get(c.id)?.owned || false}));
-      saveState(prev=>({...prev,characters:[...byId.values()]}));
-      setDataNotice(`Loaded ${mapped.length} character records from the public static game-data API. Builds, role labels and upgrade quantities still need verification before use.`);
-      setToast('Character catalogue refreshed');
-    } catch (e) {
-      setDataNotice(`Could not refresh live game data: ${e.message}. Your saved local catalogue is unchanged. Check your connection or continue using manual tracking.`);
-    } finally { setIsLoadingData(false); }
+      saveState(prev => {
+        const byId = new Map(prev.characters.map(c => [c.id, c]));
+        for (const fresh of mapped) {
+          const existing = byId.get(fresh.id) || prev.characters.find(c =>
+            (fresh.apiId && c.apiId && String(c.apiId) === String(fresh.apiId)) ||
+            String(c.name || '').toLowerCase().replace(/[^a-z0-9]/g, '') === String(fresh.name || '').toLowerCase().replace(/[^a-z0-9]/g, '')
+          );
+          byId.set(fresh.id, {
+            ...fresh,
+            ...(existing || {}),
+            id: fresh.id,
+            apiId: fresh.apiId || existing?.apiId || '',
+            name: fresh.name,
+            title: fresh.title || existing?.title || '',
+            element: fresh.element || existing?.element || 'Unknown',
+            weapon: fresh.weapon || existing?.weapon || 'Unknown',
+            rarity: fresh.rarity || existing?.rarity || 4,
+            region: fresh.region || existing?.region || 'Unknown',
+            image: fresh.image || existing?.image || '',
+            source: fresh.source,
+            owned: existing?.owned ?? false,
+            level: existing?.level ?? 1,
+            talents: existing?.talents || [1,1,1],
+            constellation: existing?.constellation ?? 0,
+            weaponName: existing?.weaponName || '',
+            artifact: existing?.artifact || '',
+            mainStats: existing?.mainStats || '',
+            role: existing?.role || fresh.role || 'Unassigned',
+            gameData: existing?.gameData || fresh.gameData || null,
+          });
+        }
+        return { ...prev, characters: [...byId.values()] };
+      });
+      setDataNotice(`Loaded ${mapped.length} character records from ${source}. Detailed talent and ascension costs load when you open a character profile. Existing owned status, levels, team presets, goals, and inventory were kept.`);
+      setToast(`Character catalogue refreshed · ${mapped.length} records`);
+    } catch (error) {
+      setDataNotice(`Could not refresh the full character catalogue: ${error.message}. Your local records remain available; retry from Settings when the data source is reachable.`);
+    } finally {
+      setIsLoadingData(false);
+    }
   }
+
+  useEffect(() => {
+    if (characters.length < 100) loadPublicCharacterData();
+  }, []);
 
   async function syncPublicShowcase() {
     const uid = String(persisted.account.uid || '').trim();
