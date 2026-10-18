@@ -49,6 +49,7 @@ export const NAV_ITEMS = [
   { id:'dashboard', label:'Dashboard', icon:'LayoutDashboard' },
   { id:'characters', label:'Characters', icon:'Users' },
   { id:'builds', label:'Character Builds', icon:'BookOpen' },
+  { id:'optimizer', label:'Artifact Optimizer', icon:'Layers3' },
   { id:'teams', label:'Builds & Teams', icon:'Swords' },
   { id:'advisor', label:'Teyvat Advisor', icon:'Bot' },
   { id:'materials', label:'Materials & Farming', icon:'PackageOpen' },
