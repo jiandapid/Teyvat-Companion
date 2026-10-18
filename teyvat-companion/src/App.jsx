@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { ELEMENTS, ELEMENT_META, MATERIAL_STARTER, NAV_ITEMS, STARTER_CHARACTERS, STARTER_TEAMS } from './data';
 import { CHARACTER_BUILD_ALIASES, CHARACTER_BUILD_GUIDES, CREATOR_CHANNELS } from './builds';
-import { enkaTtlSeconds, isValidGenshinUid, mergeEnkaShowcaseCharacter } from './core';
+import { enkaTtlSeconds, isValidGenshinUid, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter } from './core';
 
 const ICONS = { LayoutDashboard, Users, Swords, PackageOpen, MapPinned, ChartNoAxesCombined, PlayCircle, Settings2, Bot, BookOpen };
 const STORAGE_KEY = 'teyvat-companion-v1';
@@ -531,46 +531,7 @@ export default function App() {
         };
       });
       const mapped = [...new Map(mappedRecords.map(record => [record.id, record])).values()];
-      saveState(prev => {
-        const byId = new Map(prev.characters.map(c => [c.id, c]));
-        for (const fresh of mapped) {
-          const travelerVariant = /^traveler-/.test(fresh.id);
-          const existing = byId.get(fresh.id) || (!travelerVariant ? prev.characters.find(c =>
-            (fresh.apiId && c.apiId && String(c.apiId) === String(fresh.apiId)) ||
-            String(c.name || '').toLowerCase().replace(/[^a-z0-9]/g, '') === String(fresh.name || '').toLowerCase().replace(/[^a-z0-9]/g, '')
-          ) : null);
-          byId.set(fresh.id, {
-            ...fresh,
-            ...(existing || {}),
-            id: fresh.id,
-            apiId: fresh.apiId || existing?.apiId || '',
-            apiSlug: fresh.apiSlug || existing?.apiSlug || '',
-            rawName: fresh.rawName || existing?.rawName || fresh.name,
-            name: fresh.name,
-            title: fresh.title || existing?.title || '',
-            element: fresh.element || existing?.element || 'Unknown',
-            weapon: fresh.weapon || existing?.weapon || 'Unknown',
-            rarity: fresh.rarity || existing?.rarity || 0,
-            region: fresh.region || existing?.region || 'Unknown',
-            image: fresh.image || existing?.image || '',
-            iconImage: fresh.iconImage || existing?.iconImage || '',
-            portraitImage: fresh.portraitImage || existing?.portraitImage || '',
-            imageType: fresh.imageType || existing?.imageType || '',
-            materialGuides: fresh.materialGuides?.length ? fresh.materialGuides : (existing?.materialGuides || []),
-            source: fresh.source,
-            owned: existing?.owned ?? false,
-            level: existing?.level ?? 1,
-            talents: existing?.talents || [1,1,1],
-            constellation: existing?.constellation ?? 0,
-            weaponName: existing?.weaponName || '',
-            artifact: existing?.artifact || '',
-            mainStats: existing?.mainStats || '',
-            role: existing?.role || fresh.role || 'Unassigned',
-            gameData: existing?.gameData || fresh.gameData || null,
-          });
-        }
-        return { ...prev, characters: [...byId.values()] };
-      });
+      saveState(prev => ({ ...prev, characters: mergeCharacterCatalogue(prev.characters, mapped) }));
       setDataNotice(`Loaded ${mapped.length} character records from ${source}. Detailed talent and ascension costs load when you open a character profile. Existing owned status, levels, team presets, goals, and inventory were kept.`);
       setToast(`Character catalogue refreshed · ${mapped.length} records`);
     } catch (error) {
