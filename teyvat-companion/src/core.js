@@ -284,7 +284,7 @@ export function buildProgressionPlan({ characters = [], goals = [], materials = 
       kind: 'material',
       title: 'Farm a tracked material shortage',
       detail: material.name + ' · ' + material.missing + ' still needed',
-      reason: 'This shortage comes from quantities you entered; verify the correct drop source and today's rotation in-game.',
+      reason: 'This shortage comes from quantities you entered; verify the correct drop source and the current rotation in-game.',
       materialId: material.id,
       missing: material.missing,
     });
