@@ -253,3 +253,5 @@
 .hero-section-heading .heading-actions{gap:8px}
 @media(max-width:1050px){.topbar-build-shortcut{width:34px;min-width:34px;padding:0}.topbar-build-shortcut span{display:none}}
 @media(max-width:760px){.topbar-build-shortcut{min-height:30px;width:31px;min-width:31px}.build-nav-badge{font-size:6px;padding:3px 4px}.section-heading .heading-actions{display:flex;flex-wrap:wrap;gap:7px}.section-heading .heading-actions .button{font-size:10px;padding:8px 9px}}
+
+@media(max-width:760px){.topbar-build-shortcut{display:none}}
