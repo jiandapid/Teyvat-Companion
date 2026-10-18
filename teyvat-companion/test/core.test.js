@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { enkaTtlSeconds, isValidGenshinUid, mergeEnkaShowcaseCharacter } from '../src/core.js';
+import { CHARACTER_BUILD_GUIDES } from '../src/builds.js';
+import { MATERIAL_STARTER, NAV_ITEMS, STARTER_CHARACTERS, STARTER_TEAMS } from '../src/data.js';
 
 test('accepts normal 9- and 10-digit Genshin UIDs', () => {
   assert.equal(isValidGenshinUid('123456789'), true);
@@ -67,4 +69,35 @@ test('sync does not replace saved progress with missing level or constellation v
   assert.equal(synced.constellation, 1);
   assert.equal(synced.weaponName, 'Planned weapon');
   assert.equal(synced.enkaBuild.weapon, 'Actual weapon');
+});
+
+test('main navigation uses unique ids and exposes the important app pages', () => {
+  const ids = NAV_ITEMS.map(item => item.id);
+  assert.equal(new Set(ids).size, ids.length);
+  for (const page of ['dashboard', 'characters', 'builds', 'teams', 'materials', 'map', 'account', 'guides', 'settings']) {
+    assert.ok(ids.includes(page), 'missing nav page: ' + page);
+  }
+});
+
+test('starter teams only reference characters that exist in the starter catalogue', () => {
+  const ids = new Set(STARTER_CHARACTERS.map(character => character.id));
+  for (const team of STARTER_TEAMS) {
+    for (const id of team.characters) assert.ok(ids.has(id), team.name + ' references missing character ' + id);
+  }
+});
+
+test('starter material IDs and character IDs are unique', () => {
+  assert.equal(new Set(STARTER_CHARACTERS.map(character => character.id)).size, STARTER_CHARACTERS.length);
+  assert.equal(new Set(MATERIAL_STARTER.map(material => material.id)).size, MATERIAL_STARTER.length);
+});
+
+test('each curated build profile has the minimum structure needed by the UI', () => {
+  assert.ok(Object.keys(CHARACTER_BUILD_GUIDES).length >= 10);
+  for (const [id, guide] of Object.entries(CHARACTER_BUILD_GUIDES)) {
+    assert.ok(guide.role, id + ' is missing role');
+    assert.ok(Array.isArray(guide.artifacts), id + ' is missing artifacts list');
+    assert.ok(Array.isArray(guide.weapons), id + ' is missing weapons list');
+    assert.ok(Array.isArray(guide.talentOrder), id + ' is missing talent order');
+    assert.ok(guide.stats && guide.stats.sands && guide.stats.goblet && guide.stats.circlet, id + ' is missing main stats');
+  }
 });
