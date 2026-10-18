@@ -740,12 +740,36 @@ export default function App() {
         }),
       }));
       setGoodImportMessage('Imported GOOD v' + inventory.version + ': ' + inventory.summary.characters + ' characters, ' + inventory.summary.weapons + ' weapons and ' + inventory.summary.artifacts + ' artifacts. Matched ' + inventory.summary.matchedCharacters + ' characters to your catalogue; your planned build fields were preserved.');
+      setOptimizerResult(null); setOptimizerError('');
       setToast('GOOD inventory imported');
     } catch (error) {
       setGoodImportMessage('Import failed: ' + (error?.message || 'Could not read this GOOD file.') + ' Your existing inventory and tracker were not changed.');
     } finally {
       event.target.value = '';
     }
+  }
+
+  function runArtifactOptimizer() {
+    setOptimizerError('');
+    setOptimizerResult(null);
+    if (!optimizerCharacter) { setOptimizerError('Choose a character first.'); return; }
+    const inventory = persisted.goodInventory;
+    if (!inventory?.artifacts?.length) { setOptimizerError('Import a GOOD inventory with artifacts before optimizing.'); return; }
+    if (optimizerTeamId && !optimizerTeamContainsCharacter) {
+      setOptimizerError('That saved team does not contain ' + optimizerCharacter.name + '. Choose a team containing this character, or choose No team context.');
+      return;
+    }
+    const result = optimizeArtifactLoadout({
+      character: optimizerCharacter,
+      profile: findCharacterBuildGuide(optimizerCharacter),
+      artifacts: inventory.artifacts,
+      teamCharacters: optimizerTeamCharacters,
+      allCharacters: characters,
+      topN: 3,
+    });
+    if (result.error) { setOptimizerError(result.error); return; }
+    if (!result.recommendations?.length) { setOptimizerError('No complete five-piece loadout could be found. Check that the imported GOOD file includes all five artifact slots.'); return; }
+    setOptimizerResult(result);
   }
 
   const sidebar = <>
