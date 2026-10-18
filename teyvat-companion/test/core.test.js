@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { enkaTtlSeconds, isValidGenshinUid, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter } from '../src/core.js';
+import { buildProgressionPlan, enkaTtlSeconds, isValidGenshinUid, matchGoodCharacterKey, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, parseGoodInventory } from '../src/core.js';
 import { CHARACTER_BUILD_GUIDES } from '../src/builds.js';
 import { MATERIAL_STARTER, NAV_ITEMS, STARTER_CHARACTERS, STARTER_TEAMS } from '../src/data.js';
 
@@ -132,4 +132,58 @@ test('catalogue merge keeps different Traveler element rows separate', () => {
   ]);
   assert.equal(merged.length, 2);
   assert.deepEqual(merged.map(c => c.id), ['traveler-anemo', 'traveler-geo']);
+});
+
+test('imports GOOD v3 character, weapon and artifact inventory', () => {
+  const good = parseGoodInventory({
+    format: 'GOOD',
+    version: 3,
+    source: 'Teyvat Companion test',
+    characters: [{ key: 'Xingqiu', level: 80, ascension: 5, constellation: 4, talent: { auto: 1, skill: 8, burst: 9 } }],
+    weapons: [{ key: 'SacrificialSword', level: 90, ascension: 6, refinement: 3, location: 'Xingqiu', lock: true }],
+    artifacts: [{
+      setKey: 'EmblemOfSeveredFate', slotKey: 'plume', level: 20, rarity: 5, mainStatKey: 'atk',
+      location: 'Xingqiu', lock: true,
+      substats: [{ key: 'critRate_', value: 10.1 }, { key: 'critDMG_', value: 14.0 }, { key: 'atk_', value: 5.8 }],
+    }],
+  }, '2026-10-18T12:00:00.000Z');
+  assert.equal(good.format, 'GOOD');
+  assert.equal(good.version, 3);
+  assert.equal(good.characters.length, 1);
+  assert.equal(good.weapons.length, 1);
+  assert.equal(good.artifacts.length, 1);
+  assert.equal(good.artifacts[0].critValue, 34.2);
+  assert.equal(good.summary.lockedArtifacts, 1);
+  assert.equal(good.importedAt, '2026-10-18T12:00:00.000Z');
+});
+
+test('rejects malformed or unsupported GOOD imports instead of replacing data', () => {
+  assert.throws(() => parseGoodInventory('{broken'), /valid JSON/);
+  assert.throws(() => parseGoodInventory({ format: 'not GOOD', version: 3 }), /not a GOOD file/);
+  assert.throws(() => parseGoodInventory({ format: 'GOOD', version: 9, artifacts: [{}] }), /Unsupported GOOD version/);
+  assert.throws(() => parseGoodInventory({ format: 'GOOD', version: 3 }), /contains no/);
+});
+
+test('maps GOOD character keys to roster entries without confusing Traveler elements', () => {
+  const roster = [
+    { id: 'raiden', name: 'Raiden Shogun' },
+    { id: 'traveler-anemo', name: 'Traveler (Anemo)', element: 'Anemo' },
+    { id: 'traveler-geo', name: 'Traveler (Geo)', element: 'Geo' },
+  ];
+  assert.equal(matchGoodCharacterKey('RaidenShogun', roster).id, 'raiden');
+  assert.equal(matchGoodCharacterKey('TravelerAnemo', roster).id, 'traveler-anemo');
+  assert.equal(matchGoodCharacterKey('TravelerGeo', roster).id, 'traveler-geo');
+});
+
+test('progression plan puts user-set goals and known material shortages ahead of generic tips', () => {
+  const plan = buildProgressionPlan({
+    characters: [{ id: 'xingqiu', name: 'Xingqiu', owned: true, level: 70 }],
+    goals: [{ id: 'g1', character: 'xingqiu', title: 'Raise Burst', target: 'Talent level 9', done: false }],
+    materials: [{ id: 'books', name: 'Talent books', required: 10, owned: 4 }],
+    goodInventory: { artifacts: [{ rarity: 5, critValue: 38.2 }] },
+  });
+  assert.equal(plan[0].kind, 'goal');
+  assert.equal(plan[1].kind, 'material');
+  assert.equal(plan[1].missing, 6);
+  assert.equal(plan[2].kind, 'artifacts');
 });
