@@ -8,9 +8,9 @@ import {
 } from 'lucide-react';
 import { ELEMENTS, ELEMENT_META, MATERIAL_STARTER, NAV_ITEMS, STARTER_CHARACTERS, STARTER_TEAMS } from './data';
 import { CHARACTER_BUILD_ALIASES, CHARACTER_BUILD_GUIDES, CREATOR_CHANNELS } from './builds';
-import { buildProgressionPlan, enkaTtlSeconds, isValidGenshinUid, matchGoodCharacterKey, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, parseGoodInventory } from './core';
+import { buildProgressionPlan, enkaTtlSeconds, isValidGenshinUid, matchGoodCharacterKey, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, optimizeArtifactLoadout, parseGoodInventory } from './core';
 
-const ICONS = { LayoutDashboard, Users, Swords, PackageOpen, MapPinned, ChartNoAxesCombined, PlayCircle, Settings2, Bot, BookOpen };
+const ICONS = { LayoutDashboard, Users, Swords, PackageOpen, MapPinned, ChartNoAxesCombined, PlayCircle, Settings2, Bot, BookOpen, Layers3 };
 const STORAGE_KEY = 'teyvat-companion-v1';
 const REGIONS = ['Mondstadt', 'Liyue', 'Inazuma', 'Sumeru', 'Fontaine', 'Natlan', 'Nod-Krai', 'Other'];
 const TASK_STARTER = [
@@ -195,6 +195,10 @@ export default function App() {
   const [syncClock, setSyncClock] = useState(Date.now());
   const [syncError, setSyncError] = useState('');
   const [goodImportMessage, setGoodImportMessage] = useState('');
+  const [optimizerCharacterId, setOptimizerCharacterId] = useState('skirk');
+  const [optimizerTeamId, setOptimizerTeamId] = useState('');
+  const [optimizerResult, setOptimizerResult] = useState(null);
+  const [optimizerError, setOptimizerError] = useState('');
   const [dataNotice, setDataNotice] = useState('');
   const [characterFilter, setCharacterFilter] = useState({ search:'', element:'All elements', status:'All characters', role:'All roles' });
   const [materialFilter, setMaterialFilter] = useState('All materials');
@@ -221,6 +225,10 @@ export default function App() {
   const syncWaitMs = Math.max(0, syncNextFetchAt - syncClock);
   const progressionPlan = useMemo(() => buildProgressionPlan({ characters, goals: persisted.goals, materials: persisted.materials, goodInventory: persisted.goodInventory }), [characters, persisted.goals, persisted.materials, persisted.goodInventory]);
   const topImportedArtifacts = useMemo(() => [...(persisted.goodInventory?.artifacts || [])].filter(item => Number(item.rarity) === 5).sort((a,b) => Number(b.critValue || 0) - Number(a.critValue || 0)).slice(0,6), [persisted.goodInventory]);
+  const optimizerCharacter = characters.find(character => character.id === optimizerCharacterId) || ownedCharacters[0] || characters[0] || null;
+  const optimizerTeam = persisted.teams.find(team => team.id === optimizerTeamId) || null;
+  const optimizerTeamContainsCharacter = Boolean(optimizerTeam?.characters?.includes(optimizerCharacter?.id));
+  const optimizerTeamCharacters = optimizerTeamContainsCharacter ? optimizerTeam.characters.map(id => characters.find(character => character.id === id)).filter(Boolean) : [];
   const saveState = (updater) => setPersisted(prev => typeof updater === 'function' ? updater(prev) : updater);
   useEffect(() => {
     try {
