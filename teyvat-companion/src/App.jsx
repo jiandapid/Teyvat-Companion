@@ -333,6 +333,44 @@ export default function App() {
         return /^(traveler|aether|lumine|playerboy|playergirl)(-|$)/i.test(route) || ['traveler','aether','lumine'].includes(label);
       };
       const travelerIcon = records.find(isTravelerRecord)?.icon || records.find(isTravelerRecord)?.image || '';
+
+      const materialAssociationSources = {};
+      const materialSourceTypes = ['talent-book','talent-boss','common-ascension','local-specialties','boss-material'];
+      await Promise.all(materialSourceTypes.map(async type => {
+        try {
+          const response = await fetch('https://genshin.jmp.blue/materials/' + type + '?lang=en');
+          if (response.ok) materialAssociationSources[type] = await response.json();
+        } catch (error) {
+          console.warn('Material reference source unavailable: ' + type, error);
+        }
+      }));
+      const materialGuidesFor = (record, routeKey, displayName) => {
+        const ids = new Set([routeKey, slugify(record?.id), slugify(record?.route), slugify(record?.name), slugify(displayName)].filter(Boolean));
+        const belongsToCharacter = row => asRecordArray(row?.characters).some(id => ids.has(slugify(id)));
+        const guides = [];
+        for (const [key, row] of Object.entries(materialAssociationSources['talent-book'] || {})) {
+          if (belongsToCharacter(row)) guides.push({ category:'Talent books', name:key, items:asRecordArray(row.items).map(item=>item.name).filter(Boolean), availability:asRecordArray(row.availability).join(', '), domain:row.source || '' });
+        }
+        for (const [key, row] of Object.entries(materialAssociationSources['talent-boss'] || {})) {
+          if (belongsToCharacter(row)) guides.push({ category:'Weekly boss material', name:row.name || key, items:[row.name || key], source:row.source || '' });
+        }
+        for (const [key, row] of Object.entries(materialAssociationSources['common-ascension'] || {})) {
+          if (belongsToCharacter(row)) guides.push({ category:'Common enemy drops', name:key, items:asRecordArray(row.items).map(item=>item.name).filter(Boolean), source:asRecordArray(row.sources).join(', ') });
+        }
+        for (const [key, row] of Object.entries(materialAssociationSources['boss-material'] || {})) {
+          if (belongsToCharacter(row)) guides.push({ category:'Normal boss material', name:row.name || key, items:[row.name || key], source:row.source || '' });
+        }
+        for (const [region, rows] of Object.entries(materialAssociationSources['local-specialties'] || {})) {
+          for (const row of asRecordArray(rows)) if (belongsToCharacter(row)) guides.push({ category:'Local specialty', name:row.name || row.id, items:[row.name || row.id], source:region });
+        }
+        const seen = new Set();
+        return guides.filter(row => {
+          const key = row.category + ':' + row.name;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+      };
       const travelerForms = ['Anemo','Geo','Electro','Dendro','Hydro','Pyro'];
       for (const elementName of travelerForms) {
         const exists = records.some(record => isTravelerRecord(record) && normalizeElement(record.element || record.vision || record.visionType || record.vision_key) === elementName);
@@ -403,6 +441,7 @@ export default function App() {
         const apiIdValue = String(item.id ?? existing?.apiId ?? '');
         const apiId = apiIdValue.length > 0 && [...apiIdValue].every(char => char >= '0' && char <= '9') ? apiIdValue : (existing?.apiId || '');
         const gameData = existing?.gameData || (item.upgrade || item.skillTalents || item.ascension_materials ? normalizeAmbrDetail(item) : null);
+        const materialGuides = materialGuidesFor(item, routeKey, displayName);
         return {
           ...existing,
           id,
@@ -425,6 +464,7 @@ export default function App() {
           portraitImage: existing?.portraitImage || '',
           imageType: gachaImage ? 'gacha-splash' : (iconImage ? 'character-icon-fallback' : 'portrait-fallback'),
           gameData,
+          materialGuides: materialGuides.length ? materialGuides : (existing?.materialGuides || []),
           source: item._catalogSource || source,
         };
       });
@@ -454,6 +494,7 @@ export default function App() {
             iconImage: fresh.iconImage || existing?.iconImage || '',
             portraitImage: fresh.portraitImage || existing?.portraitImage || '',
             imageType: fresh.imageType || existing?.imageType || '',
+            materialGuides: fresh.materialGuides?.length ? fresh.materialGuides : (existing?.materialGuides || []),
             source: fresh.source,
             owned: existing?.owned ?? false,
             level: existing?.level ?? 1,
