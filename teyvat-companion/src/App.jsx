@@ -311,28 +311,38 @@ export default function App() {
       const mapped = records.map((item, i) => {
         const name = item.name || item.title || item.route || item.id || `Character ${i + 1}`;
         const routeId = item.route || item.id || name;
-        const id = slugify(routeId);
-        const normalizedName = String(name).toLowerCase().replace(/[^a-z0-9]/g, '');
+        const routeKey = slugify(routeId);
+        const rawElement = item.element || item.vision || item.visionType || item.vision_key || '';
+        const sourceElement = normalizeElement(rawElement);
+        const isTraveler = /^(traveler|aether|lumine|playerboy|playergirl)(-|$)/i.test(routeKey) || /^(traveler|aether|lumine)$/i.test(String(name).trim());
+        const travelerElement = isTraveler && sourceElement ? sourceElement : '';
+        const id = travelerElement ? 'traveler-' + travelerElement.toLowerCase() : routeKey;
+        const displayName = travelerElement ? 'Traveler (' + travelerElement + ')' : name;
+        const normalizedName = String(displayName).toLowerCase().replace(/[^a-z0-9]/g, '');
         const existing = knownCharacters.find(c =>
           (item.id != null && c.apiId != null && String(c.apiId) === String(item.id)) ||
           c.id === id ||
-          String(c.name || '').toLowerCase().replace(/[^a-z0-9]/g, '') === normalizedName
+          (!isTraveler && String(c.name || '').toLowerCase().replace(/[^a-z0-9]/g, '') === normalizedName)
         );
-        const rawElement = item.element || item.vision || item.visionType || item.vision_key || '';
-        const elementKey = String(rawElement).toLowerCase();
-        const element = ['Pyro','Hydro','Anemo','Electro','Dendro','Cryo','Geo'].find(el => elementKey.includes(el.toLowerCase())) || existing?.element || 'Unknown';
-        const rawWeapon = item.weaponType || item.weapon_type || item.weapon || 'Unknown';
-        const weaponMap = { sword:'Sword', claymore:'Claymore', polearm:'Polearm', catalyst:'Catalyst', bow:'Bow' };
-        const weapon = weaponMap[String(rawWeapon).toLowerCase()] || rawWeapon;
-        const rarity = Number(item.rank || item.rarity || item.stars || existing?.rarity || 4);
-        const icon = item.icon || item.image || '';
-        const image = existing?.image || (String(icon).startsWith('http') ? icon : icon ? `https://gi.yatta.moe/assets/UI/${icon}.png` : `https://genshin.jmp.blue/characters/${id}/portrait`);
+        const element = sourceElement || existing?.element || 'Unknown';
+        const rawWeapon = item.weaponType || item.weapon_type || item.weapon || '';
+        const weapon = normalizeWeapon(rawWeapon) || existing?.weapon || 'Unknown';
+        const rawRarity = Number(item.rank ?? item.rarity ?? item.stars ?? 0);
+        const rarity = rawRarity === 4 || rawRarity === 5 ? rawRarity : (existing?.rarity || 0);
+        const icon = item.icon || item.img?.icon || item.image || '';
+        const iconImage = /^https?:\\/\\//i.test(String(icon)) ? String(icon) : ambrAssetUrl(icon);
+        const gachaImage = gachaArtworkFromIcon(icon);
+        const image = gachaImage || existing?.image || iconImage || `https://genshin.jmp.blue/characters/${id}/portrait`;
+        const apiIdValue = String(item.id ?? existing?.apiId ?? '');
+        const apiId = /^\\d+$/.test(apiIdValue) ? apiIdValue : (existing?.apiId || '');
         const gameData = existing?.gameData || (item.upgrade || item.skillTalents || item.ascension_materials ? normalizeAmbrDetail(item) : null);
         return {
           ...existing,
           id,
-          apiId: String(item.id ?? existing?.apiId ?? ''),
-          name,
+          apiId,
+          apiSlug: String(item.route || item.id || routeKey),
+          name: displayName,
+          rawName: name,
           title: item.title || existing?.title || '',
           element,
           weapon,
@@ -344,6 +354,9 @@ export default function App() {
           talents: existing?.talents || [1,1,1],
           constellation: existing?.constellation ?? 0,
           image,
+          iconImage: iconImage || existing?.iconImage || '',
+          portraitImage: existing?.portraitImage || '',
+          imageType: gachaImage ? 'gacha-splash' : (iconImage ? 'character-icon-fallback' : 'portrait-fallback'),
           gameData,
           source,
         };
@@ -351,22 +364,28 @@ export default function App() {
       saveState(prev => {
         const byId = new Map(prev.characters.map(c => [c.id, c]));
         for (const fresh of mapped) {
-          const existing = byId.get(fresh.id) || prev.characters.find(c =>
+          const travelerVariant = /^traveler-/.test(fresh.id);
+          const existing = byId.get(fresh.id) || (!travelerVariant ? prev.characters.find(c =>
             (fresh.apiId && c.apiId && String(c.apiId) === String(fresh.apiId)) ||
             String(c.name || '').toLowerCase().replace(/[^a-z0-9]/g, '') === String(fresh.name || '').toLowerCase().replace(/[^a-z0-9]/g, '')
-          );
+          ) : null);
           byId.set(fresh.id, {
             ...fresh,
             ...(existing || {}),
             id: fresh.id,
             apiId: fresh.apiId || existing?.apiId || '',
+            apiSlug: fresh.apiSlug || existing?.apiSlug || '',
+            rawName: fresh.rawName || existing?.rawName || fresh.name,
             name: fresh.name,
             title: fresh.title || existing?.title || '',
             element: fresh.element || existing?.element || 'Unknown',
             weapon: fresh.weapon || existing?.weapon || 'Unknown',
-            rarity: fresh.rarity || existing?.rarity || 4,
+            rarity: fresh.rarity || existing?.rarity || 0,
             region: fresh.region || existing?.region || 'Unknown',
             image: fresh.image || existing?.image || '',
+            iconImage: fresh.iconImage || existing?.iconImage || '',
+            portraitImage: fresh.portraitImage || existing?.portraitImage || '',
+            imageType: fresh.imageType || existing?.imageType || '',
             source: fresh.source,
             owned: existing?.owned ?? false,
             level: existing?.level ?? 1,
