@@ -66,3 +66,34 @@
 @media(max-width:1180px){.advisor-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.advisor-workspace{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:720px){.advisor-hero{grid-template-columns:minmax(0,1fr);padding:21px 18px}.advisor-hero h2{font-size:24px}.advisor-hero-emblem{position:absolute;width:74px;height:74px;right:16px;top:15px;opacity:.28}.advisor-hero-emblem>svg{width:38px;height:38px}.advisor-emblem-orbit.orbit-a{width:92px;height:36px}.advisor-emblem-orbit.orbit-b{width:36px;height:92px}.advisor-hero-copy>p{padding-right:4px}.advisor-status{font-size:9px;max-width:100%;flex-wrap:wrap}.advisor-stats-grid{gap:8px}.advisor-stat-card{padding:11px;gap:9px}.advisor-stat-icon{width:29px;height:29px}.advisor-stat-card strong{font-size:19px}.advisor-stat-card small{font-size:8px}.advisor-stat-card span:not(.advisor-stat-icon){font-size:8px}.advisor-bottom-grid{grid-template-columns:minmax(0,1fr)}.advisor-chat-panel,.advisor-next-panel,.advisor-roster-panel,.advisor-trust-panel{padding:14px}.advisor-workspace .panel-heading h3,.advisor-bottom-grid .panel-heading h3{font-size:14px}}
 @media(max-width:390px){.advisor-stats-grid{grid-template-columns:minmax(0,1fr)}.advisor-hero h2{font-size:22px}.advisor-stat-card{padding:10px}}
+
+
+/* Teyvat real-map and character data upgrade */
+.real-map-panel{margin:0 0 16px;overflow:hidden}
+.real-map-heading{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 20px}
+.real-map-heading h3{margin:5px 0 5px;font-size:16px;color:var(--text-primary)}
+.real-map-heading p{margin:0;color:var(--text-secondary);font-size:11px;line-height:1.6}
+.real-map-actions{display:flex;flex-wrap:wrap;gap:8px}
+.real-map-frame{height:min(70vh,680px);min-height:390px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:#111c2b}
+.real-map-frame iframe{width:100%;height:100%;display:block;border:0;background:#111c2b}
+.real-map-note{display:flex;align-items:flex-start;gap:8px;padding:12px 16px;color:var(--text-secondary);font-size:10px;line-height:1.6}
+.real-map-note svg{flex-shrink:0;margin-top:2px;color:var(--accent-gold)}
+.real-map-note a{color:var(--accent-gold);text-decoration:underline}
+.game-data-tab{display:flex;flex-direction:column;gap:13px}
+.character-guide-links{display:flex;flex-wrap:wrap;gap:8px}
+.character-guide-links .button{font-size:10px}
+.game-data-section{padding:13px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,.015)}
+.game-data-section h3,.game-data-section h4{margin:0 0 10px;color:var(--text-primary);font-size:13px}
+.game-cost-group{padding:10px 0;border-top:1px solid var(--border)}
+.game-cost-group:first-of-type{border-top:0}
+.game-cost-group>strong{display:block;font-size:10px;color:var(--text-primary);margin-bottom:8px}
+.game-material-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.game-material-chip{display:inline-flex;gap:5px;align-items:center;padding:6px 8px;border:1px solid var(--border);border-radius:7px;background:rgba(234,201,126,.045);color:var(--text-secondary);font-size:10px;line-height:1.4}
+.game-material-chip strong{color:var(--text-primary);font-weight:600}
+.game-data-status{padding:13px;border:1px solid var(--border);border-radius:9px;color:var(--text-secondary);font-size:11px;line-height:1.6}
+.game-data-status p{margin:5px 0}
+.game-talent-card,.game-constellation{padding:10px 0;border-top:1px solid var(--border);font-size:11px}
+.game-talent-card summary,.game-constellation summary{display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;color:var(--text-primary);font-weight:650}
+.game-talent-card>p,.game-constellation>p{white-space:pre-line;color:var(--text-secondary);line-height:1.65}
+.game-talent-upgrade{padding:8px 0;border-top:1px dashed var(--border);color:var(--text-secondary)}
+@media(max-width:760px){.real-map-heading{align-items:flex-start;flex-direction:column;padding:15px}.real-map-actions{width:100%}.real-map-frame{height:65vh;min-height:340px}.character-guide-links{display:grid;grid-template-columns:1fr}.character-guide-links .button{justify-content:center}}
