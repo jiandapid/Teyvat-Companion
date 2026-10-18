@@ -3,7 +3,7 @@ import {
   Activity, ArrowLeft, ArrowRight, ArrowUpRight, BookOpen, Check, CheckCircle2, ChevronDown,
   ChevronRight, Compass, Download, ExternalLink, FileJson, Filter, Flame, Gem, Globe2, Info,
   Layers3, Link2, MapPinned, Menu, MoreHorizontal, PackageOpen, Pencil, PlayCircle, Plus,
-  RefreshCw, Search, Settings2, ShieldCheck, Sparkles, Swords, Target, Trash2, Upload, Users,
+  RefreshCw, Search, Settings2, ShieldCheck, Sparkles, Swords, Target, Trash2, Upload, Users, Clock,
   X, Zap, LayoutDashboard, ChartNoAxesCombined, CalendarDays, Database, Bot,
 } from 'lucide-react';
 import { ELEMENTS, ELEMENT_META, MATERIAL_STARTER, NAV_ITEMS, STARTER_CHARACTERS, STARTER_TEAMS } from './data';
@@ -31,13 +31,14 @@ function loadInitial() {
         account: { ar: saved.account?.ar ?? 58, worldLevel: saved.account?.worldLevel ?? 8, abyss: saved.account?.abyss || 'Not set', primogems: saved.account?.primogems ?? 0, wishes: saved.account?.wishes ?? 0, pity: saved.account?.pity ?? 0, uid: saved.account?.uid || '', nickname: saved.account?.nickname || '' },
         tasks: saved.tasks || TASK_STARTER,
         enkaSnapshot: saved.enkaSnapshot || null,
+        enkaNextFetchAt: Number(saved.enkaNextFetchAt || saved.enkaSnapshot?.nextFetchAt || 0),
         lastUpdated: saved.lastUpdated || null,
       };
     }
   } catch (e) { console.warn('Could not read local tracker data', e); }
   return {
     characters: STARTER_CHARACTERS.map(c => ({...c})), materials: MATERIAL_STARTER.map(m => ({...m})), teams: STARTER_TEAMS.map(t => ({...t})), goals: [], mapMarkers: [],
-    account: { ar: 58, worldLevel: 8, abyss: 'Not set', primogems: 0, wishes: 0, pity: 0, uid: '', nickname: '' }, tasks: TASK_STARTER.map(t => ({...t})), enkaSnapshot: null, lastUpdated: null,
+    account: { ar: 58, worldLevel: 8, abyss: 'Not set', primogems: 0, wishes: 0, pity: 0, uid: '', nickname: '' }, tasks: TASK_STARTER.map(t => ({...t})), enkaSnapshot: null, enkaNextFetchAt: 0, lastUpdated: null,
   };
 }
 
@@ -188,6 +189,7 @@ export default function App() {
   const [toast, setToast] = useState('');
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [syncLoading, setSyncLoading] = useState(false);
+  const [syncClock, setSyncClock] = useState(Date.now());
   const [syncError, setSyncError] = useState('');
   const [dataNotice, setDataNotice] = useState('');
   const [characterFilter, setCharacterFilter] = useState({ search:'', element:'All elements', status:'All characters', role:'All roles' });
@@ -210,6 +212,8 @@ export default function App() {
 
   const characters = persisted.characters;
   const ownedCharacters = characters.filter(c => c.owned);
+  const syncNextFetchAt = Number(persisted.enkaNextFetchAt || persisted.enkaSnapshot?.nextFetchAt || 0);
+  const syncWaitMs = Math.max(0, syncNextFetchAt - syncClock);
   const saveState = (updater) => setPersisted(prev => typeof updater === 'function' ? updater(prev) : updater);
   useEffect(() => {
     try {
@@ -220,6 +224,13 @@ export default function App() {
     } catch (e) { console.warn('Local save failed', e); }
   }, [persisted]);
   useEffect(() => { if (!toast) return; const timer = setTimeout(() => setToast(''), 2600); return () => clearTimeout(timer); }, [toast]);
+  useEffect(() => {
+    const nextFetchAt = Number(persisted.enkaNextFetchAt || persisted.enkaSnapshot?.nextFetchAt || 0);
+    const delay = nextFetchAt - Date.now();
+    if (!nextFetchAt || delay <= 0) { setSyncClock(Date.now()); return; }
+    const timer = setTimeout(() => setSyncClock(Date.now()), delay + 50);
+    return () => clearTimeout(timer);
+  }, [persisted.enkaNextFetchAt, persisted.enkaSnapshot?.nextFetchAt]);
 
   const updateCharacter = (id, changes) => saveState(prev => ({...prev, characters:prev.characters.map(c => c.id === id ? {...c,...changes} : c)}));
   const updateAccount = (field, value) => saveState(prev => ({...prev, account:{...prev.account,[field]:value}}));
@@ -576,6 +587,10 @@ export default function App() {
   async function syncPublicShowcase() {
     const uid = String(persisted.account.uid || '').trim();
     if (!/^\\d{9,10}$/.test(uid)) { setSyncError('Enter a valid 9–10 digit Genshin UID first.'); return; }
+    if (syncNextFetchAt > Date.now()) {
+      setSyncError('Enka.Network asks us to wait until ' + new Date(syncNextFetchAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) + ' before requesting this UID again. Your saved data is unchanged.');
+      return;
+    }
     setSyncLoading(true); setSyncError('');
     try {
       const response = await fetch('https://enka.network/api/uid/' + encodeURIComponent(uid) + '/');
@@ -587,6 +602,10 @@ export default function App() {
         throw new Error('Enka returned HTTP ' + response.status + '. Try again later.');
       }
       const data = await response.json();
+      const providerTtl = Number(data?.ttl);
+      const ttlSeconds = Number.isFinite(providerTtl) && providerTtl > 0 ? Math.ceil(providerTtl) : 60;
+      const nextFetchAt = Date.now() + ttlSeconds * 1000;
+      saveState(prev => ({...prev, enkaNextFetchAt: nextFetchAt}));
       const info = data.playerInfo || {};
       const rawShowcase = Array.isArray(data.avatarInfoList) ? data.avatarInfoList : [];
       if (!rawShowcase.length) throw new Error('The profile responded, but no detailed showcase characters were returned. Enable Character Details in-game and add characters to your showcase, then try again.');
@@ -644,6 +663,8 @@ export default function App() {
       const snapshot = {
         uid,
         fetchedAt: new Date().toISOString(),
+        ttlSeconds,
+        nextFetchAt,
         nickname: info.nickname || '',
         level: toNumber(info.level),
         worldLevel: Number.isFinite(Number(info.worldLevel)) ? Number(info.worldLevel) : null,
@@ -665,8 +686,7 @@ export default function App() {
             owned: true,
             ...(imported.level ? {level: imported.level} : {}),
             ...(imported.constellation != null ? {constellation: imported.constellation} : {}),
-            ...(imported.weapon ? {weaponName: imported.weapon} : {}),
-            ...(imported.artifactSummary ? {artifact: imported.artifactSummary} : {}),
+            // Keep the user's planned/manual build fields intact; actual showcase gear stays in enkaBuild.
             enkaBuild: {
               syncedAt: snapshot.fetchedAt,
               avatarId: imported.avatarId,
@@ -871,7 +891,8 @@ export default function App() {
   const mapPage = <div className="page-content">
     <SectionHeader eyebrow="EXPLORATION PLANNER" title="Teyvat Map & Routes" subtitle="Explore the real world map above, then manage your personal regional notes and collection checklist below." actions={<a className="button primary link-button" href="https://act.hoyolab.com/ys/app/interactive-map/index.html" target="_blank" rel="noreferrer"><Globe2 size={15}/> Open official interactive map <ExternalLink size={13}/></a>}/>
 
-    <div className="map-warning"><Info size={16}/><span>The embedded interactive map is explicitly designed to be embedded in websites. Your personal markers stay in Teyvat Companion, while the embedded map may keep its own collection progress separately.</span></div>
+    <section className="panel official-map-connect"><div className="official-map-emblem"><Globe2 size={23}/></div><div className="official-map-copy"><div className="eyebrow">OFFICIAL HOYOLAB TOOL</div><h2>Genshin Impact Interactive Map</h2><p>Open the real HoYoLAB map for official pins, underground layers, and its own account-linked map tools. It opens in a new tab so HoYoLAB sign-in and map controls can work normally.</p><small>Your HoYoLAB map progress stays with HoYoLAB; it does not automatically merge into this app's personal markers.</small></div><a className="button primary link-button" href="https://act.hoyolab.com/ys/app/interactive-map/index.html?lang=en-us" target="_blank" rel="noreferrer"><Globe2 size={15}/> Open official map <ExternalLink size={13}/></a></section>
+    <div className="map-warning"><Info size={16}/><span>The embedded map below is a community map with an official embed guide. HoYoLAB provides its own interactive service, but no official iframe embed interface is documented here, so the official map opens directly in a separate tab rather than showing a potentially blocked blank frame.</span></div>
     <section className="panel real-map-panel">
       <div className="real-map-heading">
         <div><div className="eyebrow">TEYVAT · REAL WORLD MAP</div><h3>Explore every region</h3><p>Pan, zoom, switch resource layers, and use the community map's own collection and route tools.</p></div>
@@ -888,7 +909,7 @@ export default function App() {
   const accountPage = <div className="page-content">
     <SectionHeader eyebrow="PROFILE & PROGRESSION" title="Account Tracker" subtitle="Keep your account snapshot, targets, and resources organized in one place." actions={<button className="button secondary" onClick={exportTracker}><Download size={15}/> Export backup</button>}/>
     <div className="account-overview-grid"><div className="account-profile-card"><div className="profile-emblem"><Compass size={28}/></div><div className="eyebrow">TRAVELER PROFILE</div><h2>{persisted.account.nickname || 'Your Traveler'}</h2><p>Personal account record</p><div className="profile-stats"><div><strong>{persisted.account.ar}</strong><small>Adventure Rank</small></div><div><strong>{persisted.account.worldLevel}</strong><small>World Level</small></div><div><strong>{ownedCharacters.length}</strong><small>Owned</small></div></div><div className="profile-footer"><span><span className="live-dot"/> Saved on this device</span><button className="text-action" onClick={()=>navigate('settings')}>Connection settings <ArrowRight size={13}/></button></div></div><div className="account-form-panel panel"><div className="panel-head"><div><div className="eyebrow">MANUAL ACCOUNT DETAILS</div><h3>Edit your snapshot</h3></div><span className="pill muted"><Pencil size={12}/> Editable</span></div><div className="account-input-grid"><label>In-game nickname<input value={persisted.account.nickname} onChange={e=>updateAccount('nickname',e.target.value)} placeholder="Optional nickname"/></label><label>Adventure Rank<input type="number" min="1" max="60" value={persisted.account.ar} onChange={e=>updateAccount('ar',Math.max(1,Math.min(60,Number(e.target.value)||1)))}/></label><label>World Level<input type="number" min="0" max="9" value={persisted.account.worldLevel} onChange={e=>updateAccount('worldLevel',Math.max(0,Math.min(9,Number(e.target.value)||0)))}/></label><label>Spiral Abyss progress<input value={persisted.account.abyss} onChange={e=>updateAccount('abyss',e.target.value)} placeholder="e.g. 12-3 / not attempted"/></label><label>Primogems (manual)<input type="number" min="0" value={persisted.account.primogems} onChange={e=>updateAccount('primogems',Math.max(0,Number(e.target.value)||0))}/></label><label>Wishes available (manual)<input type="number" min="0" value={persisted.account.wishes} onChange={e=>updateAccount('wishes',Math.max(0,Number(e.target.value)||0))}/></label><label>Current pity (manual)<input type="number" min="0" max="90" value={persisted.account.pity} onChange={e=>updateAccount('pity',Math.max(0,Math.min(90,Number(e.target.value)||0)))}/></label><label>Genshin UID (public showcase only)<input inputMode="numeric" value={persisted.account.uid} onChange={e=>updateAccount('uid',e.target.value.replace(/\D/g,'').slice(0,10))} placeholder="9–10 digit UID"/></label></div><div className="profile-warning"><ShieldCheck size={15}/><span>Never enter your HoYoverse password, verification code, session cookie, or authentication token here.</span></div></div></div>
-    <div className="panel sync-panel"><div className="panel-head"><div><div className="eyebrow">OPTIONAL PUBLIC DATA</div><h3>Sync character showcase</h3></div><span className={`sync-status ${persisted.enkaSnapshot?'connected':''}`}><span className="live-dot"/>{persisted.enkaSnapshot?'Connected snapshot':'Not connected'}</span></div><p className="panel-description">Import the characters currently shown on your public in-game showcase, including available levels, constellations, weapons, artifacts, and profile stats. This is not a HoYoverse login and cannot read hidden characters, Resin, Primogems, exact inventory, or wish history.</p><button className="button primary" onClick={syncPublicShowcase} disabled={syncLoading}>{syncLoading?<><RefreshCw className="spin" size={15}/> Connecting…</>:<><Link2 size={15}/> Fetch public showcase</>}</button>{syncError&&<div className="notice warning sync-message"><Info size={15}/><span>{syncError}</span></div>}{persisted.enkaSnapshot&&<div className="sync-result"><div className="sync-result-top"><div><strong>Public snapshot loaded</strong><small>UID {persisted.enkaSnapshot.uid} · {new Date(persisted.enkaSnapshot.fetchedAt).toLocaleString()}</small></div><button className="text-action" onClick={syncPublicShowcase}><RefreshCw size={13}/> Refresh</button></div><div className="sync-facts"><div><small>Nickname</small><strong>{persisted.enkaSnapshot.nickname || 'Not public'}</strong></div><div><small>Adventure Rank</small><strong>{persisted.enkaSnapshot.level ?? 'Not public'}</strong></div><div><small>World Level</small><strong>{persisted.enkaSnapshot.worldLevel ?? 'Not public'}</strong></div><div><small>Showcase entries</small><strong>{persisted.enkaSnapshot.showcase?.length ?? 0}</strong></div><div><small>Achievements</small><strong>{persisted.enkaSnapshot.achievements ?? 'Not public'}</strong></div><div><small>Abyss floor</small><strong>{persisted.enkaSnapshot.abyssFloor ? String(persisted.enkaSnapshot.abyssFloor)+'-'+String(persisted.enkaSnapshot.abyssChamber || 0) : 'Not public'}</strong></div></div>{persisted.enkaSnapshot.showcase?.length>0&&<div className="showcase-id-list"><span>Showcase characters · synced where matched</span>{persisted.enkaSnapshot.showcase.map((a,i)=><details key={`${a.avatarId}-${i}`} className="showcase-character-detail"><summary>{a.name}{a.level?` · Lv. ${a.level}`:''}{a.constellation?` · C${a.constellation}`:''}{a.weapon?` · ${a.weapon}`:''}</summary><div className="showcase-detail-content">{a.weapon&&<p><strong>Weapon:</strong> {a.weapon}{a.weaponLevel?` · Lv. ${a.weaponLevel}`:''}</p>}{a.artifacts?.length>0&&<div><strong>Artifacts</strong>{a.artifacts.map((artifact,j)=><div key={j} className="showcase-artifact-row"><span>{artifact.name}{artifact.level!=null?` · +${artifact.level}`:''}{artifact.rarity?` · ${artifact.rarity}★`:''}</span>{artifact.mainStat&&<small>Main stat: {artifact.mainStat}</small>}{artifact.substats?.length>0&&<small>Substats: {artifact.substats.map(stat=>stat.name+(stat.value!=null?' '+stat.value:'')).join(' · ')}</small>}</div>)}</div>}{a.talents?.length>0&&<p><strong>Raw talent level values:</strong> {a.talents.join(' / ')} <small>(provider order; not relabeled as Normal / Skill / Burst)</small></p>}{a.friendship!=null&&<p><strong>Friendship:</strong> {a.friendship}</p>}{!a.weapon&&!a.artifacts?.length&&!a.talents?.length&&<p>Detailed equipment was not returned for this character.</p>}</div></details>)}</div>}<p className="helper-note"><Info size={13}/> Synced characters are marked owned and their level, constellation, weapon, and artifact-set notes are updated when a catalogue match exists. Other saved characters and your manual goals/material quantities are preserved. This only covers the displayed showcase—not every character on your account.</p></div>}</div>
+    <div className="panel sync-panel"><div className="panel-head"><div><div className="eyebrow">OPTIONAL PUBLIC DATA</div><h3>Sync character showcase</h3></div><span className={`sync-status ${persisted.enkaSnapshot?'connected':''}`}><span className="live-dot"/>{persisted.enkaSnapshot?'Connected snapshot':'Not connected'}</span></div><p className="panel-description">Sync the current public Character Showcase from Enka.Network. This can import player profile data, displayed character levels, constellations, weapon/artifact details and available talent values. The app honors Enka's UID cooldown and saves the last snapshot locally. It is not a HoYoverse login and cannot read hidden characters, Resin, Primogems, full inventory, wish history or the entire owned roster.</p><button className="button primary" onClick={syncPublicShowcase} disabled={syncLoading||syncWaitMs>0}>{syncLoading?<><RefreshCw className="spin" size={15}/> Connecting…</>:syncWaitMs>0?<><Clock size={15}/> Refresh available at {new Date(syncNextFetchAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</>:<><Link2 size={15}/> Sync public showcase</>}</button>{syncError&&<div className="notice warning sync-message"><Info size={15}/><span>{syncError}</span><button className="text-action" onClick={()=>setSyncError('')} aria-label="Dismiss sync message"><X size={13}/></button></div>}{syncNextFetchAt>syncClock&&<p className="sync-cooldown-note"><Clock size={13}/> Next public refresh is available at {new Date(syncNextFetchAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}, following Enka.Network's returned cache TTL.</p>}{persisted.enkaSnapshot&&<div className="sync-result"><div className="sync-result-top"><div><strong>Public snapshot loaded</strong><small>UID {persisted.enkaSnapshot.uid} · {new Date(persisted.enkaSnapshot.fetchedAt).toLocaleString()}</small></div><button className="text-action" onClick={syncPublicShowcase}><RefreshCw size={13}/> Refresh</button></div><div className="sync-facts"><div><small>Nickname</small><strong>{persisted.enkaSnapshot.nickname || 'Not public'}</strong></div><div><small>Adventure Rank</small><strong>{persisted.enkaSnapshot.level ?? 'Not public'}</strong></div><div><small>World Level</small><strong>{persisted.enkaSnapshot.worldLevel ?? 'Not public'}</strong></div><div><small>Showcase entries</small><strong>{persisted.enkaSnapshot.showcase?.length ?? 0}</strong></div><div><small>Achievements</small><strong>{persisted.enkaSnapshot.achievements ?? 'Not public'}</strong></div><div><small>Abyss floor</small><strong>{persisted.enkaSnapshot.abyssFloor ? String(persisted.enkaSnapshot.abyssFloor)+'-'+String(persisted.enkaSnapshot.abyssChamber || 0) : 'Not public'}</strong></div></div>{persisted.enkaSnapshot.showcase?.length>0&&<div className="showcase-id-list"><span>Showcase characters · synced where matched</span>{persisted.enkaSnapshot.showcase.map((a,i)=><details key={`${a.avatarId}-${i}`} className="showcase-character-detail"><summary>{a.name}{a.level?` · Lv. ${a.level}`:''}{a.constellation?` · C${a.constellation}`:''}{a.weapon?` · ${a.weapon}`:''}</summary><div className="showcase-detail-content">{a.weapon&&<p><strong>Weapon:</strong> {a.weapon}{a.weaponLevel?` · Lv. ${a.weaponLevel}`:''}</p>}{a.artifacts?.length>0&&<div><strong>Artifacts</strong>{a.artifacts.map((artifact,j)=><div key={j} className="showcase-artifact-row"><span>{artifact.name}{artifact.level!=null?` · +${artifact.level}`:''}{artifact.rarity?` · ${artifact.rarity}★`:''}</span>{artifact.mainStat&&<small>Main stat: {artifact.mainStat}</small>}{artifact.substats?.length>0&&<small>Substats: {artifact.substats.map(stat=>stat.name+(stat.value!=null?' '+stat.value:'')).join(' · ')}</small>}</div>)}</div>}{a.talents?.length>0&&<p><strong>Raw talent level values:</strong> {a.talents.join(' / ')} <small>(provider order; not relabeled as Normal / Skill / Burst)</small></p>}{a.friendship!=null&&<p><strong>Friendship:</strong> {a.friendship}</p>}{!a.weapon&&!a.artifacts?.length&&!a.talents?.length&&<p>Detailed equipment was not returned for this character.</p>}</div></details>)}</div>}<p className="helper-note"><Info size={13}/> Matched showcase characters are marked owned and their level/constellation are updated. The live public weapon and artifact details are stored separately so your manually planned weapon, artifact and notes are not overwritten. Your other characters, goals, teams, local markers and material quantities are preserved. This only covers the displayed showcase—not every character on your account.</p></div>}</div>
     <div className="progress-goals-layout"><div className="panel goals-panel"><div className="panel-head"><div><div className="eyebrow">YOUR OBJECTIVES</div><h3>Upgrade goals</h3></div><span className="pill muted">{persisted.goals.length} goals</span></div><form className="goal-form" onSubmit={addGoal}><label>Goal name<input value={newGoal.title} onChange={e=>setNewGoal(p=>({...p,title:e.target.value}))} placeholder="e.g. Finish Skirk talents" required/></label><label>Character (optional)<select value={newGoal.character} onChange={e=>setNewGoal(p=>({...p,character:e.target.value}))}><option value="">Select character</option>{characters.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label><div className="goal-form-row"><label>Target<select value={newGoal.target} onChange={e=>setNewGoal(p=>({...p,target:e.target.value}))}>{['Level 90','Level 80/90','Talent level 9','Triple crown','Weapon level 90','Artifact build','Custom target'].map(t=><option key={t}>{t}</option>)}</select></label><label>Due date<input type="date" value={newGoal.due} onChange={e=>setNewGoal(p=>({...p,due:e.target.value}))}/></label></div><button className="button primary full-width" type="submit"><Plus size={15}/> Add upgrade goal</button></form><div className="goal-list detailed">{persisted.goals.map(g=>{const c=characters.find(ch=>ch.id===g.character);return <div className={`goal-row ${g.done?'done':''}`} key={g.id}><button className="goal-toggle" onClick={()=>saveState(p=>({...p,goals:p.goals.map(x=>x.id===g.id?{...x,done:!x.done}:x)}))}>{g.done&&<Check size={12}/>}</button><div className="goal-info"><strong>{g.title}</strong><small>{c?`${c.name} · `:''}{g.target}{g.due?` · Due ${g.due}`:''}</small></div><button className="icon-button danger tiny" onClick={()=>saveState(p=>({...p,goals:p.goals.filter(x=>x.id!==g.id)}))}><Trash2 size={13}/></button></div>;})}</div>{persisted.goals.length===0&&<p className="empty-inline">Your goals will appear here once you add them.</p>}</div><div className="panel resources-panel"><div className="panel-head"><div><div className="eyebrow">RESOURCE TRACKING</div><h3>Wish resources</h3></div><span className="pill muted">Manual</span></div><div className="resource-display"><div className="resource-emblem primogem">✧</div><div><span>Primogems</span><strong>{formatNumber(persisted.account.primogems)}</strong></div></div><ProgressBar value={persisted.account.wishes} max={180}/><div className="resource-foot"><span>{formatNumber(persisted.account.wishes)} wishes available</span><span>Pity: {persisted.account.pity}</span></div><p className="helper-note"><Info size={13}/> These values are optional manual notes, not an automated pull tracker. Update them after wishing or spending currency.</p><button className="button secondary full-width" onClick={()=>navigate('materials')}>Review upgrade materials <ArrowRight size={15}/></button></div></div>
   </div>;
 
