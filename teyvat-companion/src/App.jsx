@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { ELEMENTS, ELEMENT_META, MATERIAL_STARTER, NAV_ITEMS, STARTER_CHARACTERS, STARTER_TEAMS } from './data';
 import { CHARACTER_BUILD_ALIASES, CHARACTER_BUILD_GUIDES, CREATOR_CHANNELS } from './builds';
-import { enkaTtlSeconds, isValidGenshinUid, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter } from './core';
+import { buildProgressionPlan, enkaTtlSeconds, isValidGenshinUid, matchGoodCharacterKey, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, parseGoodInventory } from './core';
 
 const ICONS = { LayoutDashboard, Users, Swords, PackageOpen, MapPinned, ChartNoAxesCombined, PlayCircle, Settings2, Bot, BookOpen };
 const STORAGE_KEY = 'teyvat-companion-v1';
@@ -29,21 +29,23 @@ function loadInitial() {
         teams: saved.teams || STARTER_TEAMS,
         goals: saved.goals || [],
         mapMarkers: saved.mapMarkers || [],
-        account: { ar: saved.account?.ar ?? 58, worldLevel: saved.account?.worldLevel ?? 8, abyss: saved.account?.abyss || 'Not set', primogems: saved.account?.primogems ?? 0, wishes: saved.account?.wishes ?? 0, pity: saved.account?.pity ?? 0, uid: saved.account?.uid || '', nickname: saved.account?.nickname || '' },
+        account: { ar: saved.account?.ar ?? 58, worldLevel: saved.account?.worldLevel ?? 8, abyss: saved.account?.abyss || 'Not set', primogems: saved.account?.primogems ?? 0, wishes: saved.account?.wishes ?? 0, pity: saved.account?.pity ?? 0, uid: saved.account?.uid || '', nickname: saved.account?.nickname || '', resinAvailable: Math.max(0, Math.min(200, Number(saved.account?.resinAvailable) || 0)) },
         tasks: saved.tasks || TASK_STARTER,
         enkaSnapshot: saved.enkaSnapshot || null,
         enkaNextFetchAt: Number(saved.enkaNextFetchAt || saved.enkaSnapshot?.nextFetchAt || 0),
+        goodInventory: saved.goodInventory || null,
         lastUpdated: saved.lastUpdated || null,
       };
     }
   } catch (e) { console.warn('Could not read local tracker data', e); }
   return {
     characters: STARTER_CHARACTERS.map(c => ({...c})), materials: MATERIAL_STARTER.map(m => ({...m})), teams: STARTER_TEAMS.map(t => ({...t})), goals: [], mapMarkers: [],
-    account: { ar: 58, worldLevel: 8, abyss: 'Not set', primogems: 0, wishes: 0, pity: 0, uid: '', nickname: '' }, tasks: TASK_STARTER.map(t => ({...t})), enkaSnapshot: null, enkaNextFetchAt: 0, lastUpdated: null,
+    account: { ar: 58, worldLevel: 8, abyss: 'Not set', primogems: 0, wishes: 0, pity: 0, uid: '', nickname: '', resinAvailable: 0 }, tasks: TASK_STARTER.map(t => ({...t})), enkaSnapshot: null, enkaNextFetchAt: 0, goodInventory: null, lastUpdated: null,
   };
 }
 
 const formatNumber = n => Number(n || 0).toLocaleString('en-US');
+const humanizeGameKey = value => String(value || 'Unknown').replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
 const slugify = value => String(value || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const normalizeElement = raw => {
   const value = String(raw ?? '').toLowerCase();
@@ -192,6 +194,7 @@ export default function App() {
   const [syncLoading, setSyncLoading] = useState(false);
   const [syncClock, setSyncClock] = useState(Date.now());
   const [syncError, setSyncError] = useState('');
+  const [goodImportMessage, setGoodImportMessage] = useState('');
   const [dataNotice, setDataNotice] = useState('');
   const [characterFilter, setCharacterFilter] = useState({ search:'', element:'All elements', status:'All characters', role:'All roles' });
   const [materialFilter, setMaterialFilter] = useState('All materials');
@@ -210,11 +213,14 @@ export default function App() {
   const [characterDataError, setCharacterDataError] = useState('');
   const gameMaterialLookupRef = useRef({});
   const uploadRef = useRef(null);
+  const goodUploadRef = useRef(null);
 
   const characters = persisted.characters;
   const ownedCharacters = characters.filter(c => c.owned);
   const syncNextFetchAt = Number(persisted.enkaNextFetchAt || persisted.enkaSnapshot?.nextFetchAt || 0);
   const syncWaitMs = Math.max(0, syncNextFetchAt - syncClock);
+  const progressionPlan = useMemo(() => buildProgressionPlan({ characters, goals: persisted.goals, materials: persisted.materials, goodInventory: persisted.goodInventory }), [characters, persisted.goals, persisted.materials, persisted.goodInventory]);
+  const topImportedArtifacts = useMemo(() => [...(persisted.goodInventory?.artifacts || [])].filter(item => Number(item.rarity) === 5).sort((a,b) => Number(b.critValue || 0) - Number(a.critValue || 0)).slice(0,6), [persisted.goodInventory]);
   const saveState = (updater) => setPersisted(prev => typeof updater === 'function' ? updater(prev) : updater);
   useEffect(() => {
     try {
