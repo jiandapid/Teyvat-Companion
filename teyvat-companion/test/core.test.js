@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildProgressionPlan, enkaTtlSeconds, isValidGenshinUid, matchGoodCharacterKey, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, parseGoodInventory } from '../src/core.js';
+import { buildProgressionPlan, enkaTtlSeconds, isValidGenshinUid, matchGoodCharacterKey, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, optimizeArtifactLoadout, parseGoodInventory } from '../src/core.js';
 import { CHARACTER_BUILD_GUIDES } from '../src/builds.js';
 import { MATERIAL_STARTER, NAV_ITEMS, STARTER_CHARACTERS, STARTER_TEAMS } from '../src/data.js';
 
@@ -186,4 +186,129 @@ test('progression plan puts user-set goals and known material shortages ahead of
   assert.equal(plan[1].kind, 'material');
   assert.equal(plan[1].missing, 6);
   assert.equal(plan[2].kind, 'artifacts');
+});
+
+const xingqiuBuildProfile = {
+  role: 'Off-field Hydro / Sub DPS',
+  artifacts: [{ name: 'Emblem of Severed Fate', note: 'Recommended set for Burst damage and Energy Recharge.' }],
+  stats: { sands: 'ER% or ATK%', goblet: 'Hydro DMG Bonus', circlet: 'CRIT Rate / CRIT DMG' },
+  substats: ['Enough ER to Burst every rotation', 'CRIT Rate / CRIT DMG', 'ATK%'],
+  talentOrder: ['Elemental Burst', 'Elemental Skill', 'Normal Attack'],
+  playstyle: 'Burst uptime is central to his off-field role.',
+};
+
+function makeTestArtifact(slotKey, setKey, mainStatKey, suffix, overrides = {}) {
+  return {
+    optimizerId: slotKey + '-' + setKey + '-' + suffix,
+    setKey,
+    slotKey,
+    level: 20,
+    rarity: 5,
+    mainStatKey,
+    location: '',
+    characterId: '',
+    lock: false,
+    substats: [
+      { key: 'critRate_', value: 7.0 },
+      { key: 'critDMG_', value: 14.0 },
+      { key: 'enerRech_', value: 5.2 },
+      { key: 'atk_', value: 5.8 },
+    ],
+    ...overrides,
+  };
+}
+
+test('artifact optimizer returns a five-slot loadout and evaluates preferred 4-piece bonuses', () => {
+  const slots = [
+    ['flower', 'hp', 'flower'],
+    ['plume', 'atk', 'plume'],
+    ['sands', 'enerRech_', 'sands'],
+    ['goblet', 'hydro_dmg_', 'goblet'],
+    ['circlet', 'critRate_', 'circlet'],
+  ];
+  const inventory = [];
+  for (const [slot, stat, suffix] of slots) {
+    inventory.push(makeTestArtifact(slot, 'EmblemOfSeveredFate', stat, 'preferred-' + suffix));
+    inventory.push(makeTestArtifact(slot, 'GladiatorsFinale', stat, 'alternative-' + suffix, {
+      substats: [
+        { key: 'critRate_', value: 3.1 },
+        { key: 'critDMG_', value: 7.0 },
+        { key: 'def_', value: 7.3 },
+        { key: 'hp_', value: 5.8 },
+      ],
+    }));
+  }
+  const result = optimizeArtifactLoadout({
+    character: { id: 'xingqiu', name: 'Xingqiu', element: 'Hydro', role: 'Sub DPS' },
+    profile: xingqiuBuildProfile,
+    artifacts: inventory,
+  });
+  assert.ok(result.recommendations.length > 0);
+  const best = result.recommendations[0];
+  assert.equal(best.pieces.length, 5);
+  assert.deepEqual(best.pieces.map(piece => piece.slot), ['flower','plume','sands','goblet','circlet']);
+  assert.ok(best.setBreakdown.some(set => set.key === 'EmblemOfSeveredFate' && set.count >= 4 && set.preferred));
+  assert.ok(best.setBonusScore > 0);
+  assert.ok(best.pieces.every(piece => piece.reasons.length > 0));
+  assert.ok(result.combinationsSearched > 0);
+});
+
+test('artifact optimizer strongly prefers valid main stats when the build profile is available', () => {
+  const slots = [
+    ['flower', 'hp', 'flower'],
+    ['plume', 'atk', 'plume'],
+    ['sands', 'enerRech_', 'sands'],
+    ['goblet', 'hydro_dmg_', 'goblet'],
+    ['circlet', 'critRate_', 'circlet'],
+  ];
+  const inventory = [];
+  for (const [slot, preferredStat, suffix] of slots) {
+    inventory.push(makeTestArtifact(slot, 'EmblemOfSeveredFate', preferredStat, 'correct-' + suffix));
+    if (!['flower','plume'].includes(slot)) {
+      inventory.push(makeTestArtifact(slot, 'EmblemOfSeveredFate', 'def_', 'wrong-' + suffix, {
+        substats: [
+          { key: 'critRate_', value: 19.4 },
+          { key: 'critDMG_', value: 27.2 },
+          { key: 'atk_', value: 5.8 },
+          { key: 'enerRech_', value: 5.2 },
+        ],
+      }));
+    }
+  }
+  const result = optimizeArtifactLoadout({
+    character: { id: 'xingqiu', name: 'Xingqiu', element: 'Hydro', role: 'Sub DPS' },
+    profile: xingqiuBuildProfile,
+    artifacts: inventory,
+    topN: 1,
+  });
+  assert.deepEqual(result.recommendations[0].pieces.filter(piece => ['sands','goblet','circlet'].includes(piece.slot)).map(piece => piece.mainStatMatches), [true,true,true]);
+});
+
+test('optimizer avoids using a teammate current gear when a team is selected', () => {
+  const artifacts = [
+    makeTestArtifact('flower','EmblemOfSeveredFate','hp','team-gear',{characterId:'bennett',location:'Bennett'}),
+    ...[
+      ['flower','hp','f'],['plume','atk','p'],['sands','atk_','s'],['goblet','hydro_dmg_','g'],['circlet','critRate_','c'],
+    ].map(([slot,stat,suffix])=>makeTestArtifact(slot,'EmblemOfSeveredFate',stat,'free-'+suffix)),
+  ];
+  const result = optimizeArtifactLoadout({
+    character:{id:'xingqiu',name:'Xingqiu',element:'Hydro',role:'Sub DPS'},
+    profile:xingqiuBuildProfile,
+    artifacts,
+    teamCharacters:[{id:'bennett',name:'Bennett',element:'Pyro'},{id:'xingqiu',name:'Xingqiu',element:'Hydro'}],
+    allCharacters:[{id:'bennett',name:'Bennett'}],
+    topN:1,
+  });
+  assert.equal(result.excludedForTeam,1);
+  assert.ok(result.recommendations[0].pieces.every(piece=>piece.characterId !== 'bennett'));
+});
+
+test('optimizer returns an actionable error when a slot is missing', () => {
+  const result = optimizeArtifactLoadout({
+    character:{id:'xingqiu',name:'Xingqiu',element:'Hydro'},
+    profile:xingqiuBuildProfile,
+    artifacts:[makeTestArtifact('flower','EmblemOfSeveredFate','hp','only-flower')],
+  });
+  assert.match(result.error,/missing artifacts for/);
+  assert.ok(result.missingSlots.includes('circlet'));
 });
