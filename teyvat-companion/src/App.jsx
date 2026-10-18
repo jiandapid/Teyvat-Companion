@@ -145,9 +145,11 @@ function StatCard({ icon: Icon, label, value, note, trend, color = 'gold' }) {
 
 function CharacterAvatar({ character, size = 'medium' }) {
   const [imageIndex, setImageIndex] = useState(0);
-  const images = [...new Set([character?.image, character?.iconImage, character?.portraitImage].filter(Boolean))];
+  const imageRoute = String(character?.artworkId || character?.apiSlug || character?.id || '').trim();
+  const generatedSplash = imageRoute ? `https://genshin.jmp.blue/characters/${encodeURIComponent(imageRoute)}/gacha-splash` : '';
+  const images = [...new Set([character?.dripMarketingImage, character?.imageType === 'gacha-splash' ? character?.image : '', generatedSplash, character?.image, character?.iconImage, character?.portraitImage].filter(Boolean))];
   const currentImage = images[imageIndex] || '';
-  useEffect(() => setImageIndex(0), [character?.image, character?.iconImage, character?.portraitImage]);
+  useEffect(() => setImageIndex(0), [character?.id, character?.artworkId, character?.apiSlug, character?.dripMarketingImage, character?.image, character?.iconImage, character?.portraitImage]);
   return <div className={`character-avatar ${size}`} style={{'--el-color':(ELEMENT_META[character?.element] || {}).color || '#d9bd76', '--el-soft':(ELEMENT_META[character?.element] || {}).soft || 'rgba(217,189,118,.15)'}}>
     {currentImage ? <img src={currentImage} alt={character?.name ? character.name + ' character artwork' : 'Character artwork'} loading="lazy" onError={() => setImageIndex(index => index + 1)} /> : <div className="avatar-fallback"><ElementGlyph element={character?.element} size="large"/><span>{(character?.name || '?').slice(0,1)}</span></div>}
     <div className="avatar-shade" />
