@@ -19,6 +19,9 @@ jobs:
       - name: Install dependencies
         working-directory: teyvat-companion
         run: npm install --no-audit --no-fund
+      - name: Run core regression tests
+        working-directory: teyvat-companion
+        run: npm test
       - name: Build Vite app
         working-directory: teyvat-companion
         run: npm run build
