@@ -1,0 +1,24 @@
+name: Verify Teyvat Companion
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, upgrade/phase-1-advisor-ui]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        working-directory: teyvat-companion
+        run: npm install --no-audit --no-fund
+      - name: Build Vite app
+        working-directory: teyvat-companion
+        run: npm run build
