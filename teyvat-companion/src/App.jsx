@@ -46,6 +46,11 @@ function loadInitial() {
 
 const formatNumber = n => Number(n || 0).toLocaleString('en-US');
 const humanizeGameKey = value => String(value || 'Unknown').replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+const formatArtifactStat = value => {
+  const key = String(value || '').toLowerCase();
+  const labels = { hp:'HP', hp_:'HP%', atk:'ATK', atk_:'ATK%', def:'DEF', def_:'DEF%', critrate_:'CRIT Rate', critdmg_:'CRIT DMG', enerrech_:'Energy Recharge', elemas:'Elemental Mastery', physical_dmg_:'Physical DMG Bonus', pyro_dmg_:'Pyro DMG Bonus', hydro_dmg_:'Hydro DMG Bonus', cryo_dmg_:'Cryo DMG Bonus', dendro_dmg_:'Dendro DMG Bonus', electro_dmg_:'Electro DMG Bonus', anemo_dmg_:'Anemo DMG Bonus', geo_dmg_:'Geo DMG Bonus', healing_:'Healing Bonus' };
+  return labels[key] || humanizeGameKey(value);
+};
 const slugify = value => String(value || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const normalizeElement = raw => {
   const value = String(raw ?? '').toLowerCase();
@@ -772,6 +777,41 @@ export default function App() {
     setOptimizerResult(result);
   }
 
+  function saveOptimizedPlan(build) {
+    const targetId = build?.characterId;
+    if (!targetId || !build?.pieces?.length) return;
+    const setSummary = build.setBreakdown.map(set => set.count >= 4 ? '4-piece ' + set.label : set.count + '-piece ' + set.label);
+    const mainStats = build.pieces.filter(piece => ['sands','goblet','circlet'].includes(piece.slot)).map(piece => formatArtifactStat(piece.mainStatKey)).join(' / ');
+    const plannedData = {
+      score: build.score,
+      calculatedAt: new Date().toISOString(),
+      pieces: build.pieces.map(piece => ({
+        optimizerId: piece.optimizerId,
+        setKey: piece.setKey,
+        slotKey: piece.slot,
+        mainStatKey: piece.mainStatKey,
+        level: piece.level,
+        rarity: piece.rarity,
+        location: piece.location,
+        lock: piece.lock,
+        critValue: piece.critValue,
+        score: piece.score,
+      })),
+      setBreakdown: build.setBreakdown,
+      teamName: build.teamName,
+    };
+    saveState(prev => ({
+      ...prev,
+      characters: prev.characters.map(character => character.id === targetId ? {
+        ...character,
+        artifact: setSummary.join(' + ') || 'Optimizer-selected artifacts',
+        mainStats: mainStats || character.mainStats || '',
+        optimizerPlan: plannedData,
+      } : character),
+    }));
+    setToast('Optimized loadout saved as planned build');
+  }
+
   const sidebar = <>
     <div className="brand-lockup"><div className="brand-mark"><Compass size={22}/><span className="brand-spark">✦</span></div><div className="brand-text"><strong>TEYVAT<span> COMPANION</span></strong><small>YOUR ADVENTURE, OPTIMIZED</small></div></div>
     <div className="side-caption">WORKSPACE</div>
@@ -1101,7 +1141,42 @@ export default function App() {
   </div>;
 
 
-  const pageContent = {'dashboard':dashboardPage,'characters':charactersPage,'builds':characterBuildsPage,'character-build-detail':characterBuildDetailPage,'teams':teamsPage,'materials':materialsPage,'map':mapPage,'account':accountPage,'advisor':advisorPage,'guides':guidesPage,'settings':settingsPage}[page] || dashboardPage;
+  const artifactOptimizerPage = <div className="page-content">
+    <SectionHeader eyebrow="ARTIFACT WORKSHOP" title="Artifact Optimizer" subtitle="Find the strongest five-piece loadout from the artifacts in your imported inventory—not just what is equipped right now." actions={<button className="button secondary" onClick={() => navigate('account')}><Database size={15}/> Account & inventory</button>}/>
+    <div className="optimizer-hero-strip">
+      <span className="optimizer-hero-icon"><Layers3 size={23}/></span>
+      <div><strong>Use what you already own before spending resin.</strong><p>The optimizer compares compatible main stats, weighted substats, relevant 2-piece/4-piece set fit and optional saved-team context. It ranks alternatives and explains the trade-offs.</p></div>
+      <div className="optimizer-hero-count"><strong>{persisted.goodInventory?.artifacts?.length || 0}</strong><span>imported artifacts</span></div>
+    </div>
+    <section className="panel optimizer-controls-panel">
+      <div className="panel-head"><div><div className="eyebrow">BUILD TARGET</div><h3>Choose a character</h3></div><span className={persisted.goodInventory?.artifacts?.length ? 'pill success' : 'pill muted'}>{persisted.goodInventory?.artifacts?.length ? 'Inventory ready' : 'Inventory needed'}</span></div>
+      <div className="optimizer-controls-grid">
+        <label>Character to optimize<select value={optimizerCharacter?.id || ''} onChange={e=>{setOptimizerCharacterId(e.target.value);setOptimizerResult(null);setOptimizerError('');}}>{characters.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(character=><option key={character.id} value={character.id}>{character.name}{character.owned?' · Owned':''} · {character.element || 'Unknown'}</option>)}</select></label>
+        <label>Team context (optional)<select value={optimizerTeamId} onChange={e=>{setOptimizerTeamId(e.target.value);setOptimizerResult(null);setOptimizerError('');}}><option value="">No team context</option>{persisted.teams.map(team=><option key={team.id} value={team.id}>{team.name}</option>)}</select></label>
+      </div>
+      {optimizerTeamId && !optimizerTeamContainsCharacter && <div className="notice warning optimizer-inline-notice"><Info size={14}/><span>The selected team does not contain {optimizerCharacter?.name || 'this character'}. Pick a team that includes the target, or select “No team context”.</span></div>}
+      {persisted.goodInventory?.artifacts?.length ? <div className="optimizer-inventory-ready"><div><CheckCircle2 size={17}/><span><strong>{persisted.goodInventory.artifacts.length.toLocaleString()} artifacts loaded</strong><small>{persisted.goodInventory.summary?.lockedArtifacts || 0} locked · {persisted.goodInventory.summary?.highCritValueArtifacts || 0} pieces with 30+ generic CV · GOOD v{persisted.goodInventory.version}</small></span></div><button className="button secondary compact" onClick={()=>goodUploadRef.current?.click()}><Upload size={14}/> Replace import</button></div> : <div className="optimizer-no-inventory"><div className="optimizer-empty-icon"><Upload size={21}/></div><div><strong>Import a GOOD inventory to begin</strong><p>Export a GOOD JSON file with artifacts from a compatible tool, then import it here. Public UID sync alone cannot provide your unequipped pieces.</p><div className="optimizer-empty-actions"><input ref={goodUploadRef} className="hidden-input" type="file" accept="application/json,.json" onChange={importGoodFile}/><button className="button primary" onClick={()=>goodUploadRef.current?.click()}><Upload size={15}/> Import GOOD JSON</button><a className="button secondary link-button" href="https://frzyc.github.io/genshin-optimizer/" target="_blank" rel="noreferrer"><ExternalLink size={14}/> Genshin Optimizer</a></div></div></div>}
+      {goodImportMessage && <div className={'notice '+(goodImportMessage.startsWith('Import failed')?'warning':'success')}><Info size={15}/><span>{goodImportMessage}</span></div>}
+      <div className="optimizer-run-row"><div><span className="eyebrow">HOW THE SCORE WORKS</span><p>Main stat fit + stat-priority-weighted substats + role/team-aware set-bonus fit. This is a ranking heuristic, not an exact damage simulator.</p></div><button className="button primary optimizer-run-button" disabled={!persisted.goodInventory?.artifacts?.length || !optimizerCharacter} onClick={runArtifactOptimizer}><Sparkles size={15}/> Find best loadouts</button></div>
+    </section>
+    {optimizerError && <div className="notice warning optimizer-error"><Info size={16}/><span>{optimizerError}</span></div>}
+    {optimizerResult && <section className="optimizer-results-section">
+      <div className="optimizer-results-heading"><div><div className="eyebrow">RESULTS · {optimizerResult.combinationsSearched.toLocaleString()} COMBINATIONS CHECKED</div><h2>Recommended loadouts for {optimizerResult.characterName}</h2><p>{optimizerResult.scoringSummary}</p></div><button className="button secondary compact" onClick={runArtifactOptimizer}><RefreshCw size={14}/> Recalculate</button></div>
+      {optimizerResult.excludedForTeam>0 && <div className="notice warning optimizer-inline-notice"><Info size={14}/><span>{optimizerResult.excludedForTeam} artifact(s) assigned to other members of the selected team were excluded so the same piece is not suggested for two active teammates.</span></div>}
+      {!optimizerResult.profileAvailable && <div className="notice warning optimizer-inline-notice"><Info size={14}/><span>No curated in-app build profile exists for this character yet. The optimizer uses a broader role/element heuristic; verify recommended main stats and sets against a current creator guide.</span></div>}
+      <div className="optimizer-result-cards">{optimizerResult.recommendations.map((build,index)=><details key={build.signature} className={'optimizer-loadout-card '+(index===0?'top-loadout':'')} open={index===0}>
+        <summary className="optimizer-loadout-summary"><span className="optimizer-result-rank">{index+1}</span><span className="optimizer-result-title"><strong>{index===0?'Best available loadout':'Alternative loadout '+(index+1)}</strong><small>{build.score.toFixed(1)} build-fit points · {build.teamName ? 'Team: '+build.teamName : 'General character build'}</small></span><span className="optimizer-result-score">{build.score.toFixed(1)}<small>FIT</small></span><ChevronDown size={17}/></summary>
+        <div className="optimizer-loadout-body">
+          <div className="optimizer-piece-grid">{build.pieces.map(piece=><article className="optimizer-piece-card" key={piece.optimizerId}><div className="optimizer-piece-head"><span>{piece.slotLabel}</span><span>{piece.rarity}★{piece.lock?' · LOCKED':''}</span></div><strong className="optimizer-piece-set">{humanizeGameKey(piece.setKey)}</strong><div className={'optimizer-main-stat '+(piece.mainStatMatches?'matched':'')}>{formatArtifactStat(piece.mainStatKey)}</div><div className="optimizer-piece-level">+{piece.level} · {piece.score.toFixed(1)} piece-fit points</div><div className="optimizer-piece-substats">{(piece.substats||[]).map((stat,subIndex)=><span key={piece.optimizerId+'-'+subIndex}>{formatArtifactStat(stat.key)} <b>{stat.value}</b></span>)}</div><ul className="optimizer-piece-reasons">{piece.reasons.map((reason,reasonIndex)=><li key={reasonIndex}>{reason}</li>)}</ul>{piece.location && piece.characterId && piece.characterId!==optimizerCharacter?.id && <div className="optimizer-reassign-warning"><Info size={12}/> Currently assigned to {characters.find(character=>character.id===piece.characterId)?.name || piece.location}</div>}</article>)}</div>
+          {build.setBreakdown.length>0 && <div className="optimizer-set-breakdown"><div className="eyebrow">SET BONUS FIT INCLUDED IN SCORE</div>{build.setBreakdown.map(set=><div className="optimizer-set-row" key={set.key}><span className="optimizer-set-count">{set.count} pc</span><div><strong>{set.label}</strong><small>{set.explanation}</small></div><b>+{set.points.toFixed(1)}</b></div>)}</div>}
+          <div className="optimizer-loadout-footer"><p><Info size={14}/>{build.caution}</p><button className="button primary" onClick={()=>saveOptimizedPlan(build)}><Check size={15}/> Save as planned build</button></div>
+        </div>
+      </details>)}</div>
+      <div className="optimizer-disclaimer"><ShieldCheck size={15}/><span>Suggestions never equip items in-game, delete items, or change lock states. Pieces already assigned to another character are flagged. Save a recommendation only when you are happy with it.</span></div>
+    </section>}
+  </div>;
+
+  const pageContent = {'dashboard':dashboardPage,'characters':charactersPage,'builds':characterBuildsPage,'character-build-detail':characterBuildDetailPage,'optimizer':artifactOptimizerPage,'teams':teamsPage,'materials':materialsPage,'map':mapPage,'account':accountPage,'advisor':advisorPage,'guides':guidesPage,'settings':settingsPage}[page] || dashboardPage;
 
   return <div className="app-shell">
     <aside className={`sidebar ${mobileNav?'mobile-open':''}`}>{sidebar}</aside>
