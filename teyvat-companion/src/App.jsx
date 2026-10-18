@@ -215,19 +215,26 @@ export default function App() {
     setActiveCharacter(character);
     setCharacterDataError('');
     if (character.gameData) return;
-    if (!character.apiId) {
-      setCharacterDataError('No detailed API record is available for this Traveler variant yet. The element and rarity are shown, but this source has no verified talent/ascension cost table for it.');
-      return;
-    }
     setCharacterDataLoadingId(character.id);
     try {
-      const detail = normalizeAmbrDetail(await fetchAmbrData(`avatar/${encodeURIComponent(character.apiId)}`));
-      if (!detail || (!detail.upgrade?.promotes?.length && !detail.talents?.length)) throw new Error('No talent or ascension details were included.');
+      let rawDetail;
+      if (String(character.id || '').startsWith('traveler-') && !character.apiId) {
+        const response = await fetch('https://genshin.jmp.blue/characters/' + encodeURIComponent(character.id) + '?lang=en');
+        if (!response.ok) throw new Error('Traveler detail source returned ' + response.status);
+        rawDetail = await response.json();
+      } else if (character.apiId) {
+        rawDetail = await fetchAmbrData('avatar/' + encodeURIComponent(character.apiId));
+      } else {
+        throw new Error('No detailed API record is available for this character yet.');
+      }
+      const detail = normalizeAmbrDetail(rawDetail);
+      const hasAscension = Object.keys(detail?.ascension_materials || {}).length > 0 || (detail?.upgrade?.promotes || []).length > 0;
+      if (!detail || (!hasAscension && !(detail?.talents || []).length)) throw new Error('No talent or ascension details were included.');
       const enriched = { ...character, gameData: detail, gameDataFetchedAt: new Date().toISOString() };
       saveState(prev => ({ ...prev, characters: prev.characters.map(c => c.id === character.id ? { ...c, gameData: detail, gameDataFetchedAt: enriched.gameDataFetchedAt } : c) }));
       setActiveCharacter(prev => prev?.id === character.id ? enriched : prev);
     } catch (error) {
-      setCharacterDataError(`Could not load detailed game data: ${error.message}. You can still use the guide links below or try again after refreshing the catalogue.`);
+      setCharacterDataError('Could not load detailed game data: ' + error.message + '. Guide links remain available; try again after refreshing the catalogue.');
     } finally {
       setCharacterDataLoadingId(current => current === character.id ? '' : current);
     }
