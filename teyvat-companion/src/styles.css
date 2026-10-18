@@ -240,3 +240,16 @@
 .build-synced-artifact small{display:block;color:var(--text-secondary);font-size:9px;line-height:1.6;margin-top:3px}
 .build-synced-artifact>span{color:var(--gold);font-size:9px;text-align:right}
 .build-synced-artifact>small{grid-column:1/-1}
+
+
+/* Feature visibility: highlight Character Builds in every navigation context */
+.nav-item.build-nav{border-color:rgba(234,201,126,.2);background:linear-gradient(95deg,rgba(234,201,126,.105),rgba(234,201,126,.025));color:#f2d99d}
+.nav-item.build-nav svg{color:#eac97e}
+.nav-item.build-nav>span{font-weight:800}
+.build-nav-badge{margin-left:auto;padding:3px 5px;border:1px solid rgba(234,201,126,.22);border-radius:5px;background:rgba(234,201,126,.09);color:#eac97e;font:800 7px/1 'DM Sans',sans-serif;letter-spacing:.06em;font-style:normal;white-space:nowrap}
+.nav-item.build-nav.active{background:linear-gradient(95deg,rgba(234,201,126,.22),rgba(234,201,126,.075));border-color:rgba(234,201,126,.34);box-shadow:inset 2px 0 #dfbf75}
+.topbar-build-shortcut{min-height:33px;padding:7px 10px;font-size:10px}
+.topbar-build-shortcut svg{color:var(--gold)}
+.hero-section-heading .heading-actions{gap:8px}
+@media(max-width:1050px){.topbar-build-shortcut{width:34px;min-width:34px;padding:0}.topbar-build-shortcut span{display:none}}
+@media(max-width:760px){.topbar-build-shortcut{min-height:30px;width:31px;min-width:31px}.build-nav-badge{font-size:6px;padding:3px 4px}.section-heading .heading-actions{display:flex;flex-wrap:wrap;gap:7px}.section-heading .heading-actions .button{font-size:10px;padding:8px 9px}}
