@@ -42,6 +42,32 @@ function loadInitial() {
 
 const formatNumber = n => Number(n || 0).toLocaleString('en-US');
 const slugify = value => String(value || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const normalizeElement = raw => {
+  const value = String(raw ?? '').toLowerCase();
+  const aliases = { anemo:'Anemo', wind:'Anemo', geo:'Geo', rock:'Geo', electro:'Electro', electric:'Electro', pyro:'Pyro', fire:'Pyro', hydro:'Hydro', water:'Hydro', cryo:'Cryo', ice:'Cryo', dendro:'Dendro', grass:'Dendro' };
+  for (const [alias, element] of Object.entries(aliases)) if (value.includes(alias)) return element;
+  return '';
+};
+const normalizeWeapon = raw => {
+  const value = String(raw ?? '').toLowerCase();
+  if (value.includes('bow')) return 'Bow';
+  if (value.includes('catalyst')) return 'Catalyst';
+  if (value.includes('claymore')) return 'Claymore';
+  if (value.includes('pole')) return 'Polearm';
+  if (value.includes('sword') || value.includes('one_hand')) return 'Sword';
+  return '';
+};
+const ambrAssetUrl = raw => {
+  let value = String(raw ?? '').trim();
+  if (!value) return '';
+  if (/^https?:\\/\\//i.test(value)) return value;
+  value = value.replace(/^\\/*assets\\/UI\\//i, '').replace(/^\\//, '').replace(/\\.(png|webp|jpe?g)$/i, '');
+  return 'https://gi.yatta.moe/assets/UI/' + value + '.png';
+};
+const gachaArtworkFromIcon = raw => {
+  const value = String(raw ?? '').trim();
+  return value && /AvatarIcon/i.test(value) ? ambrAssetUrl(value.replace(/AvatarIcon/gi, 'Gacha_AvatarImg')) : '';
+};
 const youtubeSearch = (topic, creator = '') => `https://www.youtube.com/results?search_query=${encodeURIComponent(`${creator} Genshin Impact ${topic}`)}`;
 
 const AMBR_API_ROOT = 'https://gi.yatta.moe/api/v2';
@@ -110,12 +136,14 @@ function StatCard({ icon: Icon, label, value, note, trend, color = 'gold' }) {
 }
 
 function CharacterAvatar({ character, size = 'medium' }) {
-  const [failed, setFailed] = useState(false);
-  useEffect(() => setFailed(false), [character?.image]);
+  const [imageIndex, setImageIndex] = useState(0);
+  const images = [...new Set([character?.image, character?.iconImage, character?.portraitImage].filter(Boolean))];
+  const currentImage = images[imageIndex] || '';
+  useEffect(() => setImageIndex(0), [character?.image, character?.iconImage, character?.portraitImage]);
   return <div className={`character-avatar ${size}`} style={{'--el-color':(ELEMENT_META[character?.element] || {}).color || '#d9bd76', '--el-soft':(ELEMENT_META[character?.element] || {}).soft || 'rgba(217,189,118,.15)'}}>
-    {!failed && character?.image ? <img src={character.image} alt="" loading="lazy" onError={() => setFailed(true)} /> : <div className="avatar-fallback"><ElementGlyph element={character?.element} size="large"/><span>{(character?.name || '?').slice(0,1)}</span></div>}
+    {currentImage ? <img src={currentImage} alt={character?.name ? character.name + ' character artwork' : 'Character artwork'} loading="lazy" onError={() => setImageIndex(index => index + 1)} /> : <div className="avatar-fallback"><ElementGlyph element={character?.element} size="large"/><span>{(character?.name || '?').slice(0,1)}</span></div>}
     <div className="avatar-shade" />
-    <div className="avatar-stars">{'★'.repeat(Math.max(0, Math.min(5, character?.rarity || 4)))}</div>
+    {[4,5].includes(Number(character?.rarity)) && <div className="avatar-stars" aria-label={Number(character.rarity) + ' star rarity'}>{'★'.repeat(Number(character.rarity))}</div>}
     {character?.owned && <span className="owned-dot"><Check size={10}/></span>}
   </div>;
 }
