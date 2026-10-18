@@ -4,11 +4,11 @@ import {
   ChevronRight, Compass, Download, ExternalLink, FileJson, Filter, Flame, Gem, Globe2, Info,
   Layers3, Link2, MapPinned, Menu, MoreHorizontal, PackageOpen, Pencil, PlayCircle, Plus,
   RefreshCw, Search, Settings2, ShieldCheck, Sparkles, Swords, Target, Trash2, Upload, Users,
-  X, Zap, LayoutDashboard, ChartNoAxesCombined, CalendarDays, Database,
+  X, Zap, LayoutDashboard, ChartNoAxesCombined, CalendarDays, Database, Bot,
 } from 'lucide-react';
 import { ELEMENTS, ELEMENT_META, MATERIAL_STARTER, NAV_ITEMS, STARTER_CHARACTERS, STARTER_TEAMS } from './data';
 
-const ICONS = { LayoutDashboard, Users, Swords, PackageOpen, MapPinned, ChartNoAxesCombined, PlayCircle, Settings2 };
+const ICONS = { LayoutDashboard, Users, Swords, PackageOpen, MapPinned, ChartNoAxesCombined, PlayCircle, Settings2, Bot };
 const STORAGE_KEY = 'teyvat-companion-v1';
 const REGIONS = ['Mondstadt', 'Liyue', 'Inazuma', 'Sumeru', 'Fontaine', 'Natlan', 'Nod-Krai', 'Other'];
 const TASK_STARTER = [
@@ -103,6 +103,8 @@ export default function App() {
   const [mapCollected, setMapCollected] = useState([]);
   const [importText, setImportText] = useState('');
   const [showImport, setShowImport] = useState(false);
+  const [advisorQuestion, setAdvisorQuestion] = useState('');
+  const [advisorAnswer, setAdvisorAnswer] = useState('');
   const uploadRef = useRef(null);
 
   const characters = persisted.characters;
@@ -141,6 +143,10 @@ export default function App() {
 
   const completeGoals = persisted.goals.filter(g => g.done).length;
   const completedTasks = persisted.tasks.filter(t => t.done).length;
+  const advisorOpenGoals = persisted.goals.filter(g => !g.done);
+  const advisorMissingMaterials = persisted.materials.filter(m => Number(m.required || 0) > Number(m.owned || 0));
+  const advisorTrackedMaterials = persisted.materials.filter(m => Number(m.required || 0) > 0);
+  const advisorUnderLevelled = ownedCharacters.filter(c => Number(c.level || 1) < 80).sort((a,b) => Number(a.level || 1) - Number(b.level || 1));
 
   const addMaterial = (e) => {
     e.preventDefault();
@@ -254,7 +260,7 @@ export default function App() {
   </>;
 
   const dashboardPage = <div className="page-content">
-    <SectionHeader eyebrow="SATURDAY · ADVENTURE OVERVIEW" title={`Welcome back${persisted.account.nickname ? `, ${persisted.account.nickname}` : ', Traveler'}.`} subtitle="A little progress each day goes a long way across Teyvat." actions={<button className="button primary" onClick={()=>navigate('materials')}><Plus size={16}/> Plan an upgrade</button>}/>
+    <SectionHeader eyebrow={`${new Date().toLocaleDateString('en-US',{weekday:'long'}).toUpperCase()} · ADVENTURE OVERVIEW`} title={`Welcome back${persisted.account.nickname ? `, ${persisted.account.nickname}` : ', Traveler'}.`} subtitle="A little progress each day goes a long way across Teyvat." actions={<button className="button primary" onClick={()=>navigate('materials')}><Plus size={16}/> Plan an upgrade</button>}/>
     <div className="hero-banner">
       <div className="hero-text"><div className="hero-kicker"><Sparkles size={14}/> YOUR ADVENTURE AT A GLANCE</div><h2>Make every resin<br/><em>count.</em></h2><p>See your next best step, keep materials organized, and build a roster that works for you.</p><div className="hero-actions"><button className="button gold" onClick={()=>navigate('account')}>Review account <ArrowRight size={15}/></button><button className="button glass" onClick={()=>navigate('characters')}>Explore characters</button></div></div>
       <div className="hero-art"><div className="orb orb-one"/><div className="orb orb-two"/><div className="hero-ring ring-one"/><div className="hero-ring ring-two"/><div className="hero-symbol">✦</div><div className="hero-landscape"><span/><span/><span/><span/></div><div className="hero-label label-top">ADVENTURE RANK <b>{persisted.account.ar}</b></div><div className="hero-label label-bottom">WORLD LEVEL <b>{persisted.account.worldLevel}</b></div></div>
@@ -315,6 +321,58 @@ export default function App() {
     <div className="progress-goals-layout"><div className="panel goals-panel"><div className="panel-head"><div><div className="eyebrow">YOUR OBJECTIVES</div><h3>Upgrade goals</h3></div><span className="pill muted">{persisted.goals.length} goals</span></div><form className="goal-form" onSubmit={addGoal}><label>Goal name<input value={newGoal.title} onChange={e=>setNewGoal(p=>({...p,title:e.target.value}))} placeholder="e.g. Finish Skirk talents" required/></label><label>Character (optional)<select value={newGoal.character} onChange={e=>setNewGoal(p=>({...p,character:e.target.value}))}><option value="">Select character</option>{characters.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label><div className="goal-form-row"><label>Target<select value={newGoal.target} onChange={e=>setNewGoal(p=>({...p,target:e.target.value}))}>{['Level 90','Level 80/90','Talent level 9','Triple crown','Weapon level 90','Artifact build','Custom target'].map(t=><option key={t}>{t}</option>)}</select></label><label>Due date<input type="date" value={newGoal.due} onChange={e=>setNewGoal(p=>({...p,due:e.target.value}))}/></label></div><button className="button primary full-width" type="submit"><Plus size={15}/> Add upgrade goal</button></form><div className="goal-list detailed">{persisted.goals.map(g=>{const c=characters.find(ch=>ch.id===g.character);return <div className={`goal-row ${g.done?'done':''}`} key={g.id}><button className="goal-toggle" onClick={()=>saveState(p=>({...p,goals:p.goals.map(x=>x.id===g.id?{...x,done:!x.done}:x)}))}>{g.done&&<Check size={12}/>}</button><div className="goal-info"><strong>{g.title}</strong><small>{c?`${c.name} · `:''}{g.target}{g.due?` · Due ${g.due}`:''}</small></div><button className="icon-button danger tiny" onClick={()=>saveState(p=>({...p,goals:p.goals.filter(x=>x.id!==g.id)}))}><Trash2 size={13}/></button></div>;})}</div>{persisted.goals.length===0&&<p className="empty-inline">Your goals will appear here once you add them.</p>}</div><div className="panel resources-panel"><div className="panel-head"><div><div className="eyebrow">RESOURCE TRACKING</div><h3>Wish resources</h3></div><span className="pill muted">Manual</span></div><div className="resource-display"><div className="resource-emblem primogem">✧</div><div><span>Primogems</span><strong>{formatNumber(persisted.account.primogems)}</strong></div></div><ProgressBar value={persisted.account.wishes} max={180}/><div className="resource-foot"><span>{formatNumber(persisted.account.wishes)} wishes available</span><span>Pity: {persisted.account.pity}</span></div><p className="helper-note"><Info size={13}/> These values are optional manual notes, not an automated pull tracker. Update them after wishing or spending currency.</p><button className="button secondary full-width" onClick={()=>navigate('materials')}>Review upgrade materials <ArrowRight size={15}/></button></div></div>
   </div>;
 
+
+  const advisorPage = <div className="page-content">
+    <SectionHeader eyebrow="STRATEGY DESK" title="Teyvat Advisor" subtitle="Turn the roster and tracker information you have saved into a clearer next step." actions={<button className="button secondary" onClick={()=>navigate('materials')}><PackageOpen size={15}/> Plan materials</button>}/>
+    <div className="advisor-hero">
+      <div className="advisor-hero-copy">
+        <div className="hero-kicker"><Sparkles size={14}/> YOUR PERSONAL PLANNING DESK</div>
+        <h2>Make your next upgrade<br/><em>count.</em></h2>
+        <p>Get a practical starting point from your saved roster, goals, and material counts. The assistant is deliberately transparent about what it knows and what still needs verified game data.</p>
+        <span className="advisor-status"><span className="live-dot"/> Local planner active <span className="advisor-status-separator">·</span> Generative AI not connected yet</span>
+      </div>
+      <div className="advisor-hero-emblem"><Bot size={58}/><span className="advisor-emblem-orbit orbit-a"/><span className="advisor-emblem-orbit orbit-b"/><span className="advisor-emblem-star">✦</span></div>
+    </div>
+    <div className="advisor-stats-grid">
+      <div className="advisor-stat-card"><span className="advisor-stat-icon gold"><Users size={17}/></span><div><small>Owned roster</small><strong>{ownedCharacters.length}</strong><span>characters tracked</span></div></div>
+      <div className="advisor-stat-card"><span className="advisor-stat-icon blue"><Target size={17}/></span><div><small>Active goals</small><strong>{advisorOpenGoals.length}</strong><span>{advisorOpenGoals.length ? 'keep one as your main focus' : 'no active goal saved'}</span></div></div>
+      <div className="advisor-stat-card"><span className="advisor-stat-icon red"><PackageOpen size={17}/></span><div><small>Material gaps</small><strong>{advisorMissingMaterials.length}</strong><span>{advisorTrackedMaterials.length ? 'tracked rows with shortages' : 'enter exact quantities to calculate'}</span></div></div>
+      <div className="advisor-stat-card"><span className="advisor-stat-icon green"><Activity size={17}/></span><div><small>Below level 80</small><strong>{advisorUnderLevelled.length}</strong><span>owned characters in your tracker</span></div></div>
+    </div>
+    <div className="advisor-workspace">
+      <section className="panel advisor-chat-panel">
+        <div className="panel-heading"><div><div className="eyebrow">ASK YOUR ADVISOR</div><h3>What should I work on?</h3></div><span className="pill muted">Local preview</span></div>
+        <p className="helper-note"><Info size={13}/> Answers are based on your browser's saved tracker data. This is not yet a connected generative AI model, and it does not invent character costs or claim unverified builds are optimal.</p>
+        <div className="advisor-prompt-chips">
+          <button type="button" onClick={()=>setAdvisorQuestion('What should I farm next?')}>What should I farm?</button>
+          <button type="button" onClick={()=>setAdvisorQuestion('What should I upgrade next?')}>What should I upgrade?</button>
+          <button type="button" onClick={()=>setAdvisorQuestion('How should I approach teams?')}>Help with teams</button>
+          <button type="button" onClick={()=>setAdvisorQuestion('Can my progress sync between devices?')}>Cloud saves</button>
+        </div>
+        <form className="advisor-question-form" onSubmit={askLocalAdvisor}>
+          <label className="field-label">Ask about your tracked account<textarea rows="3" value={advisorQuestion} onChange={e=>setAdvisorQuestion(e.target.value)} placeholder="e.g. What should I focus on before building another character?"/></label>
+          <button className="button primary" type="submit"><Sparkles size={15}/> Get recommendation</button>
+        </form>
+        {advisorAnswer && <div className="advisor-answer" role="status"><span className="advisor-answer-icon"><Bot size={17}/></span><p>{advisorAnswer}</p></div>}
+      </section>
+      <section className="panel advisor-next-panel">
+        <div className="panel-heading"><div><div className="eyebrow">SUGGESTED NEXT STEPS</div><h3>Clear your biggest blockers</h3></div><Target size={18} className="panel-heading-icon"/></div>
+        <div className="advisor-priority-list">
+          {[
+            {icon:PackageOpen,title:'Close a tracked material gap',detail:advisorMissingMaterials.length ? `${advisorMissingMaterials.length} material row(s) show a shortage. Start with the exact missing counts.` : advisorTrackedMaterials.length ? 'Your quantified material rows are covered. Verify your next target before farming.' : 'Add exact material requirements and owned amounts so shortages can be calculated.',action:'Open materials',page:'materials'},
+            {icon:Target,title:'Choose one upgrade goal',detail:advisorOpenGoals.length ? `${advisorOpenGoals.length} active goal(s) saved. Work on "${advisorOpenGoals[0].title}" before adding more targets.` : 'No active goal is saved yet. Pick a character or talent you regularly use.',action:'Open account tracker',page:'account'},
+            {icon:Users,title:'Review your roster',detail:ownedCharacters.length ? `${ownedCharacters.length} characters are marked owned. Keep levels, roles, and build notes current.` : 'Mark the characters you own so team planning can use your real roster.',action:'Open characters',page:'characters'},
+          ].map(item=>{const PriorityIcon=item.icon;return <div className="advisor-priority" key={item.title}><span className="advisor-priority-icon"><PriorityIcon size={17}/></span><div className="advisor-priority-copy"><strong>{item.title}</strong><p>{item.detail}</p><button className="text-action" onClick={()=>navigate(item.page)}>{item.action} <ArrowUpRight size={13}/></button></div></div>;})}
+        </div>
+      </section>
+    </div>
+    <div className="advisor-bottom-grid">
+      <section className="panel advisor-roster-panel"><div className="panel-heading"><div><div className="eyebrow">ROSTER SNAPSHOT</div><h3>Use what you already own</h3></div><Users size={17} className="panel-heading-icon"/></div><p>{ownedCharacters.length ? ownedCharacters.slice(0,8).map(c=>c.name).join(' · ') + (ownedCharacters.length>8 ? ' · and more' : '') : 'No owned characters are marked yet. Open Characters and update ownership to personalize this section.'}</p><button className="button secondary" onClick={()=>navigate('teams')}><Swords size={15}/> Compare teams</button></section>
+      <section className="panel advisor-trust-panel"><div className="panel-heading"><div><div className="eyebrow">DATA HONESTY</div><h3>Know what is verified</h3></div><ShieldCheck size={17} className="panel-heading-icon"/></div><p>Roster counts and material shortages come from your saved entries. Build recommendations and costs still need patch-aware, sourced game data before they can be treated as authoritative.</p><a className="text-action" href="https://keqingmains.com/" target="_blank" rel="noreferrer">Compare with community guides <ExternalLink size={13}/></a></section>
+    </div>
+  </div>;
+
+
   const guidesPage = <div className="page-content">
     <SectionHeader eyebrow="COMMUNITY KNOWLEDGE" title="Guides & Videos" subtitle="Use targeted searches to find relevant community guides. Links open YouTube search, not invented or unverified videos." actions={<a className="button secondary link-button" href="https://www.youtube.com/@Zy0x" target="_blank" rel="noreferrer"><PlayCircle size={15}/> Zy0x channel <ExternalLink size={13}/></a>}/>
     <div className="guide-feature"><div className="guide-feature-art"><div className="guide-star star-a">✦</div><div className="guide-star star-b">✧</div><div className="guide-feature-orb"><BookOpen size={32}/></div><div className="guide-ribbon">FIELD NOTES · VOL. 01</div></div><div className="guide-feature-copy"><div className="eyebrow">A BETTER WAY TO LEARN</div><h2>Build knowledge,<br/><em>not just numbers.</em></h2><p>Character guides change with versions, teams, weapons, and account investment. Search by the exact character and question you want to solve, and compare more than one source.</p><button className="button gold" onClick={()=>window.open(youtubeSearch('character build guide','Zy0x'),'_blank','noopener,noreferrer')}>Explore build guides <ArrowRight size={15}/></button></div></div>
@@ -331,7 +389,55 @@ export default function App() {
     <div className="reset-zone"><div><strong>Reset local workspace</strong><p>Remove all custom progress and return to the starter example. Export a backup first if you want to keep your data.</p></div><button className="button danger-outline" onClick={()=>{if(window.confirm('Reset your Teyvat Companion data in this browser? Export a backup first if you want to keep it.')){localStorage.removeItem(STORAGE_KEY);setPersisted({characters:STARTER_CHARACTERS.map(c=>({...c})),materials:MATERIAL_STARTER.map(m=>({...m})),teams:STARTER_TEAMS.map(t=>({...t})),goals:[],mapMarkers:[],account:{ar:58,worldLevel:8,abyss:'Not set',primogems:0,wishes:0,pity:0,uid:'',nickname:''},tasks:TASK_STARTER.map(t=>({...t})),enkaSnapshot:null,lastUpdated:null});setToast('Workspace reset');}}}><Trash2 size={14}/> Reset workspace</button></div>
   </div>;
 
-  const pageContent = {'dashboard':dashboardPage,'characters':charactersPage,'teams':teamsPage,'materials':materialsPage,'map':mapPage,'account':accountPage,'guides':guidesPage,'settings':settingsPage}[page] || dashboardPage;
+
+  const askLocalAdvisor = (e) => {
+    e.preventDefault();
+    const question = advisorQuestion.trim().toLowerCase();
+    if (!question) {
+      setAdvisorAnswer('Type a question first, then I can use your saved tracker information to suggest a next step.');
+      return;
+    }
+    const owned = persisted.characters.filter(c => c.owned);
+    const missing = persisted.materials.filter(m => Number(m.required || 0) > Number(m.owned || 0));
+    const openGoals = persisted.goals.filter(g => !g.done);
+    const underLevelled = owned.filter(c => Number(c.level || 1) < 80).sort((a,b) => Number(a.level || 1) - Number(b.level || 1));
+    let answer = '';
+    if (/farm|material|ascen|talent|boss|mora|resin|book|weapon material/.test(question)) {
+      if (missing.length) {
+        const topGaps = missing.slice(0,3).map(m => `${m.name}: ${Math.max(0, Number(m.required || 0) - Number(m.owned || 0))} still needed`).join('; ');
+        answer = `Start with the gaps you have actually tracked: ${topGaps}. Check the in-game upgrade screen for exact costs before spending Resin; the planner only knows the quantities you entered.`;
+      } else if (!advisorTrackedMaterials.length) {
+        answer = 'Your planner has no quantified material requirements yet. Open Materials & Farming, add exact material names and required/owned amounts from the in-game screens, then ask again and I can summarize what is missing.';
+      } else {
+        answer = 'All material rows with a required quantity are currently covered in your tracker. Before farming something new, verify the planned character or talent target in-game and update any rows that are still estimates.';
+      }
+    } else if (/team|comp|squad|party|synerg/.test(question)) {
+      if (owned.length < 2) {
+        answer = `You have ${owned.length} character${owned.length === 1 ? '' : 's'} marked as owned. Update your roster in Characters first; team suggestions are only as useful as the ownership and role information you track.`;
+      } else {
+        const names = owned.slice(0,8).map(c => c.name).join(', ');
+        answer = `Your saved roster includes ${owned.length} owned characters, including ${names}${owned.length > 8 ? ', and more' : ''}. Open Builds & Teams to compare lineups. I won't label a team "best" from roster data alone: reactions, enemy, investment, and current guide data all matter.`;
+      }
+    } else if (/level|build|upgrade|priorit|who|focus|next/.test(question)) {
+      if (openGoals.length) {
+        answer = `You have ${openGoals.length} active goal${openGoals.length === 1 ? '' : 's'}. Start with "${openGoals[0].title}", then check its associated character and material requirements so you don't spread resources across too many targets.`;
+      } else if (underLevelled.length) {
+        const c = underLevelled[0];
+        answer = `${c.name} is one of your lowest-level owned characters at level ${Number(c.level || 1)}. If they are part of a team you use often, review their role, weapon, talents, and artifacts before committing to a level-90 target. Otherwise, choose a character you actively use and add a goal in Account Tracker.`;
+      } else {
+        answer = 'You have no active upgrade goals saved, and none of your owned characters is below level 80 in the tracker. Pick the character you use most, add a goal in Account Tracker, and record its real material costs to create a focused plan.';
+      }
+    } else if (/account|sync|login|cloud|password|device/.test(question)) {
+      answer = 'This version saves progress in this browser with local storage, so it does not yet sync between devices. Do not enter your HoYoverse password, verification codes, cookies, or tokens. Secure login and cloud saves are a separate upgrade and are not active yet.';
+    } else if (/map|location|route|specialty|ore|chest|collect/.test(question)) {
+      answer = 'Use Interactive Map for your personal region/category markers and collection notes, then open the official HoYoLAB map for geographic locations. Your current personal markers are planning notes, not verified in-game coordinates.';
+    } else {
+      answer = `I can currently summarize the data saved in this browser: ${owned.length} owned characters, ${openGoals.length} active goals, and ${missing.length} material rows with a recorded shortage. Try asking what to farm, which goal to do next, how to approach teams, or how account syncing works. This is a local rules-based preview, not a connected generative AI model yet.`;
+    }
+    setAdvisorAnswer(answer);
+  };
+
+  const pageContent = {'dashboard':dashboardPage,'characters':charactersPage,'teams':teamsPage,'materials':materialsPage,'map':mapPage,'account':accountPage,'advisor':advisorPage,'guides':guidesPage,'settings':settingsPage}[page] || dashboardPage;
 
   return <div className="app-shell">
     <aside className={`sidebar ${mobileNav?'mobile-open':''}`}>{sidebar}</aside>
