@@ -848,6 +848,18 @@ export default function App() {
             {activeBuildProfile?.teamFocus && <div className="build-team-focus"><div className="eyebrow">TEAM-BUILDING NOTE</div><p>{activeBuildProfile.teamFocus}</p><button className="text-action" onClick={() => navigate('teams')}>Open team builder <ArrowRight size={13}/></button></div>}
           </section>
 
+          {buildCharacter.enkaBuild && <section className="panel build-section-panel build-synced-profile">
+            <div className="build-panel-heading"><div><div className="eyebrow">PUBLIC ACCOUNT SYNC</div><h2>Currently equipped showcase build</h2><p>Imported from Enka.Network; separate from your manually planned build.</p></div><span className="pill muted"><RefreshCw size={12}/> Synced</span></div>
+            <div className="build-synced-grid">
+              <div><span>Showcase level</span><strong>{buildCharacter.enkaBuild.level || 'Not returned'}</strong></div>
+              <div><span>Constellation</span><strong>{buildCharacter.enkaBuild.constellation == null ? 'Not returned' : 'C' + buildCharacter.enkaBuild.constellation}</strong></div>
+              <div><span>Equipped weapon</span><strong>{buildCharacter.enkaBuild.weapon || 'Not returned'}</strong>{buildCharacter.enkaBuild.weaponLevel ? <small>Lv. {buildCharacter.enkaBuild.weaponLevel}</small> : null}</div>
+              <div><span>Friendship</span><strong>{buildCharacter.enkaBuild.friendship ?? 'Not returned'}</strong></div>
+            </div>
+            {buildCharacter.enkaBuild.artifacts?.length ? <div className="build-synced-artifacts"><div className="build-section-label">EQUIPPED ARTIFACTS</div>{buildCharacter.enkaBuild.artifacts.map((artifact, index) => <div className="build-synced-artifact" key={artifact.name + '-' + index}><div><strong>{artifact.name}</strong><small>{artifact.rarity ? artifact.rarity + '★' : 'Rarity unknown'}{artifact.level != null ? ' · +' + artifact.level : ''}</small></div>{artifact.mainStat ? <span>{artifact.mainStat}</span> : null}{artifact.substats?.length ? <small>{artifact.substats.map(stat => stat.name + (stat.value != null ? ' ' + stat.value : '')).join(' · ')}</small> : null}</div>)}</div> : <p className="build-empty-copy">Artifact details were not returned by the public source for this character.</p>}
+            {buildCharacter.enkaBuild.talentLevels?.length ? <p className="helper-note"><Info size={13}/> Raw talent level values from the showcase: {buildCharacter.enkaBuild.talentLevels.join(' / ')}. The source order is preserved rather than guessed into Normal / Skill / Burst.</p> : null}
+            {buildCharacter.enkaBuild.syncedAt ? <p className="build-video-note">Last synced {new Date(buildCharacter.enkaBuild.syncedAt).toLocaleString()}</p> : null}
+          </section>}
           <section className="panel build-section-panel build-saved-profile">
             <div className="build-panel-heading"><div><div className="eyebrow">YOUR ACCOUNT</div><h2>Saved tracker values</h2></div><button className="text-action" onClick={() => openCharacter(buildCharacter)}>Edit <Pencil size={12}/></button></div>
             <div className="build-saved-grid"><div><span>Weapon</span><strong>{buildCharacter.weaponName || 'Not set'}</strong></div><div><span>Artifact set</span><strong>{buildCharacter.artifact || 'Not set'}</strong></div><div><span>Saved main stats</span><strong>{buildCharacter.mainStats || 'Not set'}</strong></div><div><span>Personal notes</span><strong>{buildCharacter.notes || 'No notes saved'}</strong></div></div>
