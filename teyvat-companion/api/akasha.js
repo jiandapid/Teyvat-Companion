@@ -1,7 +1,9 @@
 const UID_PATTERN = /^[0-9]{9,10}$/;
 const MD5_PATTERN = /^[a-fA-F0-9]{32}$/;
 const AKASHA_API = 'https://akasha.cv/api';
-const USER_AGENT = 'TeyvatCompanion/1.0 (+https://github.com/jiandapid/Teyvat-Companion; public Akasha profile sync)';
+// Match the current community wrapper's user agent. AKASHA's API is undocumented and
+// can reject automated requests as it changes; this identifies the client consistently.
+const USER_AGENT = 'akasha-py';
 
 function json(res, status, body, headers = {}) {
   res.statusCode = status;
@@ -11,11 +13,26 @@ function json(res, status, body, headers = {}) {
   res.end(JSON.stringify(body));
 }
 
-function providerError(status) {
+function providerError(status, detail = '') {
   if (status === 404) return 'AKASHA has no public calculation/artifact data for this request. Confirm your UID and make sure your public profile is indexed.';
   if (status === 429) return 'AKASHA rate-limited this request. Wait a few minutes before trying again.';
-  if (status === 401 || status === 403) return 'AKASHA did not allow this public-data request.';
-  return 'AKASHA returned HTTP ' + status + '. Its community API can change without notice.';
+  if (status === 401 || status === 403) {
+    return 'AKASHA rejected the public API request (HTTP ' + status + '). This can be an API access or automated-request restriction, not necessarily a problem with your UID.'
+      + (detail ? ' Provider message: ' + detail : ' Its public API may block serverless requests or may have changed.');
+  }
+  return 'AKASHA returned HTTP ' + status + (detail ? '. Provider message: ' + detail : '. Its community API can change without notice.');
+}
+
+function safeProviderDetail(payload) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return '';
+  const raw = typeof payload.message === 'string' ? payload.message
+    : typeof payload.error === 'string' ? payload.error
+    : typeof payload.error?.description === 'string' ? payload.error.description
+    : typeof payload.error?.message === 'string' ? payload.error.message
+    : '';
+  const detail = raw.replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!detail || /<html|<!doctype|stack trace| at [\w.]+ \(/i.test(detail)) return '';
+  return detail.slice(0, 180);
 }
 
 async function requestAkasha(path) {
@@ -28,14 +45,27 @@ async function requestAkasha(path) {
       signal: controller.signal,
     });
     if (!upstream.ok) {
+      let providerDetail = '';
+      try { providerDetail = safeProviderDetail(await upstream.clone().json()); } catch { /* Some edge protections return HTML instead of JSON. */ }
       const status = [400, 401, 403, 404, 429].includes(upstream.status) ? upstream.status : 502;
-      return { ok: false, status: status === 502 ? 502 : upstream.status };
+      return {
+        ok: false,
+        status,
+        error: status === 502
+          ? 'AKASHA returned HTTP ' + upstream.status + '. Its community API may have changed.'
+          : providerError(status, providerDetail),
+      };
     }
     let payload;
     try { payload = await upstream.json(); }
     catch { return { ok: false, status: 502, error: 'AKASHA returned invalid JSON.' }; }
     if (payload && !Array.isArray(payload) && typeof payload === 'object' && payload.error) {
-      return { ok: false, status: 502, error: 'AKASHA returned an API error. Its community API may have changed.' };
+      const detail = safeProviderDetail(payload);
+      return {
+        ok: false,
+        status: 502,
+        error: 'AKASHA returned an API error' + (detail ? ': ' + detail : '. Its community API may have changed.'),
+      };
     }
     return { ok: true, data: payload?.data ?? payload };
   } catch (error) {
