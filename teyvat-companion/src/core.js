@@ -524,6 +524,77 @@ export function analyzeTeamComposition(teamCharacters = []) {
 }
 
 /**
+ * Merge character rows from independent public data sources before mapping them
+ * into app records. Prefer the primary provider's populated fields, but fill
+ * blanks from the supplemental source. Traveler forms are keyed by element so
+ * the seven variants are not collapsed into a single row.
+ */
+export function mergeCharacterSourceRecords(primaryRecords = [], supplementalRecords = []) {
+  const compact = value => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const sourceElement = record => {
+    const text = String(record?.element ?? record?.vision ?? record?.visionType ?? record?.vision_key ?? record?.name ?? '').toLowerCase();
+    const match = text.match(/anemo|wind|geo|rock|electro|electric|pyro|fire|hydro|water|cryo|ice|dendro|grass/);
+    if (!match) return '';
+    return ({ wind:'anemo', rock:'geo', electric:'electro', fire:'pyro', water:'hydro', ice:'cryo', grass:'dendro' })[match[0]] || match[0];
+  };
+  const travelerRecord = record => {
+    const route = String(record?.route ?? record?.id ?? '').toLowerCase();
+    const name = String(record?.name ?? record?.title ?? '').trim().toLowerCase();
+    return /^(traveler|aether|lumine|playerboy|playergirl)(-|$)/.test(route)
+      || /^(traveler|aether|lumine|playerboy|playergirl)(\s|\(|$)/.test(name);
+  };
+  const identify = record => {
+    const id = String(record?.id ?? record?.route ?? '').trim();
+    const name = String(record?.name ?? record?.title ?? record?.route ?? id).trim();
+    if (!id || !name) return '';
+    if (travelerRecord(record)) {
+      const element = sourceElement(record) || (String(record?.id ?? record?.route ?? '').toLowerCase().match(/traveler[-_ ](anemo|geo|electro|dendro|hydro|pyro)/)?.[1] || '');
+      return element ? 'traveler:' + element : 'traveler:' + compact(id);
+    }
+    return 'character:' + (compact(name) || compact(id));
+  };
+
+  const merged = new Map();
+  const consume = (rows, primary) => {
+    if (!Array.isArray(rows)) return;
+    for (const row of rows) {
+      if (!row || typeof row !== 'object' || Array.isArray(row)) continue;
+      const key = identify(row);
+      if (!key) continue;
+      const existing = merged.get(key);
+      if (!existing) {
+        merged.set(key, { ...row });
+        continue;
+      }
+
+      // For most fields, use the primary row when populated and fill holes
+      // from the supplemental row. Preserve provider-specific raw data too.
+      const preferred = primary ? row : existing;
+      const fallback = primary ? existing : row;
+      const combined = { ...fallback, ...preferred };
+      for (const field of [
+        'id','route','name','title','element','vision','visionType','vision_key',
+        'weapon','weaponType','weapon_type','rank','rarity','stars','region','nation','native',
+        'icon','image','img','upgrade','skillTalents','passiveTalents','talents',
+        'ascension_materials','apiId','apiSlug','materialGuides',
+      ]) {
+        const preferredValue = preferred?.[field];
+        const blank = preferredValue == null
+          || preferredValue === ''
+          || (Array.isArray(preferredValue) && preferredValue.length === 0)
+          || (typeof preferredValue === 'object' && !Array.isArray(preferredValue) && Object.keys(preferredValue).length === 0);
+        if (blank && fallback?.[field] != null && fallback[field] !== '') combined[field] = fallback[field];
+      }
+      merged.set(key, combined);
+    }
+  };
+
+  consume(primaryRecords, true);
+  consume(supplementalRecords, false);
+  return [...merged.values()];
+}
+
+/**
  * Reject suspiciously small/invalid refresh responses instead of replacing a
  * good local catalogue with a partial upstream response.
  */
