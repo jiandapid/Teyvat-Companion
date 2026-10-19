@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { ELEMENTS, ELEMENT_META, MATERIAL_STARTER, NAV_ITEMS, STARTER_CHARACTERS, STARTER_TEAMS } from './data';
 import { CHARACTER_BUILD_ALIASES, CHARACTER_BUILD_GUIDES, CREATOR_CHANNELS, getCharacterBuildRoleOptions } from './builds';
-import { buildProgressionPlan, enkaTtlSeconds, isValidGenshinUid, matchGoodCharacterKey, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory } from './core';
+import { buildProgressionPlan, enkaTtlSeconds, flattenEnkaSavedBuilds, isValidGenshinUid, matchGoodCharacterKey, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory } from './core';
 
 const ICONS = { LayoutDashboard, Users, Swords, PackageOpen, MapPinned, ChartNoAxesCombined, PlayCircle, Settings2, Bot, BookOpen, Layers3 };
 const STORAGE_KEY = 'teyvat-companion-v1';
@@ -317,6 +317,7 @@ export default function App() {
     }).sort((a, b) => a.name.localeCompare(b.name));
   }, [characters, buildSearch, buildElement]);
   const buildCharacter = characters.find(c => c.id === buildCharacterId) || null;
+  const enkaSavedBuildsForCharacter = buildCharacter ? (persisted.enkaSnapshot?.savedBuilds || []).filter(build => build.characterId === buildCharacter.id) : [];
   const activeBuildBaseProfile = findCharacterBuildGuide(buildCharacter);
   const buildRoleOptions = getCharacterBuildRoleOptions(activeBuildBaseProfile, buildCharacter);
   const defaultBuildRoleOption = buildRoleOptions.find(option => option.buildCategory === activeBuildBaseProfile?.buildCategory) || buildRoleOptions[0] || null;
@@ -588,7 +589,7 @@ export default function App() {
     }
     setSyncLoading(true); setSyncError('');
     try {
-      const response = await fetch('/api/enka?uid=' + encodeURIComponent(uid), { headers: { Accept: 'application/json' } });
+      const response = await fetch('/api/enka?uid=' + encodeURIComponent(uid) + '&includeBuilds=1', { headers: { Accept: 'application/json' } });
       let data;
       try { data = await response.json(); }
       catch { throw new Error('The sync endpoint returned a non-JSON response. Confirm the latest Vercel deployment includes the /api/enka function.'); }
@@ -652,6 +653,33 @@ export default function App() {
         };
       });
 
+      const savedBuilds = flattenEnkaSavedBuilds(data.savedBuilds, characters).map(build => {
+        // Enka's saved-build payload can wrap game-specific character data under
+        // "genshin"; also accept the direct avatar-info shape used by older snapshots.
+        const avatar = build.avatarData?.genshin
+          || build.avatarData?.avatarInfo
+          || build.avatarData?.avatar_info
+          || build.avatarData?.avatarData?.genshin
+          || build.avatarData
+          || {};
+        const gear = readGear(avatar);
+        const talentIds = Array.isArray(avatar?.talentIdList) ? avatar.talentIdList : [];
+        const skillLevelMap = avatar?.skillLevelMap && typeof avatar.skillLevelMap === 'object' ? avatar.skillLevelMap : {};
+        const talentLevels = Object.entries(skillLevelMap).sort((a,b) => Number(a[0])-Number(b[0]))
+          .map(([,value]) => Number(value)).filter(value => Number.isFinite(value) && value > 0);
+        return {
+          ...build,
+          level: readLevel(avatar),
+          constellation: Math.min(6, talentIds.length),
+          talents: talentLevels,
+          weapon: gear.weapon,
+          weaponLevel: gear.weaponLevel,
+          artifacts: gear.artifacts,
+          artifactSummary: gear.artifactSummary,
+          detailsAvailable: Boolean(avatar?.equipList || avatar?.skillLevelMap || avatar?.propMap),
+        };
+      });
+
       const snapshot = {
         uid,
         fetchedAt: new Date().toISOString(),
@@ -664,9 +692,15 @@ export default function App() {
         abyssFloor: toNumber(info.towerFloorIndex),
         abyssChamber: toNumber(info.towerLevelIndex),
         profilePictureId: info.profilePicture?.avatarId ?? null,
+        signature: String(info.signature || ''),
+        namecardId: info.namecardId ?? null,
+        showNameCardIds: Array.isArray(info.showNameCardIdList) ? info.showNameCardIdList : [],
         rosterEntries: publicRoster,
         showcase,
-        dataSource: 'Enka.Network public Character Showcase',
+        savedBuilds,
+        savedBuildsStatus: data.savedBuildsStatus || 'not-requested',
+        savedBuildsFetchedAt: data.savedBuildsStatus === 'loaded' ? new Date().toISOString() : null,
+        dataSource: 'Enka.Network public Character Showcase and optional public Enka profile builds',
         scope: 'Public display-list entries plus any detailed showcase records enabled by the player; not a complete owned roster or private inventory',
       };
 
