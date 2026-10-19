@@ -2731,3 +2731,54 @@ input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible
   color: #d4af62 !important;
   stroke: #d4af62 !important;
 }
+
+
+/* HARD RESET: enforce one UI palette across every route and component.
+   This intentionally replaces legacy per-section gradients and element colors.
+   Actual game artwork/images are excluded and remain authentic. */
+:root, html, body, #root, .app-shell, .main-area, .page-content {
+  color: #c4c4c8 !important;
+  background: #050505 !important;
+}
+*:not(img):not(video):not(canvas):not(picture):not(source):not(.hero-character-illustration) {
+  color: #c4c4c8 !important;
+  background-color: #090909 !important;
+  background-image: none !important;
+  border-color: rgba(212,175,98,.48) !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+.sidebar, .topbar, header, nav, aside, footer, .panel, .card, .stat-card,
+.character-card, .character-build-card, .build-card, .team-card, .guide-card,
+.material-card, .modal, .dialog, .character-modal, .hero-banner,
+.global-search, .global-search-menu, .official-map-connect, .real-map-panel {
+  background: #080808 !important;
+  background-image: none !important;
+  border-color: rgba(212,175,98,.55) !important;
+  color: #c4c4c8 !important;
+}
+h1, h2, h3, h4, h5, h6, strong, b, .stat-value, .page-title, .panel-title,
+.card-title, .character-modal-heading h2, .build-panel-heading h2 {
+  color: #dedee2 !important;
+}
+a, .eyebrow, .section-heading .eyebrow, .hero-kicker, .hero-art-ornament,
+.hero-art-caption-mark, .text-action, .rank-chip, table th, .nav-item.active {
+  color: #d4af62 !important;
+}
+.button.primary, .button.gold, button.primary, button.gold, .primary-button {
+  color: #080808 !important;
+  background: #d4af62 !important;
+  border-color: #d4af62 !important;
+}
+.nav-item.active, .tab.active, .build-role-tab.active, .filter-chip.active,
+.segmented-control button.active, [aria-current="page"] {
+  color: #d4af62 !important;
+  background: #17130b !important;
+  border-color: #d4af62 !important;
+}
+svg, svg * { color: #c4c4c8 !important; }
+button:focus-visible, a:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible {
+  outline: 2px solid #d4af62 !important;
+  outline-offset: 2px !important;
+}
