@@ -30,8 +30,8 @@ function safeProviderDetail(payload) {
     : typeof payload.error?.description === 'string' ? payload.error.description
     : typeof payload.error?.message === 'string' ? payload.error.message
     : '';
-  const detail = raw.replace(/[\\r\\n\\t]+/g, ' ').replace(/\\s+/g, ' ').trim();
-  if (!detail || /<html|<!doctype|stack trace| at [\\w.]+ \\(/i.test(detail)) return '';
+  const detail = raw.replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!detail || /<html|<!doctype|stack trace| at [\w.]+ \(/i.test(detail)) return '';
   return detail.slice(0, 180);
 }
 
