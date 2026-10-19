@@ -982,13 +982,120 @@ export default function App() {
     const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download=`teyvat-companion-backup-${new Date().toISOString().slice(0,10)}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); setToast('Backup exported');
   }
   function importTrackerObject(obj) {
-    if (!obj || typeof obj !== 'object' || (!obj.characters && !obj.account)) { setToast('That file does not look like a Teyvat Companion backup'); return; }
-    const importedCharacters = Array.isArray(obj.characters) ? obj.characters : Object.values(obj.characters || {});
-    const merged = new Map(STARTER_CHARACTERS.map(c=>[c.id,{...c}]));
-    importedCharacters.forEach(c=> { if (c?.id) merged.set(c.id,{...merged.get(c.id),...c}); });
-    const base = loadInitial();
-    saveState({...base,...obj,characters:[...merged.values()],account:{...base.account,...obj.account},materials:obj.materials || base.materials,teams:obj.teams || base.teams,goals:obj.goals || [],mapMarkers:obj.mapMarkers || [],tasks:obj.tasks || base.tasks});
-    setShowImport(false); setImportText(''); setToast('Tracker backup imported');
+    let backup;
+    try {
+      backup = normalizeTrackerBackup(obj);
+    } catch (error) {
+      setToast(error?.message || 'That file is not a valid Teyvat Companion backup.');
+      return;
+    }
+
+    const base = createDefaultState();
+    const merged = new Map(STARTER_CHARACTERS.map(c => [c.id, { ...c }]));
+    for (const character of backup.characters) {
+      const id = String(character.id).trim();
+      const previous = merged.get(id) || {};
+      const importedTalents = Array.isArray(character.talents) ? character.talents : [];
+      merged.set(id, {
+        ...previous,
+        ...character,
+        id,
+        name: typeof character.name === 'string' && character.name.trim() ? character.name.trim() : (previous.name || id),
+        owned: typeof character.owned === 'boolean' ? character.owned : Boolean(previous.owned),
+        level: clampInteger(character.level, 1, 90, clampInteger(previous.level, 1, 90, 1)),
+        talents: [0, 1, 2].map(i => clampInteger(importedTalents[i] ?? previous.talents?.[i], 1, 15, 1)),
+        constellation: clampInteger(character.constellation ?? previous.constellation, 0, 6, 0),
+        weaponName: typeof character.weaponName === 'string' ? character.weaponName : (previous.weaponName || ''),
+        artifact: typeof character.artifact === 'string' ? character.artifact : (previous.artifact || ''),
+        mainStats: typeof character.mainStats === 'string' ? character.mainStats : (previous.mainStats || ''),
+        notes: typeof character.notes === 'string' ? character.notes : (previous.notes || ''),
+        role: typeof character.role === 'string' ? character.role : (previous.role || 'Unassigned'),
+      });
+    }
+    const knownCharacterIds = new Set(merged.keys());
+    const materials = Array.isArray(backup.materials) ? backup.materials
+      .filter(m => isRecord(m) && m.id != null && typeof m.name === 'string' && m.name.trim())
+      .map(m => ({
+        ...m,
+        id: String(m.id),
+        name: m.name.trim(),
+        category: typeof m.category === 'string' && m.category ? m.category : 'Other',
+        required: clampInteger(m.required, 0, 1000000000, 0),
+        owned: clampInteger(m.owned, 0, 1000000000, 0),
+        note: typeof m.note === 'string' ? m.note : '',
+      })) : base.materials;
+    const teams = Array.isArray(backup.teams) ? backup.teams
+      .filter(t => isRecord(t) && t.id != null && typeof t.name === 'string' && Array.isArray(t.characters))
+      .map((t, i) => ({
+        ...t,
+        id: String(t.id || 'team-import-' + i),
+        name: t.name.trim() || 'Untitled team',
+        characters: [...new Set(t.characters.filter(id => id != null).map(String).filter(id => knownCharacterIds.has(id)))].slice(0, 4),
+        description: typeof t.description === 'string' ? t.description : '',
+      }))
+      .filter(t => t.characters.length >= 2) : base.teams;
+    const goals = Array.isArray(backup.goals) ? backup.goals
+      .filter(g => isRecord(g) && typeof g.title === 'string' && g.title.trim())
+      .map((g, i) => ({ ...g, id: String(g.id || 'goal-import-' + i), title: g.title.trim(), character: typeof g.character === 'string' ? g.character : '', target: typeof g.target === 'string' ? g.target : 'Level 90', done: Boolean(g.done) }))
+      : base.goals;
+    const tasks = Array.isArray(backup.tasks) ? backup.tasks
+      .filter(t => isRecord(t) && typeof t.title === 'string' && t.title.trim())
+      .map((t, i) => ({ ...t, id: String(t.id || 'task-import-' + i), title: t.title.trim(), detail: typeof t.detail === 'string' ? t.detail : '', done: Boolean(t.done) }))
+      : base.tasks;
+    const mapMarkers = Array.isArray(backup.mapMarkers) ? backup.mapMarkers
+      .filter(m => isRecord(m) && typeof m.name === 'string' && m.name.trim())
+      .map((m, i) => ({ ...m, id: String(m.id || 'marker-import-' + i), name: m.name.trim(), region: typeof m.region === 'string' ? m.region : 'Other', type: typeof m.type === 'string' ? m.type : 'Other', note: typeof m.note === 'string' ? m.note : '', collected: Boolean(m.collected) }))
+      : base.mapMarkers;
+
+    const rawAccount = isRecord(backup.account) ? backup.account : {};
+    const account = {
+      ...base.account,
+      ...rawAccount,
+      ar: clampInteger(rawAccount.ar, 1, 60, base.account.ar),
+      worldLevel: clampInteger(rawAccount.worldLevel, 0, 9, base.account.worldLevel),
+      abyss: typeof rawAccount.abyss === 'string' ? rawAccount.abyss : base.account.abyss,
+      primogems: clampInteger(rawAccount.primogems, 0, 1000000000, 0),
+      wishes: clampInteger(rawAccount.wishes, 0, 100000000, 0),
+      pity: clampInteger(rawAccount.pity, 0, 90, 0),
+      uid: typeof rawAccount.uid === 'string' ? rawAccount.uid.trim() : '',
+      nickname: typeof rawAccount.nickname === 'string' ? rawAccount.nickname : '',
+      resinAvailable: clampInteger(rawAccount.resinAvailable, 0, 200, 0),
+    };
+    const enkaSnapshot = isRecord(backup.enkaSnapshot) ? {
+      ...backup.enkaSnapshot,
+      characters: Array.isArray(backup.enkaSnapshot.characters) ? backup.enkaSnapshot.characters.filter(isRecord) : [],
+      savedBuilds: Array.isArray(backup.enkaSnapshot.savedBuilds) ? backup.enkaSnapshot.savedBuilds.filter(isRecord) : [],
+    } : null;
+    const goodInventory = isRecord(backup.goodInventory) ? {
+      ...backup.goodInventory,
+      characters: Array.isArray(backup.goodInventory.characters) ? backup.goodInventory.characters.filter(isRecord) : [],
+      weapons: Array.isArray(backup.goodInventory.weapons) ? backup.goodInventory.weapons.filter(isRecord) : [],
+      artifacts: Array.isArray(backup.goodInventory.artifacts) ? backup.goodInventory.artifacts.filter(isRecord) : [],
+      summary: isRecord(backup.goodInventory.summary) ? backup.goodInventory.summary : {},
+    } : null;
+    const akashaSnapshot = isRecord(backup.akashaSnapshot) ? {
+      ...backup.akashaSnapshot,
+      profiles: Array.isArray(backup.akashaSnapshot.profiles) ? backup.akashaSnapshot.profiles.filter(isRecord) : [],
+    } : null;
+
+    saveState({
+      ...base,
+      characters: [...merged.values()],
+      materials,
+      teams,
+      goals,
+      tasks,
+      mapMarkers,
+      account,
+      enkaSnapshot,
+      enkaNextFetchAt: clampInteger(backup.enkaNextFetchAt ?? enkaSnapshot?.nextFetchAt, 0, Number.MAX_SAFE_INTEGER, 0),
+      goodInventory,
+      akashaSnapshot,
+      lastUpdated: typeof backup.lastUpdated === 'string' ? backup.lastUpdated : null,
+    });
+    setShowImport(false);
+    setImportText('');
+    setToast('Tracker backup imported');
   }
   function importFromText(e) {
     e.preventDefault(); try { importTrackerObject(JSON.parse(importText)); } catch { setToast('Could not parse JSON. Paste a valid backup file.'); }
