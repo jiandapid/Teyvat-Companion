@@ -29,8 +29,13 @@ export function normalizeTrackerBackup(input) {
     throw new Error('No character data was found. Choose a Teyvat Companion backup.');
   }
 
+  if (input.extraCharacters !== undefined && !Array.isArray(input.extraCharacters)) {
+    throw new Error('The backup has an invalid "extraCharacters" section. Your current data was not changed.');
+  }
+
   const charactersById = new Map();
-  for (const character of rawCharacters) {
+  const allCharacters = [...rawCharacters, ...(Array.isArray(input.extraCharacters) ? input.extraCharacters : [])];
+  for (const character of allCharacters) {
     if (!isBackupRecord(character) || character.id == null || !String(character.id).trim()) continue;
     const id = String(character.id).trim();
     charactersById.set(id, { ...character, id });
