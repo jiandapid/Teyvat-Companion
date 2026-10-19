@@ -1,0 +1,694 @@
+export function isValidGenshinUid(value) {
+  return /^[0-9]{9,10}$/.test(String(value ?? '').trim());
+}
+
+export function enkaTtlSeconds(value) {
+  const ttl = Number(value);
+  return Number.isFinite(ttl) && ttl > 0 ? Math.ceil(ttl) : 60;
+}
+
+export function mergeEnkaShowcaseCharacter(character, imported, syncedAt) {
+  const current = character || {};
+  const entry = imported || {};
+  const validLevel = Number.isFinite(Number(entry.level)) && Number(entry.level) > 0;
+  const hasConstellation = entry.constellation !== null
+    && entry.constellation !== undefined
+    && Number.isFinite(Number(entry.constellation));
+  const enkaBuild = {
+    ...(current.enkaBuild || {}),
+    syncedAt,
+    avatarId: entry.avatarId || '',
+    level: entry.level ?? null,
+    constellation: entry.constellation ?? null,
+    talentLevels: Array.isArray(entry.talents) ? [...entry.talents] : [],
+    weapon: entry.weapon || '',
+    weaponLevel: entry.weaponLevel ?? null,
+    artifacts: Array.isArray(entry.artifacts) ? [...entry.artifacts] : [],
+    friendship: entry.friendship ?? null,
+  };
+
+  return {
+    ...current,
+    owned: true,
+    ...(validLevel ? { level: Number(entry.level) } : {}),
+    ...(hasConstellation ? { constellation: Math.max(0, Math.min(6, Number(entry.constellation))) } : {}),
+    // Keep the user's editable planned build fields; current equipped gear belongs in enkaBuild.
+    enkaBuild,
+  };
+}
+
+const compactName = value => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+const isTravelerRecord = value => /^traveler-/i.test(String(value?.id || ''))
+  || /^(traveler|aether|lumine)(\s|$)/i.test(String(value?.name || ''));
+
+function sameCatalogueCharacter(a, b) {
+  if (!a || !b) return false;
+  if (a.id && b.id && String(a.id) === String(b.id)) return true;
+  if (isTravelerRecord(a) || isTravelerRecord(b)) return false;
+  if (a.apiId && b.apiId && String(a.apiId) === String(b.apiId)) return true;
+  const aName = compactName(a.name);
+  return Boolean(aName && aName === compactName(b.name));
+}
+
+function mergeDuplicateCharacter(existing, incoming) {
+  return {
+    ...incoming,
+    ...existing,
+    id: existing.id || incoming.id,
+    owned: Boolean(existing.owned || incoming.owned),
+    level: Math.max(Number(existing.level) || 1, Number(incoming.level) || 1),
+    talents: [0, 1, 2].map(i => Math.max(Number(existing.talents?.[i]) || 1, Number(incoming.talents?.[i]) || 1)),
+    constellation: Math.max(Number(existing.constellation) || 0, Number(incoming.constellation) || 0),
+    weaponName: existing.weaponName || incoming.weaponName || '',
+    artifact: existing.artifact || incoming.artifact || '',
+    mainStats: existing.mainStats || incoming.mainStats || '',
+    notes: existing.notes || incoming.notes || '',
+    enkaBuild: existing.enkaBuild || incoming.enkaBuild || null,
+    gameData: existing.gameData || incoming.gameData || null,
+  };
+}
+
+/**
+ * Refresh catalogue metadata while retaining the app's stable local IDs and tracking fields.
+ * Some data sources use alternate slugs (e.g. "kaedehara-kazuha" vs the starter ID "kazuha").
+ */
+export function mergeCharacterCatalogue(previousCharacters, freshRecords) {
+  const byId = new Map();
+
+  // First collapse duplicates left by older catalogue refreshes, without merging Traveler elements.
+  for (const character of Array.isArray(previousCharacters) ? previousCharacters : []) {
+    const match = [...byId.values()].find(existing => sameCatalogueCharacter(existing, character));
+    if (!match) {
+      if (character?.id) byId.set(character.id, character);
+      continue;
+    }
+    byId.set(match.id, mergeDuplicateCharacter(match, character));
+  }
+
+  // Then refresh metadata, keeping the matched record's stable ID and user-specific progress.
+  for (const fresh of Array.isArray(freshRecords) ? freshRecords : []) {
+    if (!fresh?.id) continue;
+    const match = [...byId.values()].find(existing => sameCatalogueCharacter(existing, fresh));
+    const existing = match || null;
+    const canonicalId = existing?.id || fresh.id;
+    byId.set(canonicalId, {
+      ...fresh,
+      ...(existing || {}),
+      id: canonicalId,
+      apiId: fresh.apiId || existing?.apiId || '',
+      apiSlug: fresh.apiSlug || existing?.apiSlug || '',
+      rawName: fresh.rawName || existing?.rawName || fresh.name,
+      name: fresh.name || existing?.name || canonicalId,
+      title: fresh.title || existing?.title || '',
+      element: fresh.element || existing?.element || 'Unknown',
+      weapon: fresh.weapon || existing?.weapon || 'Unknown',
+      rarity: fresh.rarity || existing?.rarity || 0,
+      region: fresh.region || existing?.region || 'Unknown',
+      image: fresh.image || existing?.image || '',
+      iconImage: fresh.iconImage || existing?.iconImage || '',
+      portraitImage: fresh.portraitImage || existing?.portraitImage || '',
+      imageType: fresh.imageType || existing?.imageType || '',
+      materialGuides: fresh.materialGuides?.length ? fresh.materialGuides : (existing?.materialGuides || []),
+      source: fresh.source || existing?.source || '',
+      owned: existing?.owned ?? false,
+      level: existing?.level ?? 1,
+      talents: existing?.talents || [1, 1, 1],
+      constellation: existing?.constellation ?? 0,
+      weaponName: existing?.weaponName || '',
+      artifact: existing?.artifact || '',
+      mainStats: existing?.mainStats || '',
+      notes: existing?.notes || '',
+      role: existing?.role || fresh.role || 'Unassigned',
+      gameData: existing?.gameData || fresh.gameData || null,
+    });
+  }
+
+  return [...byId.values()];
+}
+
+
+const round2 = value => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+
+function numberOr(value, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function cleanGoodArtifact(item) {
+  const substats = (Array.isArray(item.substats) ? item.substats : [])
+    .filter(stat => stat && typeof stat.key === 'string')
+    .map(stat => ({ key: stat.key, value: numberOr(stat.value) }));
+  let critValue = 0;
+  for (const stat of substats) {
+    const token = compactName(stat.key);
+    if (token.includes('critrate') || token.includes('criticalrate')) critValue += numberOr(stat.value) * 2;
+    else if (token.includes('critdmg') || token.includes('criticaldamage')) critValue += numberOr(stat.value);
+  }
+  return {
+    setKey: String(item.setKey || 'Unknown'),
+    slotKey: String(item.slotKey || 'unknown'),
+    level: Math.max(0, Math.min(20, numberOr(item.level))),
+    rarity: [1, 2, 3, 4, 5].includes(Number(item.rarity)) ? Number(item.rarity) : 5,
+    mainStatKey: String(item.mainStatKey || 'unknown'),
+    location: String(item.location || ''),
+    lock: Boolean(item.lock),
+    substats,
+    critValue: round2(critValue),
+  };
+}
+
+/**
+ * Import the documented Genshin Open Object Description (GOOD) inventory format.
+ * Supports GOOD v1–v3 and keeps imports in the browser; it does not require a game login.
+ */
+export function parseGoodInventory(input, importedAt = new Date().toISOString()) {
+  let obj = input;
+  if (typeof input === 'string') {
+    try { obj = JSON.parse(input); }
+    catch { throw new Error('This file is not valid JSON.'); }
+  }
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) throw new Error('Choose a GOOD JSON object.');
+  if (obj.format !== 'GOOD') throw new Error('This is not a GOOD file. Expected format: "GOOD".');
+  if (![1, 2, 3].includes(Number(obj.version))) throw new Error('Unsupported GOOD version. Supported versions are 1, 2 and 3.');
+  const rawCharacters = Array.isArray(obj.characters) ? obj.characters : [];
+  const rawWeapons = Array.isArray(obj.weapons) ? obj.weapons : [];
+  const rawArtifacts = Array.isArray(obj.artifacts) ? obj.artifacts : [];
+  if (!rawCharacters.length && !rawWeapons.length && !rawArtifacts.length) {
+    throw new Error('The GOOD file contains no characters, weapons or artifacts.');
+  }
+  if (rawCharacters.length > 300 || rawWeapons.length > 3000 || rawArtifacts.length > 5000) {
+    throw new Error('This file exceeds the safety limit for inventory items.');
+  }
+
+  const characters = rawCharacters.filter(item => item && typeof item.key === 'string' && item.key.trim())
+    .map(item => ({
+      key: item.key.trim(),
+      level: Math.max(1, Math.min(100, numberOr(item.level, 1))),
+      ascension: Math.max(0, Math.min(6, numberOr(item.ascension))),
+      constellation: Math.max(0, Math.min(6, numberOr(item.constellation))),
+      talent: {
+        auto: Math.max(1, Math.min(15, numberOr(item.talent?.auto, 1))),
+        skill: Math.max(1, Math.min(15, numberOr(item.talent?.skill, 1))),
+        burst: Math.max(1, Math.min(15, numberOr(item.talent?.burst, 1))),
+      },
+    }));
+  const weapons = rawWeapons.filter(item => item && typeof item.key === 'string' && item.key.trim())
+    .map(item => ({
+      key: item.key.trim(),
+      level: Math.max(1, Math.min(90, numberOr(item.level, 1))),
+      ascension: Math.max(0, Math.min(6, numberOr(item.ascension))),
+      refinement: Math.max(1, Math.min(5, numberOr(item.refinement, 1))),
+      location: String(item.location || ''),
+      lock: Boolean(item.lock),
+    }));
+  const artifacts = rawArtifacts.filter(item => item && typeof item.setKey === 'string' && typeof item.slotKey === 'string')
+    .map(cleanGoodArtifact);
+
+  if (!characters.length && !weapons.length && !artifacts.length) {
+    throw new Error('No usable GOOD inventory entries were found.');
+  }
+
+  const artifactsBySlot = artifacts.reduce((acc, artifact) => {
+    acc[artifact.slotKey] = (acc[artifact.slotKey] || 0) + 1;
+    return acc;
+  }, {});
+  return {
+    format: 'GOOD',
+    version: Number(obj.version),
+    source: String(obj.source || 'GOOD file import'),
+    importedAt,
+    characters,
+    weapons,
+    artifacts,
+    summary: {
+      characters: characters.length,
+      weapons: weapons.length,
+      artifacts: artifacts.length,
+      lockedArtifacts: artifacts.filter(item => item.lock).length,
+      artifactsBySlot,
+      highCritValueArtifacts: artifacts.filter(item => item.critValue >= 30).length,
+    },
+  };
+}
+
+export function matchGoodCharacterKey(key, characters) {
+  const raw = String(key || '').trim();
+  if (!raw) return null;
+  const token = compactName(raw);
+  const traveler = token.match(/^(?:traveler|aether|lumine)(anemo|geo|electro|dendro|hydro|pyro|cryo)$/);
+  if (traveler) {
+    const match = (characters || []).find(character => String(character.id || '').toLowerCase() === 'traveler-' + traveler[1]);
+    if (match) return match;
+  }
+  const aliases = {
+    raidenshogun: ['raiden', 'raiden-shogun'],
+    kaedeharakazuha: ['kazuha', 'kaedehara-kazuha'],
+    tartaglia: ['childe', 'tartaglia'],
+    kamisatoayaka: ['ayaka', 'kamisato-ayaka'],
+    kamisatoayato: ['ayato', 'kamisato-ayato'],
+  };
+  const keys = new Set([token, ...(aliases[token] || []).map(compactName)]);
+  return (characters || []).find(character => {
+    const candidates = [character.id, character.apiSlug, character.apiSlug?.split('/').pop(), character.name, character.rawName];
+    return candidates.some(candidate => keys.has(compactName(candidate)));
+  }) || null;
+}
+
+/**
+ * Build a transparent progression plan from user-entered goals and shortages.
+ * It deliberately doesn't invent live resin costs or domain drop rates when those aren't sourced.
+ */
+export function buildProgressionPlan({ characters = [], goals = [], materials = [], goodInventory = null } = {}) {
+  const activeGoals = goals.filter(goal => !goal.done);
+  const shortages = materials.map(material => ({
+    ...material,
+    missing: Math.max(0, numberOr(material.required) - numberOr(material.owned)),
+  })).filter(material => material.missing > 0);
+  shortages.sort((a, b) => numberOr(b.priority) - numberOr(a.priority) || b.missing / Math.max(1, numberOr(b.required)) - a.missing / Math.max(1, numberOr(a.required)));
+
+  const actions = [];
+  if (activeGoals.length) {
+    const goal = activeGoals[0];
+    const character = characters.find(item => item.id === goal.character);
+    actions.push({
+      kind: 'goal',
+      title: 'Continue your active goal',
+      detail: (character ? character.name + ': ' : '') + goal.title + (goal.target ? ' · ' + goal.target : ''),
+      reason: 'An unfinished goal is your clearest declared priority.',
+      goalId: goal.id,
+    });
+  }
+  if (shortages.length) {
+    const material = shortages[0];
+    actions.push({
+      kind: 'material',
+      title: 'Farm a tracked material shortage',
+      detail: material.name + ' · ' + material.missing + ' still needed',
+      reason: 'This shortage comes from quantities you entered; verify the correct drop source and the current rotation in-game.',
+      materialId: material.id,
+      missing: material.missing,
+    });
+  }
+  const artifacts = goodInventory?.artifacts || [];
+  const usableArtifacts = artifacts.filter(item => Number(item.rarity) === 5);
+  if (usableArtifacts.length) {
+    const bestCv = [...usableArtifacts].sort((a, b) => numberOr(b.critValue) - numberOr(a.critValue))[0];
+    actions.push({
+      kind: 'artifacts',
+      title: 'Audit your imported artifact inventory',
+      detail: usableArtifacts.length + ' five-star artifacts imported' + (bestCv?.critValue ? ' · highest generic CRIT Value ' + round2(bestCv.critValue) : ''),
+      reason: 'CRIT Value is only a quick sorting signal, not a character-specific build score. Main stats, set effects and team needs matter.',
+    });
+  }
+  const underLevelled = characters.filter(character => character.owned && numberOr(character.level, 1) < 80)
+    .sort((a, b) => numberOr(a.level, 1) - numberOr(b.level, 1))[0];
+  if (underLevelled) {
+    actions.push({
+      kind: 'character',
+      title: 'Review a lower-level owned character',
+      detail: underLevelled.name + ' · Lv. ' + numberOr(underLevelled.level, 1),
+      reason: 'Compare their role and team value before spending EXP books or boss resin.',
+      characterId: underLevelled.id,
+    });
+  }
+  if (!actions.length) {
+    actions.push({
+      kind: 'review',
+      title: 'Choose one upgrade target',
+      detail: 'Pick a character, talent, weapon or artifact set to focus on this week.',
+      reason: 'A concrete target makes the next resin decision easier to evaluate.',
+    });
+  }
+  return actions.slice(0, 4);
+}
+
+
+const ARTIFACT_SLOTS = ['flower', 'plume', 'sands', 'goblet', 'circlet'];
+const ARTIFACT_SET_INFO = {
+  GladiatorsFinale: { label: "Gladiator's Finale", two: 'atk', four: 'normal' },
+  ShimenawasReminiscence: { label: "Shimenawa's Reminiscence", two: 'atk', four: 'normal' },
+  EmblemOfSeveredFate: { label: 'Emblem of Severed Fate', two: 'energy', four: 'burst' },
+  GoldenTroupe: { label: 'Golden Troupe', two: 'skill', four: 'offFieldSkill' },
+  DeepwoodMemories: { label: 'Deepwood Memories', two: 'dendro', four: 'dendroRes' },
+  GildedDreams: { label: 'Gilded Dreams', two: 'em', four: 'reaction' },
+  ViridescentVenerer: { label: 'Viridescent Venerer', two: 'anemo', four: 'swirl' },
+  NoblesseOblige: { label: 'Noblesse Oblige', two: 'burst', four: 'teamBuff' },
+  TenacityOfTheMillelith: { label: 'Tenacity of the Millelith', two: 'hp', four: 'teamBuff' },
+  VourukashasGlow: { label: "Vourukasha's Glow", two: 'hp', four: 'skillBurst' },
+  MarechausseeHunter: { label: 'Marechaussee Hunter', two: 'normal', four: 'crit' },
+  FinaleOfTheDeepGalleries: { label: 'Finale of the Deep Galleries', two: 'cryo', four: 'cryo' },
+  DesertPavilionChronicle: { label: 'Desert Pavilion Chronicle', two: 'anemo', four: 'normal' },
+  OceanHuedClam: { label: 'Ocean-Hued Clam', two: 'healing', four: 'healing' },
+  ArchaicPetra: { label: 'Archaic Petra', two: 'geo', four: 'teamBuff' },
+  CrimsonWitchOfFlames: { label: 'Crimson Witch of Flames', two: 'pyro', four: 'reaction' },
+  FlowerOfParadiseLost: { label: 'Flower of Paradise Lost', two: 'em', four: 'reaction' },
+  HuskOfOpulentDreams: { label: 'Husk of Opulent Dreams', two: 'def', four: 'def' },
+  HeartOfDepth: { label: 'Heart of Depth', two: 'hydro', four: 'normal' },
+  BlizzardStrayer: { label: 'Blizzard Strayer', two: 'cryo', four: 'crit' },
+  ThunderingFury: { label: 'Thundering Fury', two: 'electro', four: 'reaction' },
+  PaleFlame: { label: 'Pale Flame', two: 'physical', four: 'normal' },
+  BloodstainedChivalry: { label: 'Bloodstained Chivalry', two: 'physical', four: 'normal' },
+  RetracingBolide: { label: 'Retracing Bolide', two: 'shield', four: 'normal' },
+  WanderersTroupe: { label: "Wanderer's Troupe", two: 'em', four: 'charged' },
+  Thundersoother: { label: 'Thundersoother', two: 'electro', four: 'electro' },
+  Lavawalker: { label: 'Lavawalker', two: 'pyro', four: 'pyro' },
+};
+
+function optimizerStatKey(raw) {
+  const source = String(raw || '').trim().toLowerCase();
+  const token = compactName(source);
+  const percent = source.includes('%') || source.endsWith('_') || token.includes('percent');
+  if (token.includes('critrate') || token === 'crit') return 'critRate';
+  if (token.includes('critdmg') || token.includes('criticaldamage')) return 'critDmg';
+  if (token.includes('enerrech') || token === 'energyrecharge' || token === 'er') return 'er';
+  if (token.includes('elementalmastery') || token === 'elemas' || token === 'em') return 'em';
+  for (const element of ['pyro', 'hydro', 'cryo', 'dendro', 'anemo', 'electro', 'geo']) {
+    if (token.includes(element) && (token.includes('dmg') || token.includes('damage'))) return element + 'Dmg';
+  }
+  if (token.includes('physical') && (token.includes('dmg') || token.includes('damage'))) return 'physicalDmg';
+  if (token.includes('healing')) return 'healing';
+  if (token.includes('atk') || token === 'attack') return percent ? 'atkPercent' : 'atkFlat';
+  if (token.includes('hp') || token === 'health') return percent ? 'hpPercent' : 'hpFlat';
+  if (token.includes('def') || token === 'defense') return percent ? 'defPercent' : 'defFlat';
+  return token || 'unknown';
+}
+
+function optimizerMainOptions(profile, slot) {
+  const raw = profile?.stats?.[slot];
+  if (!raw) return [];
+  return String(raw).split(/\s+or\s+|\/|,|;/i).map(value => optimizerStatKey(value)).filter(value => value && value !== 'unknown');
+}
+
+function optimizerPreferredSets(profile) {
+  const result = [];
+  for (const artifact of profile?.artifacts || []) {
+    const text = String(artifact?.name || '');
+    if (/2[- ]?piece.*hp|hp%.*set/i.test(text)) {
+      for (const key of ['TenacityOfTheMillelith', 'VourukashasGlow']) if (!result.includes(key)) result.push(key);
+      continue;
+    }
+    const normalized = compactName(text);
+    const key = Object.keys(ARTIFACT_SET_INFO).find(candidate =>
+      compactName(candidate) === normalized || compactName(ARTIFACT_SET_INFO[candidate].label) === normalized
+    );
+    if (key && !result.includes(key)) result.push(key);
+  }
+  return result;
+}
+
+function optimizerContext(character, profile, teamCharacters = []) {
+  const role = String(profile?.role || character?.role || '').toLowerCase();
+  const profileText = [
+    role,
+    profile?.playstyle,
+    profile?.teamFocus,
+    ...(Object.values(profile?.stats || {})),
+    ...(profile?.talentOrder || []),
+  ].join(' ').toLowerCase();
+  const support = /support|healer|shielder|buffer|battery/.test(role);
+  const dps = /dps|carry|damage/.test(role);
+  const wantsHp = /hp%|health/.test(profileText);
+  const wantsDef = /def%|defense/.test(profileText);
+  const wantsEr = /energy recharge|\ber\b/.test(profileText);
+  const wantsEm = /elemental mastery|\bem\b|reaction|swirl|bloom|aggravate|hyperbloom|burgeon|vaporize|melt/.test(profileText);
+  const team = Array.isArray(teamCharacters) ? teamCharacters.filter(Boolean) : [];
+  const elements = new Set([character, ...team].filter(Boolean).map(item => String(item.element || '').toLowerCase()));
+  const teamHasDendro = elements.has('dendro');
+  const teamHasReactionPartner = ['hydro', 'pyro', 'electro'].some(element => elements.has(element));
+  const reactionTeam = (teamHasDendro && teamHasReactionPartner) || elements.size >= 3;
+  const weights = {
+    critRate: dps ? 2.05 : 1.35,
+    critDmg: dps ? 1.05 : 0.78,
+    atkPercent: dps ? 1.0 : 0.55,
+    hpPercent: wantsHp ? 1.05 : 0.38,
+    defPercent: wantsDef ? 1.0 : 0.28,
+    er: wantsEr || support ? 1.12 : 0.52,
+    em: wantsEm ? 0.72 : 0.30,
+    atkFlat: dps ? 0.12 : 0.07,
+    hpFlat: wantsHp ? 0.012 : 0.004,
+    defFlat: wantsDef ? 0.12 : 0.035,
+  };
+  if (support && team.length > 1) weights.er += 0.16;
+  if (reactionTeam && wantsEm) weights.em += 0.14;
+  return { character, profile, role, profileText, support, dps, wantsHp, wantsDef, wantsEr, wantsEm, team, elements, reactionTeam, weights };
+}
+
+function optimizerSetTagFit(tag, context) {
+  const element = String(context.character?.element || '').toLowerCase();
+  const profileText = context.profileText;
+  switch (tag) {
+    case 'atk': return context.dps || /atk%/.test(profileText) ? 7 : 3;
+    case 'hp': return context.wantsHp ? 8 : 2;
+    case 'def': return context.wantsDef ? 8 : 2;
+    case 'energy': return context.wantsEr || context.support ? 8 : 3;
+    case 'em': return context.wantsEm || context.reactionTeam ? 8 : 3;
+    case 'anemo': return element === 'anemo' ? 9 : 1;
+    case 'geo': return element === 'geo' ? 9 : 1;
+    case 'cryo': return element === 'cryo' ? 9 : 1;
+    case 'hydro': return element === 'hydro' ? 9 : 1;
+    case 'pyro': return element === 'pyro' ? 9 : 1;
+    case 'electro': return element === 'electro' ? 9 : 1;
+    case 'dendro': return element === 'dendro' ? 9 : (context.reactionTeam ? 5 : 1);
+    case 'physical': return /physical/.test(profileText) ? 9 : 1;
+    case 'skill': return /skill/.test(profileText) || /sub dps|support/.test(context.role) ? 8 : 4;
+    case 'offFieldSkill': return /off.field|sub dps|support/.test(profileText) ? 9 : 3;
+    case 'burst': return /burst/.test(profileText) || context.support ? 8 : 4;
+    case 'skillBurst': return /skill|burst/.test(profileText) || context.support ? 8 : 3;
+    case 'dendroRes': return element === 'dendro' || context.reactionTeam ? 9 : 3;
+    case 'reaction': return context.wantsEm || context.reactionTeam ? 9 : 3;
+    case 'swirl': return element === 'anemo' ? 11 : 2;
+    case 'teamBuff': return context.support || /support|team/.test(profileText) ? 9 : 4;
+    case 'normal':
+    case 'charged': return context.dps ? 8 : 4;
+    case 'crit': return context.dps ? 9 : 5;
+    case 'healing': return /heal|healing/.test(profileText) || context.support ? 8 : 2;
+    case 'shield': return /shield/.test(profileText) || context.support ? 8 : 2;
+    default: return 0;
+  }
+}
+
+function optimizerSetScore(chosen, preferredSets, context) {
+  const counts = {};
+  for (const artifact of chosen) {
+    if (artifact.setKey && artifact.setKey !== 'Unknown') counts[artifact.setKey] = (counts[artifact.setKey] || 0) + 1;
+  }
+  let score = 0;
+  const breakdown = [];
+  for (const [key, count] of Object.entries(counts)) {
+    const info = ARTIFACT_SET_INFO[key];
+    const preferredIndex = preferredSets.indexOf(key);
+    const primaryPreferred = preferredIndex === 0;
+    const secondaryPreferred = preferredIndex > 0;
+    const pieces = [];
+    let points = 0;
+    if (count >= 2) {
+      const fit = info ? optimizerSetTagFit(info.two, context) : (preferredIndex >= 0 ? 6 : 0);
+      const preference = primaryPreferred ? 10 : secondaryPreferred ? 6 : 0;
+      points += fit + preference;
+      pieces.push('2-piece');
+    }
+    if (count >= 4) {
+      const fit = info ? optimizerSetTagFit(info.four, context) : (preferredIndex >= 0 ? 10 : 0);
+      const preference = primaryPreferred ? 18 : secondaryPreferred ? 13 : 0;
+      points += fit + preference;
+      pieces.push('4-piece');
+    }
+    if (points > 0) {
+      score += points;
+      breakdown.push({
+        key,
+        label: info?.label || key,
+        count,
+        pieces,
+        preferred: preferredIndex >= 0,
+        preferredRank: preferredIndex,
+        points: round2(points),
+        explanation: preferredIndex === 0 ? 'First recommended set for this build' : secondaryPreferred ? 'Alternative set listed in the build profile' : 'Set-effect fit estimated from role, stats and team context',
+      });
+    }
+  }
+  breakdown.sort((a,b) => b.points-a.points);
+  return { score: round2(score), breakdown };
+}
+
+function optimizerPieceScore(artifact, slot, context) {
+  const wanted = optimizerMainOptions(context.profile, slot);
+  const main = optimizerStatKey(artifact.mainStatKey);
+  let mainStatScore = 0;
+  let mainStatMatches = false;
+  if (slot === 'flower') {
+    mainStatMatches = main === 'hpFlat';
+    mainStatScore = mainStatMatches ? 0 : -14;
+  } else if (slot === 'plume') {
+    mainStatMatches = main === 'atkFlat';
+    mainStatScore = mainStatMatches ? 0 : -14;
+  } else if (wanted.length) {
+    mainStatMatches = wanted.includes(main);
+    mainStatScore = mainStatMatches ? 26 : -18;
+  }
+
+  const substatBreakdown = (artifact.substats || []).map(stat => {
+    const key = optimizerStatKey(stat.key);
+    const weight = context.weights[key] ?? 0.16;
+    const points = numberOr(stat.value) * weight;
+    return { key, label: String(stat.key), value: numberOr(stat.value), points: round2(points) };
+  });
+  const substatScore = substatBreakdown.reduce((sum, stat) => sum + stat.points, 0);
+  const rarityScore = Number(artifact.rarity) >= 5 ? 2.5 : Number(artifact.rarity) === 4 ? 0 : Number(artifact.rarity) === 3 ? -5 : -10;
+  const levelScore = Math.max(0, Math.min(20, numberOr(artifact.level))) * 0.12;
+  const score = round2(mainStatScore + substatScore + rarityScore + levelScore);
+  const topSubstats = [...substatBreakdown].sort((a,b)=>b.points-a.points).filter(stat=>stat.points>0).slice(0,3);
+  const mainLabel = mainStatMatches && wanted.length ? 'Main stat matches this build’s listed options' :
+    (wanted.length && !mainStatMatches ? 'Main stat is outside this build’s listed options' :
+      slot === 'flower' || slot === 'plume' ? 'Fixed flower/plume main stat' : 'No curated main-stat profile; ranked by substats and sets');
+  return {
+    ...artifact,
+    optimizerId: artifact.optimizerId || artifact.id,
+    _optimizerScore: score,
+    _mainStatScore: mainStatScore,
+    _mainStatMatches: mainStatMatches,
+    _mainStatLabel: mainLabel,
+    _substatScore: round2(substatScore),
+    _topSubstats: topSubstats,
+    _rarityScore: rarityScore,
+    _levelScore: round2(levelScore),
+  };
+}
+
+/**
+ * Finds high-fit five-piece combinations from an imported GOOD artifact inventory.
+ * This is a transparent heuristic (main-stat fit + weighted substats + preferred-set synergy),
+ * not a frame-by-frame damage simulator. It never equips items in game.
+ */
+export function optimizeArtifactLoadout({
+  character,
+  profile = null,
+  artifacts = [],
+  teamCharacters = [],
+  allCharacters = [],
+  topN = 3,
+  candidatesPerSlot = 10,
+} = {}) {
+  if (!character?.id) return { error: 'Choose a character first.' };
+  if (!Array.isArray(artifacts) || artifacts.length === 0) return { error: 'Import a GOOD inventory containing artifacts first.' };
+
+  const context = optimizerContext(character, profile, teamCharacters);
+  const preferredSets = optimizerPreferredSets(profile);
+  const teamIds = new Set(context.team.map(item => item.id).filter(Boolean));
+  const source = artifacts.map((artifact, index) => ({
+    ...artifact,
+    optimizerId: String(artifact.optimizerId || artifact.inventoryId || artifact.id || ('good-artifact-' + index)),
+  }));
+  const available = source.filter(artifact => !artifact.characterId || !teamIds.has(artifact.characterId) || artifact.characterId === character.id);
+  const excludedForTeam = source.length - available.length;
+  const slots = {};
+  for (const slot of ARTIFACT_SLOTS) {
+    const pieces = available.filter(artifact => String(artifact.slotKey || '').toLowerCase() === slot);
+    if (!pieces.length) slots[slot] = [];
+    else {
+      const scored = pieces.map(artifact => optimizerPieceScore(artifact, slot, context));
+      scored.sort((a,b) => {
+        const preference = artifact => {
+          const index = preferredSets.indexOf(artifact.setKey);
+          return index === 0 ? 9 : index > 0 ? 5 : 0;
+        };
+        return (b._optimizerScore + preference(b)) - (a._optimizerScore + preference(a));
+      });
+      const shortlist = new Map(scored.slice(0, Math.max(1, candidatesPerSlot)).map(item => [item.optimizerId, item]));
+      // Preserve set coverage so a slightly weaker piece can still complete a preferred 4-piece set.
+      for (const key of preferredSets) {
+        for (const item of scored.filter(piece => piece.setKey === key).slice(0, 2)) shortlist.set(item.optimizerId, item);
+      }
+      slots[slot] = [...shortlist.values()];
+    }
+  }
+  const missingSlots = ARTIFACT_SLOTS.filter(slot => !slots[slot]?.length);
+  if (missingSlots.length) {
+    return {
+      error: 'Your imported inventory is missing artifacts for: ' + missingSlots.join(', ') + '. Import a more complete GOOD file to compare full five-piece builds.',
+      missingSlots,
+      artifactCount: available.length,
+      excludedForTeam,
+    };
+  }
+
+  const combosAvailable = ARTIFACT_SLOTS.reduce((total, slot) => total * slots[slot].length, 1);
+  const best = [];
+  let examined = 0;
+  const chosen = [];
+  const desiredTopN = Math.max(1, Math.min(5, Math.floor(numberOr(topN, 3))));
+
+  function visit(depth, pieceScore) {
+    if (depth === ARTIFACT_SLOTS.length) {
+      examined += 1;
+      const setScore = optimizerSetScore(chosen, preferredSets, context);
+      const score = round2(pieceScore + setScore.score);
+      const signature = chosen.map(item => item.optimizerId).join('|');
+      if (best.some(build => build.signature === signature)) return;
+      if (best.length >= desiredTopN && score <= best[best.length - 1].score) return;
+      const pieces = chosen.map((item, index) => {
+        const slot = ARTIFACT_SLOTS[index];
+        const setInfo = setScore.breakdown.find(row => row.key === item.setKey);
+        const reasons = [item._mainStatLabel];
+        if (item._topSubstats.length) reasons.push('Useful rolls: ' + item._topSubstats.map(stat => stat.label + ' ' + stat.value).join(', '));
+        if (setInfo) reasons.push(setInfo.count + ' pieces of ' + setInfo.label + (setInfo.count >= 4 ? ' (4-piece bonus counted)' : ' (2-piece bonus counted)'));
+        const equippedCharacter = item.characterId ? allCharacters.find(candidate => candidate.id === item.characterId) : null;
+        if (item.location && item.characterId && item.characterId !== character.id) reasons.push('Currently assigned to ' + (equippedCharacter?.name || item.location) + '; reassigning is needed');
+        if (item.lock) reasons.push('Locked in imported inventory; suggestion only, no lock state changed');
+        return {
+          ...item,
+          slot,
+          slotLabel: slot.charAt(0).toUpperCase() + slot.slice(1),
+          score: item._optimizerScore,
+          mainStatMatches: item._mainStatMatches,
+          reasons,
+          substatBreakdown: item._topSubstats,
+        };
+      });
+      const build = {
+        signature,
+        characterId: character.id,
+        characterName: character.name,
+        teamName: context.team.length ? context.team.map(member => member.name).join(' · ') : '',
+        score,
+        pieceScore: round2(pieceScore),
+        setBonusScore: setScore.score,
+        setBreakdown: setScore.breakdown,
+        pieces,
+        preferredSets,
+        candidateCount: artifacts.length,
+        eligibleCount: available.length,
+        excludedForTeam,
+        combinationsSearched: combosAvailable,
+        profileAvailable: Boolean(profile),
+        scoringSummary: profile
+          ? 'Uses the curated main-stat options and artifact-set preferences for this character, weighted substats, rarity and level, plus an estimated fit for the chosen team.'
+          : 'No curated profile is available. Uses role/element-informed substat weights and known set-effect tags where possible; verify this result against a creator guide.',
+        caution: 'Relative build-fit score only. It does not simulate exact damage, enemy resistance, weapon passives, rotations, buffs or every reaction multiplier.',
+      };
+      best.push(build);
+      best.sort((a,b)=>b.score-a.score);
+      if (best.length > desiredTopN) best.pop();
+      return;
+    }
+    for (const artifact of slots[ARTIFACT_SLOTS[depth]]) {
+      chosen[depth] = artifact;
+      visit(depth + 1, pieceScore + artifact._optimizerScore);
+    }
+  }
+  visit(0, 0);
+
+  return {
+    characterId: character.id,
+    characterName: character.name,
+    teamName: context.team.length ? context.team.map(member => member.name).join(' · ') : '',
+    artifactCount: artifacts.length,
+    eligibleCount: available.length,
+    excludedForTeam,
+    combinationsSearched: examined,
+    candidateCountsBySlot: Object.fromEntries(ARTIFACT_SLOTS.map(slot => [slot, slots[slot].length])),
+    profileAvailable: Boolean(profile),
+    recommendations: best,
+    preferredSets,
+  };
+}
