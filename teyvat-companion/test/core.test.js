@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildProgressionPlan, enkaTtlSeconds, flattenEnkaSavedBuilds, getCharacterUpgradeMaterialRequirements, isValidGenshinUid, matchGoodCharacterKey, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, MIN_PLAYABLE_CHARACTER_COUNT, normalizeAkashaArtifacts, normalizeAkashaProfiles, normalizeTrackerBackup, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory, validateCharacterCatalogue } from '../src/core.js';
+import { analyzeTeamComposition, buildProgressionPlan, enkaTtlSeconds, flattenEnkaSavedBuilds, getCharacterUpgradeMaterialRequirements, isValidGenshinUid, matchGoodCharacterKey, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, MIN_PLAYABLE_CHARACTER_COUNT, normalizeAkashaArtifacts, normalizeAkashaProfiles, normalizeTrackerBackup, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory, validateCharacterCatalogue } from '../src/core.js';
 import { CHARACTER_BUILD_GUIDES } from '../src/builds.js';
 import { MATERIAL_STARTER, NAV_ITEMS, STARTER_CHARACTERS, STARTER_TEAMS } from '../src/data.js';
 
@@ -411,6 +411,7 @@ test('artifact optimizer returns a five-slot loadout and evaluates preferred 4-p
   assert.ok(best.setBreakdown.some(set => set.key === 'EmblemOfSeveredFate' && set.count >= 4 && set.preferred));
   assert.ok(best.setBonusScore > 0);
   assert.ok(best.pieces.every(piece => piece.reasons.length > 0));
+  assert.ok(best.pieces.every(piece => Number.isFinite(piece._mainStatScore) && Number.isFinite(piece._substatScore) && Number.isFinite(piece._rarityScore) && Number.isFinite(piece._levelScore)), 'each selected piece exposes transparent heuristic score components');
   assert.ok(result.combinationsSearched > 0);
 });
 
@@ -574,4 +575,48 @@ test('upgrade material planning safely returns no invented costs for missing gam
   assert.equal(unresolved[0].name, 'Material ID unknown-id');
   assert.equal(unresolved[0].resolved, false);
   assert.equal(unresolved[0].required, 3);
+});
+
+
+test('team composition analysis surfaces possible reactions and defensive-role gaps', () => {
+  const result = analyzeTeamComposition([
+    { id: 'hu-tao', name: 'Hu Tao', element: 'Pyro', role: 'Main DPS', owned: true },
+    { id: 'xingqiu', name: 'Xingqiu', element: 'Hydro', role: 'Sub DPS', owned: true },
+    { id: 'kazuha', name: 'Kaedehara Kazuha', element: 'Anemo', role: 'Support', owned: false },
+    { id: 'layla', name: 'Layla', element: 'Cryo', role: 'Shielder', owned: true },
+  ]);
+
+  assert.equal(result.memberCount, 4);
+  assert.equal(result.ownedCount, 3);
+  assert.ok(result.reactions.includes('Vaporize'));
+  assert.ok(result.reactions.includes('Swirl'));
+  assert.ok(result.checks.some(check => check.title.startsWith('Potential reactions:')));
+  assert.ok(!result.checks.some(check => check.title === 'Survivability not identified'));
+});
+
+test('team composition analysis handles incomplete teams and duplicate slots safely', () => {
+  const result = analyzeTeamComposition([
+    { id: 'mona', name: 'Mona', element: 'Hydro', role: 'Support' },
+    { id: 'mona', name: 'Mona', element: 'Hydro', role: 'Support' },
+  ]);
+
+  assert.equal(result.memberCount, 2);
+  assert.equal(result.uniqueMemberCount, 1);
+  assert.equal(result.duplicateCount, 1);
+  assert.ok(result.checks.some(check => check.level === 'warning' && check.title === 'Duplicate character slots'));
+  assert.ok(result.checks.some(check => check.title.startsWith('Party has')));
+  assert.ok(result.checks.some(check => check.title === 'Survivability not identified'));
+});
+
+test('team composition analysis never treats possible reactions as exact rotation advice', () => {
+  const result = analyzeTeamComposition([
+    { id: 'nahida', name: 'Nahida', element: 'Dendro', role: 'Support' },
+    { id: 'xingqiu', name: 'Xingqiu', element: 'Hydro', role: 'Sub DPS' },
+    { id: 'raiden', name: 'Raiden Shogun', element: 'Electro', role: 'Sub DPS' },
+    { id: 'thoma', name: 'Thoma', element: 'Pyro', role: 'Shielder' },
+  ]);
+  const reactionCheck = result.checks.find(check => check.title.startsWith('Potential reactions:'));
+  assert.ok(result.reactions.includes('Hyperbloom'));
+  assert.ok(result.reactions.includes('Burgeon'));
+  assert.match(reactionCheck.detail, /application, timing, ICDs/);
 });
