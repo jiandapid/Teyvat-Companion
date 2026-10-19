@@ -438,3 +438,14 @@
   .build-role-picker{padding:10px}
   .build-role-picker select{font-size:10px}
 }
+
+/* Missing alternate-role profiles are shown as explicit research gaps, not fake builds. */
+.build-role-unreviewed-note{
+  margin:0;
+  padding:10px 11px;
+  border-left:2px solid rgba(234,201,126,.45);
+  background:rgba(234,201,126,.035);
+  color:var(--subtle);
+  font-size:10px;
+  line-height:1.7;
+}
