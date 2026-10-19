@@ -4,7 +4,7 @@ import {
   ChevronRight, Compass, Download, ExternalLink, FileJson, Filter, Flame, Gem, Globe2, Info,
   Layers3, Link2, MapPinned, Menu, MoreHorizontal, PackageOpen, Pencil, PlayCircle, Plus,
   RefreshCw, Search, Settings2, ShieldCheck, Sparkles, Swords, Target, Trash2, Upload, Users, Clock,
-  X, Zap, LayoutDashboard, ChartNoAxesCombined, CalendarDays, Database, Bot,
+  X, Zap, LayoutDashboard, ChartNoAxesCombined, CalendarDays, Database, Bot, ChevronLeft,
 } from 'lucide-react';
 import { ELEMENTS, ELEMENT_META, MATERIAL_STARTER, NAV_ITEMS, STARTER_CHARACTERS, STARTER_TEAMS } from './data';
 import { CHARACTER_BUILD_ALIASES, CHARACTER_BUILD_GUIDES, CREATOR_CHANNELS, getCharacterBuildRoleOptions } from './builds';
@@ -13,6 +13,11 @@ import { buildProgressionPlan, enkaTtlSeconds, flattenEnkaSavedBuilds, isValidGe
 const ICONS = { LayoutDashboard, Users, Swords, PackageOpen, MapPinned, ChartNoAxesCombined, PlayCircle, Settings2, Bot, BookOpen, Layers3 };
 const STORAGE_KEY = 'teyvat-companion-v1';
 const REGIONS = ['Mondstadt', 'Liyue', 'Inazuma', 'Sumeru', 'Fontaine', 'Natlan', 'Nod-Krai', 'Other'];
+const NAV_GROUPS = [
+  { label: 'Explore Teyvat', ids: ['dashboard', 'characters', 'teams', 'map', 'guides'] },
+  { label: 'Build & Prepare', ids: ['builds', 'optimizer', 'materials', 'advisor'] },
+  { label: 'Your Account', ids: ['account', 'settings'] },
+];
 const TASK_STARTER = [
   { id:'task-weekly', title:'Choose one upgrade goal', detail:'Pick a character or weapon to focus on today', done:false, kind:'planning' },
   { id:'task-inventory', title:'Update missing materials', detail:'Enter the materials you already have', done:false, kind:'inventory' },
@@ -195,7 +200,11 @@ export default function App() {
   const [buildSearch, setBuildSearch] = useState('');
   const [buildElement, setBuildElement] = useState('All elements');
   const [mobileNav, setMobileNav] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try { return localStorage.getItem('teyvat-companion-sidebar-collapsed') === 'true'; } catch { return false; }
+  });
   const [globalSearch, setGlobalSearch] = useState('');
+  const globalSearchRef = useRef(null);
   useEffect(() => { setBuildVariantId(''); setBuildPlaystyleId(''); }, [buildCharacterId]);
   const [activeCharacter, setActiveCharacter] = useState(null);
   const [toast, setToast] = useState('');
@@ -252,6 +261,31 @@ export default function App() {
     } catch (e) { console.warn('Local save failed', e); }
   }, [persisted]);
   useEffect(() => { if (!toast) return; const timer = setTimeout(() => setToast(''), 2600); return () => clearTimeout(timer); }, [toast]);
+  useEffect(() => {
+    try { localStorage.setItem('teyvat-companion-sidebar-collapsed', String(sidebarCollapsed)); } catch { /* storage may be unavailable */ }
+  }, [sidebarCollapsed]);
+  useEffect(() => {
+    const onNavigationKey = event => {
+      const tagName = String(event.target?.tagName || '').toUpperCase();
+      const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(tagName) || event.target?.isContentEditable;
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        globalSearchRef.current?.focus();
+        globalSearchRef.current?.select();
+        return;
+      }
+      if (event.key === '/' && !typing && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        event.preventDefault();
+        globalSearchRef.current?.focus();
+      }
+      if (event.key === 'Escape') {
+        setMobileNav(false);
+        globalSearchRef.current?.blur();
+      }
+    };
+    window.addEventListener('keydown', onNavigationKey);
+    return () => window.removeEventListener('keydown', onNavigationKey);
+  }, []);
   useEffect(() => {
     const nextFetchAt = Number(persisted.enkaNextFetchAt || persisted.enkaSnapshot?.nextFetchAt || 0);
     const delay = nextFetchAt - Date.now();
@@ -961,20 +995,40 @@ export default function App() {
   }
 
   const sidebar = <>
-    <div className="brand-lockup"><div className="brand-mark"><Compass size={22}/><span className="brand-spark">✦</span></div><div className="brand-text"><strong>TEYVAT<span> COMPANION</span></strong><small>YOUR ADVENTURE, OPTIMIZED</small></div></div>
-    <div className="side-caption">WORKSPACE</div>
-    <nav className="primary-nav">{NAV_ITEMS.map(item=>{const Icon=ICONS[item.icon] || Compass;return <button key={item.id} className={`nav-item ${item.id==='builds'?'build-nav':''} ${(page===item.id || (item.id==='builds' && page==='character-build-detail'))?'active':''}`} onClick={()=>navigate(item.id)}><Icon size={18}/><span>{item.label}</span>{item.id==='builds'&&<i className="build-nav-badge">BUILD LAB</i>}{item.id==='materials' && materialStats.missing>0 && <i className="nav-count">{Math.min(99,materialStats.missing)}</i>}</button>;})}</nav>
+    <div className="brand-lockup">
+      <div className="brand-mark" aria-hidden="true"><Compass size={23}/><span className="brand-spark">✦</span></div>
+      <div className="brand-text"><strong>TEYVAT<span> COMPANION</span></strong><small>ADVENTURER'S HANDBOOK</small></div>
+      <button type="button" className="sidebar-toggle icon-button" onClick={()=>setSidebarCollapsed(value=>!value)} aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}><ChevronLeft size={16}/></button>
+    </div>
+    <nav className="sidebar-nav" aria-label="Main navigation">
+      {NAV_GROUPS.map(group=><section className="nav-group" key={group.label} aria-label={group.label}>
+        <div className="side-caption">{group.label}</div>
+        <div className="primary-nav">{group.ids.map(id=>{
+          const item=NAV_ITEMS.find(navItem=>navItem.id===id);
+          if(!item) return null;
+          const Icon=ICONS[item.icon] || Compass;
+          const active=page===item.id || (item.id==='builds' && page==='character-build-detail');
+          return <button type="button" key={item.id} className={`nav-item ${active?'active':''}`} onClick={()=>navigate(item.id)} aria-current={active?'page':undefined} title={sidebarCollapsed?item.label:undefined}>
+            <Icon size={18}/><span className="nav-label">{item.label}</span>
+            {item.id==='materials' && materialStats.missing>0 && <i className="nav-count">{Math.min(99,materialStats.missing)}</i>}
+          </button>;
+        })}</div>
+      </section>)}
+    </nav>
     <div className="sidebar-spacer"/>
-    <div className="side-quest-card"><div className="quest-top"><span className="quest-gem"><Gem size={17}/></span><span className="eyebrow">YOUR NEXT MILESTONE</span></div><strong>{persisted.goals.length ? persisted.goals[0].title : 'Set your next goal'}</strong><p>{persisted.goals.length ? `${persisted.goals.filter(g=>g.done).length} of ${persisted.goals.length} goals complete` : 'Turn your roster into a clear upgrade plan.'}</p><button className="text-action" onClick={()=>navigate('account')}>View progression <ArrowRight size={14}/></button></div>
-    <div className="sidebar-bottom"><div className="local-badge"><span className="live-dot"/> <span>Local tracker active</span></div><button className="user-mini" onClick={()=>navigate('settings')}><div className="user-avatar">{(persisted.account.nickname || 'T').slice(0,1).toUpperCase()}</div><div><strong>{persisted.account.nickname || 'Traveler'}</strong><small>Personal workspace</small></div><MoreHorizontal size={18}/></button></div>
+    <div className="side-quest-card"><div className="quest-top"><span className="quest-gem"><Gem size={16}/></span><span className="eyebrow">ADVENTURE OBJECTIVE</span></div><strong>{persisted.goals.find(goal=>!goal.done)?.title || (persisted.goals.length ? 'All recorded goals complete' : 'Choose your next goal')}</strong><p>{persisted.goals.length ? `${persisted.goals.filter(g=>g.done).length} of ${persisted.goals.length} goals complete` : 'Track a character, plan materials, and work through one goal at a time.'}</p><button className="text-action" onClick={()=>navigate('account')}>Open journal <ArrowRight size={14}/></button></div>
+    <div className="sidebar-bottom"><div className="local-badge"><span className="live-dot"/> <span>Saved on this device</span></div><button className="user-mini" onClick={()=>navigate('settings')} title="Open settings"><div className="user-avatar">{(persisted.account.nickname || 'T').slice(0,1).toUpperCase()}</div><div><strong>{persisted.account.nickname || 'Traveler'}</strong><small>Local adventure record</small></div><MoreHorizontal size={18}/></button></div>
   </>;
 
   const dashboardPage = <div className="page-content">
     <SectionHeader eyebrow={`${new Date().toLocaleDateString('en-US',{weekday:'long'}).toUpperCase()} · ADVENTURE OVERVIEW`} title={`Welcome back${persisted.account.nickname ? `, ${persisted.account.nickname}` : ', Traveler'}.`} subtitle="A little progress each day goes a long way across Teyvat." actions={<><button className="button primary" onClick={()=>navigate('builds')}><BookOpen size={15}/> Character Builds</button><button className="button secondary" onClick={()=>navigate('materials')}><Plus size={16}/> Plan an upgrade</button></>}/>
     <div className="hero-banner">
-      <div className="hero-text"><div className="hero-kicker"><Sparkles size={14}/> YOUR ADVENTURE AT A GLANCE</div><h2>Make every resin<br/><em>count.</em></h2><p>See your next best step, keep materials organized, and build a roster that works for you.</p><div className="hero-actions"><button className="button gold" onClick={()=>navigate('account')}>Review account <ArrowRight size={15}/></button><button className="button glass" onClick={()=>navigate('characters')}>Explore characters</button></div></div>
-      <div className="hero-art"><div className="orb orb-one"/><div className="orb orb-two"/><div className="hero-ring ring-one"/><div className="hero-ring ring-two"/><div className="hero-symbol">✦</div><div className="hero-landscape"><span/><span/><span/><span/></div><div className="hero-label label-top">ADVENTURE RANK <b>{persisted.account.ar}</b></div><div className="hero-label label-bottom">WORLD LEVEL <b>{persisted.account.worldLevel}</b></div></div>
-      <div className="hero-corner">✧</div>
+      <div className="hero-text"><div className="hero-kicker"><Compass size={14}/> FIELD NOTES FROM TEYVAT</div><h2>Your next adventure<br/><em>starts here.</em></h2><p>Keep your roster, builds, materials and goals together in one traveler's journal.</p><div className="hero-actions"><button className="button gold" onClick={()=>navigate('account')}>Open adventure record <ArrowRight size={15}/></button><button className="button glass" onClick={()=>navigate('characters')}>Browse characters</button></div><div className="hero-world-stats"><span><small>ADVENTURE RANK</small><strong>{persisted.account.ar}</strong></span><i/><span><small>WORLD LEVEL</small><strong>{persisted.account.worldLevel}</strong></span><i/><span><small>ROSTER</small><strong>{ownedCharacters.length}</strong></span></div></div>
+      <div className="hero-art" aria-label="Featured Genshin Impact character artwork">
+        <div className="hero-art-ornament" aria-hidden="true">✧</div>
+        {(ownedCharacters[0] || characters[0]) && <img className="hero-character-illustration" src={(() => {const c=ownedCharacters[0] || characters[0];const route=String(c.artworkId || c.apiSlug || c.id || '').trim();return c.dripMarketingImage || (c.imageType==='gacha-splash' ? c.image : '') || (route ? `https://genshin.jmp.blue/characters/${encodeURIComponent(route)}/gacha-splash` : '') || c.image || c.iconImage || '';})()} alt={(ownedCharacters[0] || characters[0]).name + ' game artwork'} loading="lazy" onError={event=>{const c=ownedCharacters[0] || characters[0];const fallback=c?.image || c?.iconImage || '';if(fallback && event.currentTarget.src!==fallback) event.currentTarget.src=fallback;else event.currentTarget.style.visibility='hidden';}}/>}
+        <div className="hero-art-caption"><span className="hero-art-caption-mark">✦</span><span><small>YOUR CURRENT ROSTER</small><strong>{(ownedCharacters[0] || characters[0])?.name || 'The Traveler'}</strong></span><ArrowUpRight size={16}/></div>
+      </div>
     </div>
     <div className="stats-grid">
       <StatCard icon={Users} label="Characters owned" value={`${ownedCharacters.length} / ${characters.length}`} note="Tracked in your roster" color="violet"/>
@@ -1440,11 +1494,15 @@ export default function App() {
   </div>;
 
   const pageContent = {'dashboard':dashboardPage,'characters':charactersPage,'builds':characterBuildsPage,'character-build-detail':characterBuildDetailPage,'optimizer':artifactOptimizerPage,'teams':teamsPage,'materials':materialsPage,'map':mapPage,'account':accountPage,'advisor':advisorPage,'guides':guidesPage,'settings':settingsPage}[page] || dashboardPage;
+  const breadcrumbPage = page === 'character-build-detail' ? 'builds' : page;
+  const breadcrumbItem = NAV_ITEMS.find(item => item.id === breadcrumbPage);
+  const breadcrumbGroup = NAV_GROUPS.find(group => group.ids.includes(breadcrumbPage))?.label || 'Character Builds';
+  const breadcrumbTitle = page === 'character-build-detail' ? (buildCharacter ? buildCharacter.name + ' Build' : 'Character Build') : (breadcrumbItem?.label || 'Dashboard');
 
-  return <div className="app-shell">
-    <aside className={`sidebar ${mobileNav?'mobile-open':''}`}>{sidebar}</aside>
+  return <div className={`app-shell ${sidebarCollapsed?'sidebar-is-collapsed':''}`}>
+    <aside className={`sidebar ${mobileNav?'mobile-open':''} ${sidebarCollapsed?'is-collapsed':''}`}>{sidebar}</aside>
     {mobileNav&&<button className="mobile-backdrop" aria-label="Close menu" onClick={()=>setMobileNav(false)}/>}
-    <main className="main-area"><header className="topbar"><div className="topbar-left"><button className="mobile-menu icon-button" onClick={()=>setMobileNav(true)} aria-label="Open menu"><Menu size={20}/></button><div className="breadcrumb"><span>TEYVAT</span><ChevronRight size={14}/><strong>{page==='character-build-detail' ? (buildCharacter ? buildCharacter.name + ' Build' : 'Character Build') : (NAV_ITEMS.find(n=>n.id===page)?.label || 'Dashboard')}</strong></div></div><div className="topbar-actions"><div className="global-search"><Search size={16}/><input value={globalSearch} onChange={e=>{setGlobalSearch(e.target.value);if(e.target.value) setPage('characters');}} placeholder="Find characters…"/><kbd>⌘ K</kbd></div><button className="button secondary topbar-build-shortcut" onClick={()=>navigate('builds')} title="Open Character Builds"><BookOpen size={15}/><span>Builds</span></button><div className="topbar-divider"/><button className="icon-button quick-settings" title="Settings" onClick={()=>navigate('settings')}><Settings2 size={18}/></button><button className="topbar-profile" title="Account tracker" onClick={()=>navigate('account')}><span className="user-avatar">{(persisted.account.nickname || 'T').slice(0,1).toUpperCase()}</span><span className="rank-chip">AR {persisted.account.ar}</span><ChevronDown size={14}/></button></div></header><div key={page} className="page-animate">{pageContent}</div><footer className="global-footer"><span>✦ Teyvat Companion</span><span>Unofficial fan-made companion · Not affiliated with HoYoverse</span><span>Made for Travelers <span className="footer-heart">♡</span></span></footer></main>
+    <main className="main-area"><header className="topbar"><div className="topbar-left"><button className="mobile-menu icon-button" onClick={()=>setMobileNav(true)} aria-label="Open navigation"><Menu size={20}/></button><div className="breadcrumb"><span>TEYVAT</span><ChevronRight size={13}/><span>{breadcrumbGroup}</span><ChevronRight size={13}/><strong>{breadcrumbTitle}</strong></div></div><div className="topbar-actions"><div className="global-search"><Search size={16}/><input ref={globalSearchRef} value={globalSearch} onChange={e=>{setGlobalSearch(e.target.value);if(e.target.value) setPage('characters');}} aria-label="Search characters" placeholder="Find characters…"/><kbd>⌘ K</kbd></div><button className="button secondary topbar-build-shortcut" onClick={()=>navigate('builds')} title="Open Character Builds"><BookOpen size={15}/><span>Builds</span></button><div className="topbar-divider"/><button className="icon-button quick-settings" title="Settings" onClick={()=>navigate('settings')}><Settings2 size={18}/></button><button className="topbar-profile" title="Account tracker" onClick={()=>navigate('account')}><span className="user-avatar">{(persisted.account.nickname || 'T').slice(0,1).toUpperCase()}</span><span className="rank-chip">AR {persisted.account.ar}</span><ChevronDown size={14}/></button></div></header><div key={page} className="page-animate">{pageContent}</div><footer className="global-footer"><span>✦ Teyvat Companion</span><span>Unofficial fan-made companion · Not affiliated with HoYoverse</span><span>Made for Travelers <span className="footer-heart">♡</span></span></footer></main>
     {activeCharacter && <CharacterModal character={characters.find(c=>c.id===activeCharacter.id)||activeCharacter} onClose={()=>setActiveCharacter(null)} onUpdate={updateCharacter} onGoal={addGoalForCharacter} onMaterials={addCharacterMaterialsToPlan} onToast={setToast} detailsLoading={characterDataLoadingId===activeCharacter.id} detailsError={characterDataError} materialLookup={gameMaterialLookupRef.current} onRetryDetails={openCharacter} onOpenBuild={openBuildPage}/>}
     {showImport && <div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&setShowImport(false)}><div className="import-modal panel"><button className="modal-close icon-button" onClick={()=>setShowImport(false)}><X size={18}/></button><div className="modal-icon"><FileJson size={21}/></div><div className="eyebrow">RESTORE WORKSPACE</div><h2>Import a backup</h2><p>Paste the contents of a Teyvat Companion JSON backup, or select a file below.</p><button className="button secondary full-width" onClick={()=>uploadRef.current?.click()}><Upload size={15}/> Choose JSON backup file</button><input ref={uploadRef} className="hidden-input" type="file" accept="application/json,.json" onChange={async e=>{const file=e.target.files?.[0];if(!file)return;try{importTrackerObject(JSON.parse(await file.text()));}catch{setToast('Could not read that JSON backup.');}e.target.value='';}}/><div className="import-divider"><span>OR PASTE JSON</span></div><form onSubmit={importFromText}><textarea value={importText} onChange={e=>setImportText(e.target.value)} rows="7" placeholder={'{\n  "format": "teyvat-companion-backup-v1", ...\n}'} required/><button className="button primary full-width" type="submit"><Upload size={15}/> Import tracker data</button></form><p className="modal-footnote"><Info size={13}/> Import replaces the current tracker state. Export your current data first if needed.</p></div></div>}
     {toast&&<div className="toast"><CheckCircle2 size={16}/>{toast}</div>}
