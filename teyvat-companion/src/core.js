@@ -235,7 +235,7 @@ export function normalizeAkashaArtifacts(payload) {
       setName: String(row.setName ?? row.set_name ?? 'Unknown set'),
       rarity: safeAkashaNumber(row.stars ?? row.rarity),
       slot: AKASHA_SLOT_LABELS[String(row.equipType ?? row.equip_type ?? '')] || String(row.equipType ?? row.equip_type ?? 'Artifact slot'),
-      level: rawLevel == null ? null : Math.max(0, Math.min(20, rawLevel > 20 ? rawLevel - 1 : rawLevel)),
+      level: rawLevel == null ? null : Math.max(0, Math.min(20, rawLevel - 1)),
       mainStat: { key: mainKey, value: mainValue },
       substats,
       critValue: explicitCv ?? computedCv,
