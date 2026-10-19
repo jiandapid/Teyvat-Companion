@@ -68,7 +68,7 @@ test('alternate builds have distinct IDs, full build data, and a direct source n
 test('the build selector catalogue has the intended evidence-backed variants', () => {
   assert.deepEqual(
     CHARACTER_BUILD_GUIDES['kuki-shinobu'].alternateBuilds.map(build => build.id).sort(),
-    ['aggravate', 'pure-healer']
+    ['aggravate', 'hyperbloom-sub-dps', 'pure-healer']
   );
   assert.ok(CHARACTER_BUILD_GUIDES.nahida.alternateBuilds.some(build => build.id === 'on-field-driver'));
   assert.ok(CHARACTER_BUILD_GUIDES.kazuha.alternateBuilds.some(build => build.id === 'quickswap-dps'));
