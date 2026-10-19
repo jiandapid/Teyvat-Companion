@@ -1957,12 +1957,19 @@ export function getCharacterBuildRoleOptions(profile) {
 
   for (const role of BUILD_ROLE_CATEGORIES) {
     if (coveredRoles.has(role)) continue;
+    const sourceRole = profile?.buildCategory || 'not yet reviewed';
+    const gapReason = role === 'Main DPS'
+      ? `A separate on-field carry build has not been source-verified in this app. The current primary profile is ${sourceRole}; its stats and talent priorities may not fit sustained on-field damage.`
+      : role === 'Sub DPS'
+        ? `A distinct off-field damage/application build has not been source-verified in this app. The primary profile is ${sourceRole}; do not assume its stats and rotation fit an off-field role.`
+        : `A separate team-support build has not been source-verified in this app. The primary profile is ${sourceRole}; it may not cover the buffs, healing, shielding, or utility this team needs.`;
     options.push({
       id: `unreviewed-${BUILD_ROLE_IDS[role]}`,
       buildCategory: role,
-      role: `No source-backed ${role} build curated yet`,
-      label: `${role} — not reviewed / not recommended yet`,
+      role: `No separate sourced ${role} build curated yet`,
+      label: `${role} — no separate sourced build yet`,
       status: 'unreviewed',
+      note: `${gapReason} This is an evidence gap, not proof the playstyle is impossible. The app leaves this role unfilled rather than copying stats from a different role.`,
       profile: null,
     });
   }
