@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { ELEMENTS, ELEMENT_META, MATERIAL_STARTER, NAV_ITEMS, STARTER_CHARACTERS, STARTER_TEAMS } from './data';
 import { CHARACTER_BUILD_ALIASES, CHARACTER_BUILD_GUIDES, CREATOR_CHANNELS, getCharacterBuildRoleOptions } from './builds';
-import { buildProgressionPlan, enkaTtlSeconds, flattenEnkaSavedBuilds, isValidGenshinUid, matchGoodCharacterKey, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, normalizeAkashaArtifacts, normalizeAkashaProfiles, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory } from './core';
+import { buildProgressionPlan, enkaTtlSeconds, flattenEnkaSavedBuilds, isValidGenshinUid, matchGoodCharacterKey, normalizeTrackerBackup, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, normalizeAkashaArtifacts, normalizeAkashaProfiles, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory } from './core';
 
 const ICONS = { LayoutDashboard, Users, Swords, PackageOpen, MapPinned, ChartNoAxesCombined, PlayCircle, Settings2, Bot, BookOpen, Layers3 };
 const STORAGE_KEY = 'teyvat-companion-v1';
@@ -193,6 +193,7 @@ function EmptyState({ icon: Icon = Sparkles, title, description, action }) {
 
 export default function App() {
   const [persisted, setPersisted] = useState(loadInitial);
+  const [storageStatus, setStorageStatus] = useState('saving');
   const [page, setPage] = useState('dashboard');
   const [buildCharacterId, setBuildCharacterId] = useState('');
   const [buildVariantId, setBuildVariantId] = useState('');
@@ -259,7 +260,11 @@ export default function App() {
       const standardIds = new Set(STARTER_CHARACTERS.map(c => c.id));
       const extraCharacters = persisted.characters.filter(c => !standardIds.has(c.id));
       localStorage.setItem(STORAGE_KEY, JSON.stringify({...persisted, characters: characterMap, extraCharacters, lastUpdated: new Date().toISOString()}));
-    } catch (e) { console.warn('Local save failed', e); }
+      setStorageStatus('saved');
+    } catch (e) {
+      console.warn('Local save failed', e);
+      setStorageStatus('error');
+    }
   }, [persisted]);
   useEffect(() => { if (!toast) return; const timer = setTimeout(() => setToast(''), 2600); return () => clearTimeout(timer); }, [toast]);
   useEffect(() => {
@@ -419,6 +424,7 @@ export default function App() {
     e.preventDefault();
     const ids = [newTeam.slot1,newTeam.slot2,newTeam.slot3,newTeam.slot4].filter(Boolean);
     if (!newTeam.name.trim() || ids.length < 2) { setToast('Add a team name and at least two characters'); return; }
+    if (new Set(ids).size !== ids.length) { setToast('Choose a different character for each team slot'); return; }
     const team = {id:`team-${Date.now()}`,name:newTeam.name.trim(),characters:ids,description:'Custom team saved from your current roster.'};
     saveState(prev => ({...prev, teams:[team,...prev.teams]})); setNewTeam({name:'My team',slot1:'',slot2:'',slot3:'',slot4:''}); setToast('Team saved');
   };
@@ -1032,7 +1038,7 @@ export default function App() {
     </nav>
     <div className="sidebar-spacer"/>
     <div className="side-quest-card"><div className="quest-top"><span className="quest-gem"><Gem size={16}/></span><span className="eyebrow">ADVENTURE OBJECTIVE</span></div><strong>{persisted.goals.find(goal=>!goal.done)?.title || (persisted.goals.length ? 'All recorded goals complete' : 'Choose your next goal')}</strong><p>{persisted.goals.length ? `${persisted.goals.filter(g=>g.done).length} of ${persisted.goals.length} goals complete` : 'Track a character, plan materials, and work through one goal at a time.'}</p><button className="text-action" onClick={()=>navigate('account')}>Open journal <ArrowRight size={14}/></button></div>
-    <div className="sidebar-bottom"><div className="local-badge"><span className="live-dot"/> <span>Saved on this device</span></div><button className="user-mini" onClick={()=>navigate('settings')} title="Open settings"><div className="user-avatar">{(persisted.account.nickname || 'T').slice(0,1).toUpperCase()}</div><div><strong>{persisted.account.nickname || 'Traveler'}</strong><small>Local adventure record</small></div><MoreHorizontal size={18}/></button></div>
+    <div className="sidebar-bottom"><div className="local-badge" role="status" aria-live="polite">{storageStatus === 'error' ? <Info size={12}/> : <span className="live-dot"/>}<span>{storageStatus === 'error' ? 'Save failed — export a backup' : storageStatus === 'saving' ? 'Saving locally…' : 'Saved on this device'}</span></div><button className="user-mini" onClick={()=>navigate('settings')} title="Open settings"><div className="user-avatar">{(persisted.account.nickname || 'T').slice(0,1).toUpperCase()}</div><div><strong>{persisted.account.nickname || 'Traveler'}</strong><small>Local adventure record</small></div><MoreHorizontal size={18}/></button></div>
   </>;
 
   const dashboardPage = <div className="page-content">
@@ -1429,8 +1435,8 @@ export default function App() {
   const settingsPage = <div className="page-content">
     <SectionHeader eyebrow="PREFERENCES & DATA SOURCES" title="Settings" subtitle="Manage your local data, public data connections, and tracker setup."/>
     <div className="settings-grid"><div className="panel settings-card"><div className="settings-icon gold"><Database size={20}/></div><div className="eyebrow">CHARACTER CATALOGUE</div><h3>Refresh public game data</h3><p>Try loading a broader static character catalogue from the community genshin.dev API. Character data availability and image formats can vary; imported builds and materials are not treated as verified.</p>{dataNotice&&<div className={`notice compact-notice ${dataNotice.startsWith('Could not')?'warning':'success'}`}><Info size={14}/><span>{dataNotice}</span></div>}<button className="button primary" onClick={loadPublicCharacterData} disabled={isLoadingData}>{isLoadingData?<><RefreshCw className="spin" size={15}/> Loading catalogue…</>:<><RefreshCw size={15}/> Refresh characters</>}</button><a className="source-link" href="https://github.com/genshindev/api" target="_blank" rel="noreferrer">Dataset docs & license <ExternalLink size={12}/></a></div><div className="panel settings-card"><div className="settings-icon blue"><Link2 size={20}/></div><div className="eyebrow">PUBLIC ACCOUNT DATA</div><h3>Enka.Network showcase</h3><p>Use your UID to sync the public display list, detailed showcase gear when enabled, and optional saved builds from a verified public Enka profile. It remains a public-data integration, not a HoYoverse login. Respect provider refresh limits.</p><button className="button secondary" onClick={()=>navigate('account')}>Manage account connection <ArrowRight size={14}/></button><a className="source-link" href="https://github.com/EnkaNetwork/API-docs" target="_blank" rel="noreferrer">API usage rules <ExternalLink size={12}/></a></div><div className="panel settings-card"><div className="settings-icon green"><FileJson size={20}/></div><div className="eyebrow">BACKUP & PORTABILITY</div><h3>Your data belongs to you</h3><p>Export everything to a JSON backup file and import it on another browser/device. This version stores tracker data in this browser's local storage; no cloud account is configured.</p><div className="settings-button-row"><button className="button primary" onClick={exportTracker}><Download size={15}/> Export backup</button><button className="button secondary" onClick={()=>setShowImport(true)}><Upload size={15}/> Import backup</button></div></div><div className="panel settings-card"><div className="settings-icon violet"><ShieldCheck size={20}/></div><div className="eyebrow">PRIVACY & LIMITATIONS</div><h3>Safe by design</h3><p>No HoYoverse password or login token is requested. Account showcase sync is public-data only. Live material coordinates, exact upgrade calculator data, cloud sync, and authenticated accounts are not configured in this build.</p><ul className="settings-bullets"><li><Check size={14}/> Local persistent tracker</li><li><Check size={14}/> Editable quantities and goals</li><li><Check size={14}/> JSON export/import</li><li><Info size={14}/> No cloud authentication yet</li></ul></div></div>
-    <div className="panel data-health-panel"><div className="panel-head"><div><div className="eyebrow">WORKSPACE STATUS</div><h3>Data health</h3></div><span className="pill success"><span className="live-dot"/> Local storage available</span></div><div className="data-health-grid"><div><span>Tracked characters</span><strong>{characters.length}</strong></div><div><span>Materials</span><strong>{persisted.materials.length}</strong></div><div><span>Saved teams</span><strong>{persisted.teams.length}</strong></div><div><span>Personal map markers</span><strong>{persisted.mapMarkers.length}</strong></div><div><span>Goals</span><strong>{persisted.goals.length}</strong></div><div><span>Enka snapshot</span><strong>{persisted.enkaSnapshot?'Available':'Not connected'}</strong></div></div></div>
-    <div className="reset-zone"><div><strong>Reset local workspace</strong><p>Remove all custom progress and return to the starter example. Export a backup first if you want to keep your data.</p></div><button className="button danger-outline" onClick={()=>{if(window.confirm('Reset your Teyvat Companion data in this browser? Export a backup first if you want to keep it.')){localStorage.removeItem(STORAGE_KEY);setPersisted({characters:STARTER_CHARACTERS.map(c=>({...c})),materials:MATERIAL_STARTER.map(m=>({...m})),teams:STARTER_TEAMS.map(t=>({...t})),goals:[],mapMarkers:[],account:{ar:58,worldLevel:8,abyss:'Not set',primogems:0,wishes:0,pity:0,uid:'',nickname:'',resinAvailable:0},tasks:TASK_STARTER.map(t=>({...t})),enkaSnapshot:null,enkaNextFetchAt:0,goodInventory:null,akashaSnapshot:null,lastUpdated:null});setToast('Workspace reset');}}}><Trash2 size={14}/> Reset workspace</button></div>
+    <div className="panel data-health-panel"><div className="panel-head"><div><div className="eyebrow">WORKSPACE STATUS</div><h3>Data health</h3></div><span className={`pill ${storageStatus === 'error' ? 'warning' : storageStatus === 'saved' ? 'success' : 'muted'}`}>{storageStatus === 'error' ? <Info size={13}/> : <span className="live-dot"/>}{storageStatus === 'error' ? 'Save failed' : storageStatus === 'saving' ? 'Saving changes…' : 'Saved locally'}</span></div><div className="data-health-grid"><div><span>Tracked characters</span><strong>{characters.length}</strong></div><div><span>Materials</span><strong>{persisted.materials.length}</strong></div><div><span>Saved teams</span><strong>{persisted.teams.length}</strong></div><div><span>Personal map markers</span><strong>{persisted.mapMarkers.length}</strong></div><div><span>Goals</span><strong>{persisted.goals.length}</strong></div><div><span>Enka snapshot</span><strong>{persisted.enkaSnapshot?'Available':'Not connected'}</strong></div></div></div>
+    <div className="reset-zone"><div><strong>Reset local workspace</strong><p>Remove all custom progress and return to the starter example. Export a backup first if you want to keep your data.</p></div><button className="button danger-outline" onClick={()=>{if(window.confirm('Reset your Teyvat Companion data in this browser? Export a backup first if you want to keep it.')){localStorage.removeItem(STORAGE_KEY);setPersisted(createDefaultState());setToast('Workspace reset');}}}><Trash2 size={14}/> Reset workspace</button></div>
   </div>;
 
 
