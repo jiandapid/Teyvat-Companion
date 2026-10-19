@@ -1379,7 +1379,7 @@ export default function App() {
     } else if (/map|location|route|specialty|ore|chest|collect/.test(question)) {
       answer = 'Use Interactive Map for your personal region/category markers and collection notes, then open the official HoYoLAB map for geographic locations. Your current personal markers are planning notes, not verified in-game coordinates.';
     } else {
-      answer = `I can currently summarize the data saved in this browser: ${owned.length} owned characters, ${openGoals.length} active goals, and ${missing.length} material rows with a recorded shortage. Try asking what to farm, which goal to do next, how to approach teams, or how account syncing works. This is a local rules-based preview, not a connected generative AI model yet.`;
+      answer = `I can currently summarize the data saved in this browser: ${owned.length} owned characters, ${openGoals.length} active goals, and ${missing.length} material rows with a recorded shortage. Try asking what to farm, which goal to do next, how to approach teams, or how account syncing works. This is a local rules-based guide using the information saved in your tracker.`;
     }
     setAdvisorAnswer(answer);
   };
@@ -1388,12 +1388,12 @@ export default function App() {
     <SectionHeader eyebrow="STRATEGY DESK" title="Teyvat Advisor" subtitle="Turn the roster and tracker information you have saved into a clearer next step." actions={<button className="button secondary" onClick={()=>navigate('materials')}><PackageOpen size={15}/> Plan materials</button>}/>
     <div className="advisor-hero">
       <div className="advisor-hero-copy">
-        <div className="hero-kicker"><Sparkles size={14}/> YOUR PERSONAL PLANNING DESK</div>
+        <div className="hero-kicker"><Compass size={14}/> YOUR PERSONAL FIELD GUIDE</div>
         <h2>Make your next upgrade<br/><em>count.</em></h2>
         <p>Get a practical starting point from your saved roster, goals, and material counts. The assistant is deliberately transparent about what it knows and what still needs verified game data.</p>
-        <span className="advisor-status"><span className="live-dot"/> Local planner active <span className="advisor-status-separator">·</span> Generative AI not connected yet</span>
+        <span className="advisor-status"><span className="live-dot"/> Local planner active <span className="advisor-status-separator">·</span> Uses your saved tracker data</span>
       </div>
-      <div className="advisor-hero-emblem"><Bot size={58}/><span className="advisor-emblem-orbit orbit-a"/><span className="advisor-emblem-orbit orbit-b"/><span className="advisor-emblem-star">✦</span></div>
+      <div className="advisor-hero-emblem"><Compass size={58}/><span className="advisor-emblem-orbit orbit-a"/><span className="advisor-emblem-orbit orbit-b"/><span className="advisor-emblem-star">✦</span></div>
     </div>
     <div className="advisor-stats-grid">
       <div className="advisor-stat-card"><span className="advisor-stat-icon gold"><Users size={17}/></span><div><small>Owned roster</small><strong>{ownedCharacters.length}</strong><span>characters tracked</span></div></div>
@@ -1403,8 +1403,8 @@ export default function App() {
     </div>
     <div className="advisor-workspace">
       <section className="panel advisor-chat-panel">
-        <div className="panel-heading"><div><div className="eyebrow">ASK YOUR ADVISOR</div><h3>What should I work on?</h3></div><span className="pill muted">Local preview</span></div>
-        <p className="helper-note"><Info size={13}/> Answers are based on your browser's saved tracker data. This is not yet a connected generative AI model, and it does not invent character costs or claim unverified builds are optimal.</p>
+        <div className="panel-heading"><div><div className="eyebrow">FIELD GUIDE</div><h3>What should I focus on?</h3></div><span className="pill muted">Saved-data guide</span></div>
+        <p className="helper-note"><Info size={13}/> Guidance uses your locally saved roster, goals, and material counts. It is a rules-based planner, not a live combat simulator, and it flags information that still needs verification.</p>
         <div className="advisor-prompt-chips">
           <button type="button" onClick={()=>setAdvisorQuestion('What should I farm next?')}>What should I farm?</button>
           <button type="button" onClick={()=>setAdvisorQuestion('What should I upgrade next?')}>What should I upgrade?</button>
@@ -1415,7 +1415,7 @@ export default function App() {
           <label className="field-label">Ask about your tracked account<textarea rows="3" value={advisorQuestion} onChange={e=>setAdvisorQuestion(e.target.value)} placeholder="e.g. What should I focus on before building another character?"/></label>
           <button className="button primary" type="submit"><Sparkles size={15}/> Get recommendation</button>
         </form>
-        {advisorAnswer && <div className="advisor-answer" role="status"><span className="advisor-answer-icon"><Bot size={17}/></span><p>{advisorAnswer}</p></div>}
+        {advisorAnswer && <div className="advisor-answer" role="status"><span className="advisor-answer-icon"><Compass size={17}/></span><p>{advisorAnswer}</p></div>}
       </section>
       <section className="panel advisor-next-panel">
         <div className="panel-heading"><div><div className="eyebrow">SUGGESTED NEXT STEPS</div><h3>Clear your biggest blockers</h3></div><Target size={18} className="panel-heading-icon"/></div>

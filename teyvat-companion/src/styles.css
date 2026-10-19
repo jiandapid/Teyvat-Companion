@@ -1557,3 +1557,27 @@ input:focus, select:focus, textarea:focus { border-color: #b59a5e; }
   .global-search-wrap { width: min(44vw, 168px); flex-basis: min(44vw, 168px); }
   .global-search-menu { right: -58px; }
 }
+
+
+/* Mobile drawer must expand fully even if compact navigation was saved on desktop. */
+@media (max-width: 760px) {
+  .app-shell.sidebar-is-collapsed .sidebar.mobile-open { transform: translateX(0); }
+  .app-shell.sidebar-is-collapsed .brand-text { display: flex; }
+  .app-shell.sidebar-is-collapsed .side-caption { display: block; }
+  .app-shell.sidebar-is-collapsed .nav-label { display: inline; }
+  .app-shell.sidebar-is-collapsed .side-quest-card { display: block; }
+  .app-shell.sidebar-is-collapsed .local-badge { display: flex; }
+  .app-shell.sidebar-is-collapsed .user-mini>div:nth-child(2) { display: flex; }
+  .app-shell.sidebar-is-collapsed .user-mini>svg { display: block; }
+  .app-shell.sidebar-is-collapsed .nav-item { justify-content: flex-start; }
+  .app-shell.sidebar-is-collapsed .sidebar-toggle svg { transform: none; }
+}
+.advisor-emblem-orbit, .advisor-emblem-star { display: none; }
+.advisor-hero-emblem {
+  width: 116px;
+  height: 116px;
+  background: rgba(21, 45, 37, .16);
+  border: 1px solid rgba(225, 207, 160, .48);
+  box-shadow: none;
+}
+.advisor-hero-emblem>svg { filter: none; }
