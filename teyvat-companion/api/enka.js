@@ -10,6 +10,47 @@ function json(res, status, body, headers = {}) {
   res.end(JSON.stringify(body));
 }
 
+function publicProfileSegment(value, maxLength = 96) {
+  const segment = String(value ?? '').trim();
+  return segment.length > 0 && segment.length <= maxLength && /^[a-zA-Z0-9_-]+$/.test(segment) ? segment : '';
+}
+
+/**
+ * Fetch only a verified/public Enka profile's saved builds. This is an optional
+ * enrichment: its failure must never turn a valid UID/showcase sync into a failure.
+ */
+async function fetchPublicSavedBuilds(owner) {
+  const username = publicProfileSegment(owner?.username, 64);
+  const hash = publicProfileSegment(owner?.hash, 96);
+  if (!username || !hash) {
+    return { status: owner ? 'invalid-public-profile-metadata' : 'no-public-Enka-profile', builds: null };
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 6500);
+  try {
+    const url = 'https://enka.network/api/profile/' + encodeURIComponent(username)
+      + '/hoyos/' + encodeURIComponent(hash) + '/builds/';
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { Accept: 'application/json', 'User-Agent': USER_AGENT },
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      return { status: response.status === 404 ? 'no-public-saved-builds' : 'temporarily-unavailable', builds: null };
+    }
+    const builds = await response.json();
+    if (!builds || typeof builds !== 'object' || Array.isArray(builds)) {
+      return { status: 'invalid-saved-build-response', builds: null };
+    }
+    return { status: 'loaded', builds };
+  } catch (error) {
+    return { status: error?.name === 'AbortError' ? 'timeout' : 'temporarily-unavailable', builds: null };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 function errorMessage(status) {
   if (status === 400) return 'Enka rejected this UID. Check the digits and the game server.';
   if (status === 404) return 'No public profile was found. Confirm the UID and enable Character Details in the in-game showcase.';
@@ -59,9 +100,16 @@ export default async function handler(req, res) {
 
     const requestedTtl = Number(payload.ttl);
     const ttl = Number.isFinite(requestedTtl) && requestedTtl > 0 ? Math.min(86400, Math.ceil(requestedTtl)) : 60;
+    const includeBuilds = String(req.query?.includeBuilds || '') === '1';
+    // Saved builds are an optional, documented Enka public-profile endpoint. Keep the
+    // core showcase path successful if the secondary request is hidden or unavailable.
+    const saved = includeBuilds ? await fetchPublicSavedBuilds(payload.owner) : null;
+    const responsePayload = includeBuilds
+      ? { ...payload, savedBuilds: saved.builds, savedBuildsStatus: saved.status }
+      : payload;
     // This endpoint exposes only publicly visible profile/showcase data. CDN caching
     // shares Enka's TTL across visitors so one UID cannot hammer the provider.
-    return json(res, 200, payload, {
+    return json(res, 200, responsePayload, {
       'Cache-Control': 'public, s-maxage=' + ttl + ', stale-while-revalidate=30',
       'X-Enka-Cache-TTL': String(ttl),
     });
