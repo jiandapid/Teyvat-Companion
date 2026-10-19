@@ -1216,6 +1216,126 @@ export default function App() {
   function importFromText(e) {
     e.preventDefault(); try { importTrackerObject(JSON.parse(importText)); } catch { setToast('Could not parse JSON. Paste a valid backup file.'); }
   }
+  async function handleCloudAuth(event) {
+    event.preventDefault();
+    if (!supabaseConfigured || !supabase) {
+      setCloudMessage('Cloud accounts are not configured for this build yet.');
+      return;
+    }
+    const email = cloudEmail.trim().toLowerCase();
+    if (!email || cloudPassword.length < 8) {
+      setCloudMessage('Enter an email and a password with at least 8 characters.');
+      return;
+    }
+    setCloudBusy(true);
+    setCloudMessage('');
+    try {
+      if (cloudAuthMode === 'signup') {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password: cloudPassword,
+          options: { emailRedirectTo: window.location.origin },
+        });
+        if (error) throw error;
+        if (data?.session?.user) {
+          setCloudUser(data.session.user);
+          setCloudMessage('Account created and signed in. Save a cloud backup to enable cross-device restore.');
+          setCloudPassword('');
+        } else {
+          setCloudMessage('Account created. Check your email to confirm the address, then sign in here.');
+          setCloudAuthMode('signin');
+          setCloudPassword('');
+        }
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password: cloudPassword });
+        if (error) throw error;
+        setCloudUser(data?.user || data?.session?.user || null);
+        setCloudPassword('');
+        setCloudMessage('Signed in. Your local tracker has not been changed; choose Save to cloud or Restore from cloud.');
+      }
+    } catch (error) {
+      setCloudMessage(error?.message || 'Cloud authentication failed. Check the project settings and try again.');
+    } finally {
+      setCloudBusy(false);
+    }
+  }
+
+  async function saveCloudWorkspace() {
+    if (!supabaseConfigured || !supabase || !cloudUser?.id) {
+      setCloudMessage('Sign in to a configured cloud account first.');
+      return;
+    }
+    setCloudBusy(true);
+    setCloudMessage('');
+    try {
+      const savedAt = new Date().toISOString();
+      const stateJson = {
+        ...persisted,
+        format: 'teyvat-companion-backup-v1',
+        exportedAt: savedAt,
+      };
+      const { data, error } = await supabase
+        .from('user_workspaces')
+        .upsert({ user_id: cloudUser.id, state_json: stateJson, updated_at: savedAt }, { onConflict: 'user_id' })
+        .select('updated_at')
+        .single();
+      if (error) throw error;
+      setCloudLastSyncedAt(data?.updated_at || savedAt);
+      setCloudMessage('Cloud backup saved. This browser remains the active copy until you explicitly restore on another device.');
+    } catch (error) {
+      setCloudMessage(error?.message || 'Could not save to cloud. Your local tracker remains unchanged.');
+    } finally {
+      setCloudBusy(false);
+    }
+  }
+
+  async function restoreCloudWorkspace() {
+    if (!supabaseConfigured || !supabase || !cloudUser?.id) {
+      setCloudMessage('Sign in to a configured cloud account first.');
+      return;
+    }
+    if (!window.confirm('Restore your cloud backup over this browser’s current tracker? Export a local backup first if you need to keep both versions.')) return;
+    setCloudBusy(true);
+    setCloudMessage('');
+    try {
+      const { data, error } = await supabase
+        .from('user_workspaces')
+        .select('state_json, updated_at')
+        .eq('user_id', cloudUser.id)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) {
+        setCloudMessage('There is no cloud backup for this account yet. Save this browser’s tracker first.');
+        return;
+      }
+      const validated = normalizeTrackerBackup(data.state_json);
+      importTrackerObject(validated);
+      setCloudLastSyncedAt(data.updated_at || '');
+      setCloudMessage('Cloud backup restored. Your local tracker will now save this restored copy in the browser.');
+    } catch (error) {
+      setCloudMessage((error?.message || 'Cloud restore failed.') + ' Your local tracker was not replaced.');
+    } finally {
+      setCloudBusy(false);
+    }
+  }
+
+  async function signOutCloudAccount() {
+    if (!supabaseConfigured || !supabase) return;
+    setCloudBusy(true);
+    setCloudMessage('');
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      setCloudUser(null);
+      setCloudPassword('');
+      setCloudMessage('Signed out. Your local tracker remains available on this device.');
+    } catch (error) {
+      setCloudMessage(error?.message || 'Could not sign out of the cloud account.');
+    } finally {
+      setCloudBusy(false);
+    }
+  }
+
   async function importGoodFile(event) {
     const file = event.target.files?.[0];
     if (!file) return;
