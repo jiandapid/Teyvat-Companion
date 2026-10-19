@@ -173,6 +173,19 @@ test('normalizes AKASHA artifact pieces with slot, main stat, substats, level an
   assert.equal(artifacts[0].critValue, 34.2);
 });
 
+test('orders AKASHA artifact pieces by their five equipment slots', () => {
+  const artifacts = normalizeAkashaArtifacts([
+    { id: 'circlet', name: 'Circlet', equipType: 'EQUIP_DRESS', level: 21 },
+    { id: 'goblet', name: 'Goblet', equipType: 'EQUIP_RING', level: 21 },
+    { id: 'flower', name: 'Flower', equipType: 'EQUIP_BRACER', level: 21 },
+    { id: 'sands', name: 'Sands', equipType: 'EQUIP_SHOES', level: 21 },
+    { id: 'plume', name: 'Plume', equipType: 'EQUIP_NECKLACE', level: 21 },
+  ]);
+  assert.deepEqual(artifacts.map(item => item.slot), [
+    'Flower of Life', 'Plume of Death', 'Sands of Eon', 'Goblet of Eonothem', 'Circlet of Logos',
+  ]);
+});
+
 test('AKASHA normalizers safely handle missing, malformed and unmatched public data', () => {
   assert.deepEqual(normalizeAkashaProfiles(null, '123456789'), []);
   assert.deepEqual(normalizeAkashaArtifacts({ message: 'changed API' }), []);

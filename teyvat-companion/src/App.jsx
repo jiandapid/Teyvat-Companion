@@ -341,6 +341,8 @@ export default function App() {
   const [undoAction, setUndoAction] = useState(null);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [syncLoading, setSyncLoading] = useState(false);
+  const [uidSyncLoading, setUidSyncLoading] = useState(false);
+  const [uidSyncMessage, setUidSyncMessage] = useState('');
   const [syncClock, setSyncClock] = useState(Date.now());
   const [syncError, setSyncError] = useState('');
   const [akashaSyncLoading, setAkashaSyncLoading] = useState(false);
@@ -961,12 +963,13 @@ export default function App() {
     if (needsCatalogRefresh) loadPublicCharacterData();
   }, []);
 
-  async function syncPublicShowcase() {
-    const uid = String(persisted.account.uid || '').trim();
-    if (!isValidGenshinUid(uid)) { setSyncError('Enter a valid 9–10 digit Genshin UID first.'); return; }
-    if (syncNextFetchAt > Date.now()) {
-      setSyncError('Enka.Network asks us to wait until ' + new Date(syncNextFetchAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) + ' before requesting this UID again. Your saved data is unchanged.');
-      return;
+  async function syncPublicShowcase(uidOverride = persisted.account.uid, options = {}) {
+    const uid = String(uidOverride || '').trim();
+    const quiet = Boolean(options.quiet);
+    if (!isValidGenshinUid(uid)) { setSyncError('Enter a valid 9–10 digit Genshin UID first.'); return null; }
+    if (syncNextFetchAt > Date.now() && String(persisted.enkaSnapshot?.uid || '') === uid) {
+      setSyncError('Enka.Network asks us to wait until ' + new Date(syncNextFetchAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) + ' before refreshing this UID. Your saved data is unchanged.');
+      return null;
     }
     setSyncLoading(true); setSyncError('');
     try {
@@ -978,7 +981,7 @@ export default function App() {
       if (!data || typeof data !== 'object') throw new Error('The sync endpoint returned an empty response.');
       const ttlSeconds = enkaTtlSeconds(data?.ttl);
       const nextFetchAt = Date.now() + ttlSeconds * 1000;
-      saveState(prev => ({...prev, enkaNextFetchAt: nextFetchAt}));
+      saveState(prev => String(prev.account.uid || '').trim() === uid ? ({...prev, enkaNextFetchAt: nextFetchAt}) : prev);
       const info = data.playerInfo || {};
       const rawShowcase = Array.isArray(data.avatarInfoList) ? data.avatarInfoList : [];
       const publicRoster = parseEnkaPublicRoster(info, rawShowcase, characters);
@@ -992,19 +995,25 @@ export default function App() {
       const readGear = avatar => {
         const gear = Array.isArray(avatar?.equipList) ? avatar.equipList : [];
         const weapon = gear.find(item => String(item?.flat?.itemType || '').toLowerCase().includes('weapon') || item?.weaponStats || item?.weaponAffixMap);
-        const artifacts = gear.filter(item => String(item?.flat?.itemType || '').toLowerCase().includes('reliquary') || item?.reliquaryMainstat || item?.reliquarySubstats);
-        const artifactNames = [...new Set(artifacts.map(item => item?.flat?.setName || item?.flat?.name).filter(Boolean))];
-        return {
-          weapon: weapon?.flat?.name || '',
-          weaponLevel: toNumber(weapon?.weapon?.level ?? weapon?.level),
-          artifacts: artifacts.map(item => ({
+        const slotLabels = { EQUIP_BRACER:'Flower of Life', EQUIP_NECKLACE:'Plume of Death', EQUIP_SHOES:'Sands of Eon', EQUIP_RING:'Goblet of Eonothem', EQUIP_DRESS:'Circlet of Logos' };
+        const slotOrder = ['Flower of Life', 'Plume of Death', 'Sands of Eon', 'Goblet of Eonothem', 'Circlet of Logos'];
+        const artifacts = gear
+          .filter(item => String(item?.flat?.itemType || '').toLowerCase().includes('reliquary') || item?.reliquaryMainstat || item?.reliquarySubstats)
+          .map(item => ({
+            slot: slotLabels[String(item?.flat?.equipType || '')] || String(item?.flat?.equipType || ''),
             name: item?.flat?.name || item?.flat?.setName || 'Artifact',
             setName: item?.flat?.setName || '',
             rarity: toNumber(item?.flat?.rankLevel),
-            level: Number.isFinite(Number(item?.reliquary?.level)) ? Number(item.reliquary.level) : null,
+            level: Number.isFinite(Number(item?.reliquary?.level)) ? Math.max(0, Number(item.reliquary.level) - 1) : null,
             mainStat: item?.reliquaryMainstat?.name || '',
             substats: (item?.reliquarySubstats || []).map(stat => ({name:stat?.name || '', value:stat?.statValue ?? stat?.value ?? null})),
-          })),
+          }))
+          .sort((a,b) => (slotOrder.indexOf(a.slot) < 0 ? 99 : slotOrder.indexOf(a.slot)) - (slotOrder.indexOf(b.slot) < 0 ? 99 : slotOrder.indexOf(b.slot)));
+        const artifactNames = [...new Set(artifacts.map(item => item.setName || item.name).filter(Boolean))];
+        return {
+          weapon: weapon?.flat?.name || '',
+          weaponLevel: toNumber(weapon?.weapon?.level ?? weapon?.level),
+          artifacts,
           artifactSummary: artifactNames.join(' / '),
           equipmentCount: gear.length,
         };
@@ -1017,7 +1026,9 @@ export default function App() {
         const gear = readGear(avatar);
         const talentIds = Array.isArray(avatar?.talentIdList) ? avatar.talentIdList : [];
         const skillLevelMap = avatar?.skillLevelMap && typeof avatar.skillLevelMap === 'object' ? avatar.skillLevelMap : {};
-        const talentLevels = Object.entries(skillLevelMap).sort((a,b) => Number(a[0])-Number(b[0])).map(([,value]) => Number(value)).filter(value => Number.isFinite(value) && value > 0);
+        const talentDetails = Object.entries(skillLevelMap).sort((a,b) => Number(a[0])-Number(b[0]))
+          .map(([skillId,value]) => ({skillId,level:Number(value)})).filter(item => Number.isFinite(item.level) && item.level > 0);
+        const talentLevels = talentDetails.map(item => item.level);
         return {
           avatarId,
           characterId: match?.id || '',
@@ -1026,6 +1037,7 @@ export default function App() {
           constellation: Math.min(6, talentIds.length),
           friendship: toNumber(avatar?.fetterInfo?.expLevel),
           talents: talentLevels,
+          talentDetails,
           weapon: gear.weapon,
           weaponLevel: gear.weaponLevel,
           artifacts: gear.artifacts,
@@ -1046,13 +1058,15 @@ export default function App() {
         const gear = readGear(avatar);
         const talentIds = Array.isArray(avatar?.talentIdList) ? avatar.talentIdList : [];
         const skillLevelMap = avatar?.skillLevelMap && typeof avatar.skillLevelMap === 'object' ? avatar.skillLevelMap : {};
-        const talentLevels = Object.entries(skillLevelMap).sort((a,b) => Number(a[0])-Number(b[0]))
-          .map(([,value]) => Number(value)).filter(value => Number.isFinite(value) && value > 0);
+        const talentDetails = Object.entries(skillLevelMap).sort((a,b) => Number(a[0])-Number(b[0]))
+          .map(([skillId,value]) => ({skillId,level:Number(value)})).filter(item => Number.isFinite(item.level) && item.level > 0);
+        const talentLevels = talentDetails.map(item => item.level);
         return {
           ...build,
           level: readLevel(avatar),
           constellation: Math.min(6, talentIds.length),
           talents: talentLevels,
+          talentDetails,
           weapon: gear.weapon,
           weaponLevel: gear.weaponLevel,
           artifacts: gear.artifacts,
@@ -1086,6 +1100,7 @@ export default function App() {
       };
 
       saveState(prev => {
+        if (String(prev.account.uid || '').trim() !== uid) return prev;
         const updatedCharacters = prev.characters.map(character => {
           const publicEntry = publicRoster.find(item => item.characterId && item.characterId === character.id);
           const imported = showcase.find(item => item.characterId && item.characterId === character.id);
@@ -1117,19 +1132,22 @@ export default function App() {
       });
       const matched = publicRoster.filter(item => item.characterId).length;
       const detailedCount = showcase.length;
-      setToast('Public roster synced · ' + publicRoster.length + ' display-list entries (' + detailedCount + ' detailed), ' + matched + ' matched to your catalogue');
+      if (!quiet) setToast('Public roster synced · ' + publicRoster.length + ' display-list entries (' + detailedCount + ' detailed), ' + matched + ' matched to your catalogue');
+      return snapshot;
     } catch (e) {
       setSyncError((e?.message || 'Could not fetch the public showcase.') + ' Your saved tracker was not cleared.');
+      return null;
     } finally {
       setSyncLoading(false);
     }
   }
 
-  async function syncAkashaProfile() {
-    const uid = String(persisted.account.uid || '').trim();
+  async function syncAkashaProfile(uidOverride = persisted.account.uid, options = {}) {
+    const uid = String(uidOverride || '').trim();
+    const quiet = Boolean(options.quiet);
     if (!isValidGenshinUid(uid)) {
       setAkashaSyncError('Enter a valid 9–10 digit Genshin UID in Account Tracker first.');
-      return;
+      return null;
     }
     setAkashaSyncLoading(true);
     setAkashaSyncError('');
@@ -1144,7 +1162,9 @@ export default function App() {
       const profiles = normalizeAkashaProfiles(data?.profiles, uid, characters);
       if (!Array.isArray(data?.profiles)) throw new Error('AKASHA returned an unrecognized profile format. Your previous snapshot was kept.');
 
-      saveState(prev => ({
+      saveState(prev => {
+        if (String(prev.account.uid || '').trim() !== uid) return prev;
+        return {
         ...prev,
         akashaSnapshot: {
           uid,
@@ -1154,14 +1174,37 @@ export default function App() {
           profiles,
           artifactsByBuild: prev.akashaSnapshot?.uid === uid ? (prev.akashaSnapshot.artifactsByBuild || {}) : {},
         },
-      }));
+        };
+      });
       setAkashaSyncError('');
-      setToast('AKASHA synced · ' + profiles.length + ' character calculation profiles');
+      if (!quiet) setToast('AKASHA synced · ' + profiles.length + ' character calculation profiles');
+      return profiles;
     } catch (error) {
       setAkashaSyncError((error?.message || 'Could not sync AKASHA data.') + ' Your existing snapshot and tracker data were not changed.');
+      return null;
     } finally {
       setAkashaSyncLoading(false);
     }
+  }
+
+  async function fetchAkashaArtifactDetails(profile, uidOverride) {
+    const uid = String(uidOverride || '').trim();
+    const md5 = String(profile?.md5 || '').trim();
+    if (!isValidGenshinUid(uid)) throw new Error('Enter a valid 9–10 digit Genshin UID before loading artifact details.');
+    if (!/^[a-fA-F0-9]{32}$/.test(md5)) throw new Error('AKASHA did not return a valid build hash for this entry. Sync the profile again and retry.');
+    const response = await fetchWithTimeout('/api/akasha?uid=' + encodeURIComponent(uid) + '&md5=' + encodeURIComponent(md5), {
+      headers: { Accept: 'application/json' },
+    }, 12000);
+    let data;
+    try { data = await response.json(); }
+    catch { throw new Error('AKASHA returned a non-JSON artifact response.'); }
+    if (!response.ok) throw new Error(data?.error || ('AKASHA artifact lookup failed with HTTP ' + response.status + '.'));
+    if (!Array.isArray(data?.artifacts)) throw new Error('AKASHA returned an unrecognized artifact format.');
+    return {
+      md5: md5.toLowerCase(),
+      fetchedAt: data.fetchedAt || new Date().toISOString(),
+      artifacts: normalizeAkashaArtifacts(data.artifacts),
+    };
   }
 
   async function loadAkashaArtifacts(profile) {
@@ -1178,33 +1221,97 @@ export default function App() {
     setAkashaArtifactLoadingId(md5);
     setAkashaSyncError('');
     try {
-      const response = await fetchWithTimeout('/api/akasha?uid=' + encodeURIComponent(uid) + '&md5=' + encodeURIComponent(md5), {
-        headers: { Accept: 'application/json' },
-      }, 12000);
-      let data;
-      try { data = await response.json(); }
-      catch { throw new Error('AKASHA returned a non-JSON artifact response.'); }
-      if (!response.ok) throw new Error(data?.error || ('AKASHA artifact lookup failed with HTTP ' + response.status + '.'));
-      if (!Array.isArray(data?.artifacts)) throw new Error('AKASHA returned an unrecognized artifact format. Your previous artifact data was kept.');
-      const artifacts = normalizeAkashaArtifacts(data.artifacts);
+      const bundle = await fetchAkashaArtifactDetails(profile, uid);
       saveState(prev => {
-        if (prev.akashaSnapshot?.uid !== uid) return prev;
+        if (String(prev.account.uid || '').trim() !== uid || prev.akashaSnapshot?.uid !== uid) return prev;
         return {
           ...prev,
           akashaSnapshot: {
             ...prev.akashaSnapshot,
             artifactsByBuild: {
               ...(prev.akashaSnapshot.artifactsByBuild || {}),
-              [md5]: { fetchedAt: data.fetchedAt || new Date().toISOString(), artifacts },
+              [bundle.md5]: { fetchedAt: bundle.fetchedAt, artifacts: bundle.artifacts },
             },
           },
         };
       });
-      setToast('AKASHA artifacts synced · ' + artifacts.length + ' pieces');
+      setToast('AKASHA artifacts synced · ' + bundle.artifacts.length + ' pieces');
+      return bundle.artifacts;
     } catch (error) {
       setAkashaSyncError((error?.message || 'Could not load AKASHA artifacts.') + ' Previously synced artifact details remain saved.');
+      return null;
     } finally {
       setAkashaArtifactLoadingId('');
+    }
+  }
+
+  async function syncUidAccount(event) {
+    event.preventDefault();
+    const uid = String(persisted.account.uid || '').trim();
+    if (!isValidGenshinUid(uid)) {
+      setUidSyncMessage('Enter your 9–10 digit in-game UID first.');
+      return;
+    }
+
+    setUidSyncLoading(true);
+    setUidSyncMessage('Connecting to Enka.Network and AKASHA System…');
+    setSyncError('');
+    setAkashaSyncError('');
+    try {
+      const [enkaSnapshot, akashaProfilesResult] = await Promise.all([
+        syncPublicShowcase(uid, { quiet: true }),
+        syncAkashaProfile(uid, { quiet: true }),
+      ]);
+      const akashaProfiles = Array.isArray(akashaProfilesResult) ? akashaProfilesResult : [];
+      const availableHashes = [...new Map(akashaProfiles
+        .filter(profile => /^[a-fA-F0-9]{32}$/.test(String(profile?.md5 || '').trim()))
+        .map(profile => [String(profile.md5).toLowerCase(), profile])).values()];
+      const maxAutomaticArtifactBuilds = 18;
+      const profilesToLoad = availableHashes.slice(0, maxAutomaticArtifactBuilds);
+      let loaded = 0;
+      let failed = 0;
+
+      for (let start = 0; start < profilesToLoad.length; start += 3) {
+        const group = profilesToLoad.slice(start, start + 3);
+        setUidSyncMessage('Public profiles received. Sorting artifact details ' + Math.min(start + group.length, profilesToLoad.length) + ' of ' + profilesToLoad.length + '…');
+        const results = await Promise.all(group.map(async profile => {
+          try {
+            const bundle = await fetchAkashaArtifactDetails(profile, uid);
+            saveState(prev => {
+              if (String(prev.account.uid || '').trim() !== uid || prev.akashaSnapshot?.uid !== uid) return prev;
+              return {
+                ...prev,
+                akashaSnapshot: {
+                  ...prev.akashaSnapshot,
+                  artifactsByBuild: {
+                    ...(prev.akashaSnapshot.artifactsByBuild || {}),
+                    [bundle.md5]: { fetchedAt: bundle.fetchedAt, artifacts: bundle.artifacts },
+                  },
+                },
+              };
+            });
+            return true;
+          } catch {
+            return false;
+          }
+        }));
+        loaded += results.filter(Boolean).length;
+        failed += results.filter(value => !value).length;
+      }
+
+      const enkaLabel = enkaSnapshot ? 'Enka: ' + (enkaSnapshot.rosterEntries?.length || 0) + ' public display characters' : 'Enka: unavailable or on cooldown';
+      const akashaLabel = Array.isArray(akashaProfilesResult) ? 'AKASHA: ' + akashaProfiles.length + ' calculation profiles' : 'AKASHA: profile data unavailable';
+      const capped = Math.max(0, availableHashes.length - profilesToLoad.length);
+      const summary = enkaLabel + ' · ' + akashaLabel + ' · artifact builds loaded ' + loaded + '/' + profilesToLoad.length
+        + (failed ? ' (' + failed + ' unavailable)' : '')
+        + (capped ? ' · ' + capped + ' more builds available to load manually' : '');
+      setUidSyncMessage('Import finished. ' + summary + '.');
+      setToast('UID sync complete · ' + (enkaSnapshot ? 'Enka roster updated' : 'Enka unavailable') + ' · ' + loaded + ' artifact builds imported');
+      if (failed) setAkashaSyncError(failed + ' AKASHA artifact lookup(s) failed; successfully loaded data was kept. You can retry those builds from Account Tracker.');
+    } catch (error) {
+      setUidSyncMessage((error?.message || 'The UID import failed.') + ' Any data already synced was kept.');
+    } finally {
+      setUidSyncLoading(false);
     }
   }
 
@@ -1590,6 +1697,25 @@ export default function App() {
 
   const dashboardPage = <div className="page-content">
     <SectionHeader eyebrow={`${new Date().toLocaleDateString('en-US',{weekday:'long'}).toUpperCase()} · ADVENTURE OVERVIEW`} title={`Welcome back${persisted.account.nickname ? `, ${persisted.account.nickname}` : ', Traveler'}.`} subtitle="A little progress each day goes a long way across Teyvat." actions={<><button className="button primary" onClick={()=>navigate('builds')}><BookOpen size={15}/> Character Builds</button><button className="button secondary" onClick={()=>navigate('materials')}><Plus size={16}/> Plan an upgrade</button></>}/>
+    <section className="panel uid-import-panel">
+      <div className="uid-import-copy">
+        <div className="eyebrow"><Database size={13}/> AUTOMATIC ACCOUNT IMPORT</div>
+        <h2>Bring your Teyvat roster into sync</h2>
+        <p>Enter your in-game UID to import visible character levels, showcase weapons, talent values, equipped artifacts and available AKASHA build rankings in one go.</p>
+      </div>
+      <form className="uid-import-form" onSubmit={syncUidAccount}>
+        <label htmlFor="home-genshin-uid">Genshin Impact UID</label>
+        <div className="uid-import-controls">
+          <input id="home-genshin-uid" name="uid" inputMode="numeric" autoComplete="off" pattern="[0-9]{9,10}" maxLength={10} value={persisted.account.uid} onChange={event=>updateAccount('uid',event.target.value.replace(/\D/g,'').slice(0,10))} placeholder="Enter your 9–10 digit UID" aria-describedby="home-uid-help" required/>
+          <button className="button primary" type="submit" disabled={uidSyncLoading}>{uidSyncLoading?<><RefreshCw className="spin" size={15}/> Importing…</>:<><RefreshCw size={15}/> Sync my UID</>}</button>
+        </div>
+        <small id="home-uid-help">Public data only. Never enter your password, verification code or cookies.</small>
+        {uidSyncMessage && <div className="uid-import-status" role="status" aria-live="polite"><Info size={14}/><span>{uidSyncMessage}</span></div>}
+        {syncError && <div className="uid-import-error" role="alert"><Info size={14}/><span>{syncError}</span></div>}
+        {akashaSyncError && <div className="uid-import-error" role="alert"><Info size={14}/><span>{akashaSyncError}</span></div>}
+        <div className="uid-import-links"><span>{persisted.enkaSnapshot?.uid===persisted.account.uid?'Enka snapshot saved':'Enka not synced'} · {persisted.akashaSnapshot?.uid===persisted.account.uid?'AKASHA snapshot saved':'AKASHA not synced'}</span><button className="text-action" type="button" onClick={()=>navigate('account')}>Detailed sync view <ArrowRight size={13}/></button></div>
+      </form>
+    </section>
     <div className="hero-banner">
       <div className="hero-text"><div className="hero-kicker"><Sparkles size={14}/> SKIRK · THE VOID STAR</div><h2>Beyond the stars,<br/><em>lies the void.</em></h2><p>A cosmic field guide for your Teyvat roster, character builds, materials, and next adventure.</p><div className="hero-actions"><button className="button gold" onClick={()=>navigate('account')}>Open adventure record <ArrowRight size={15}/></button><button className="button glass" onClick={()=>navigate('characters')}>Browse characters</button></div><div className="hero-world-stats"><span><small>ADVENTURE RANK</small><strong>{persisted.account.ar}</strong></span><i/><span><small>WORLD LEVEL</small><strong>{persisted.account.worldLevel}</strong></span><i/><span><small>ROSTER</small><strong>{ownedCharacters.length}</strong></span></div></div>
       <div className="hero-art" aria-label="Skirk official celebration artwork by Siroimorino">
@@ -1811,7 +1937,7 @@ export default function App() {
   const accountPage = <div className="page-content">
     <SectionHeader eyebrow="PROFILE & PROGRESSION" title="Account Tracker" subtitle="Keep your account snapshot, targets, and resources organized in one place." actions={<button className="button secondary" onClick={exportTracker}><Download size={15}/> Export backup</button>}/>
     <div className="account-overview-grid"><div className="account-profile-card"><div className="profile-emblem"><Compass size={28}/></div><div className="eyebrow">TRAVELER PROFILE</div><h2>{persisted.account.nickname || 'Your Traveler'}</h2><p>Personal account record</p><div className="profile-stats"><div><strong>{persisted.account.ar}</strong><small>Adventure Rank</small></div><div><strong>{persisted.account.worldLevel}</strong><small>World Level</small></div><div><strong>{ownedCharacters.length}</strong><small>Owned</small></div></div><div className="profile-footer"><span><span className="live-dot"/> Saved on this device</span><button className="text-action" onClick={()=>navigate('settings')}>Connection settings <ArrowRight size={13}/></button></div></div><div className="account-form-panel panel"><div className="panel-head"><div><div className="eyebrow">MANUAL ACCOUNT DETAILS</div><h3>Edit your snapshot</h3></div><span className="pill muted"><Pencil size={12}/> Editable</span></div><div className="account-input-grid"><label>In-game nickname<input value={persisted.account.nickname} onChange={e=>updateAccount('nickname',e.target.value)} placeholder="Optional nickname"/></label><label>Adventure Rank<input type="number" min="1" max="60" value={persisted.account.ar} onChange={e=>updateAccount('ar',Math.max(1,Math.min(60,Number(e.target.value)||1)))}/></label><label>World Level<input type="number" min="0" max="9" value={persisted.account.worldLevel} onChange={e=>updateAccount('worldLevel',Math.max(0,Math.min(9,Number(e.target.value)||0)))}/></label><label>Spiral Abyss progress<input value={persisted.account.abyss} onChange={e=>updateAccount('abyss',e.target.value)} placeholder="e.g. 12-3 / not attempted"/></label><label>Primogems (manual)<input type="number" min="0" value={persisted.account.primogems} onChange={e=>updateAccount('primogems',Math.max(0,Number(e.target.value)||0))}/></label><label>Wishes available (manual)<input type="number" min="0" value={persisted.account.wishes} onChange={e=>updateAccount('wishes',Math.max(0,Number(e.target.value)||0))}/></label><label>Current pity (manual)<input type="number" min="0" max="90" value={persisted.account.pity} onChange={e=>updateAccount('pity',Math.max(0,Math.min(90,Number(e.target.value)||0)))}/></label><label>Genshin UID (Enka + AKASHA public data)<input inputMode="numeric" value={persisted.account.uid} onChange={e=>updateAccount('uid',e.target.value.replace(/\D/g,'').slice(0,10))} placeholder="9–10 digit UID"/></label></div><div className="profile-warning"><ShieldCheck size={15}/><span>Never enter your HoYoverse password, verification code, session cookie, or authentication token here.</span></div></div></div>
-    <div className="panel sync-panel"><div className="panel-head"><div><div className="eyebrow">OPTIONAL PUBLIC DATA</div><h3>Sync character showcase</h3></div><span className={`sync-status ${persisted.enkaSnapshot?'connected':''}`}><span className="live-dot"/>{persisted.enkaSnapshot?'Connected snapshot':'Not connected'}</span></div><p className="panel-description">Sync public Enka account data: display-list characters and levels, detailed showcase equipment when enabled, public profile statistics, and saved build snapshots when the UID is linked to a verified public Enka profile. The app honors Enka's UID cooldown and saves the last snapshot locally. It is not a HoYoverse login and cannot read hidden characters, Resin, Primogems, full inventory, wish history or the entire owned roster.</p><button className="button primary" onClick={syncPublicShowcase} disabled={syncLoading||syncWaitMs>0}>{syncLoading?<><RefreshCw className="spin" size={15}/> Connecting…</>:syncWaitMs>0?<><Clock size={15}/> Refresh available at {new Date(syncNextFetchAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</>:<><Link2 size={15}/> Sync public showcase</>}</button>{syncError&&<div className="notice warning sync-message"><Info size={15}/><span>{syncError}</span><button className="text-action" onClick={()=>setSyncError('')} aria-label="Dismiss sync message"><X size={13}/></button></div>}{syncNextFetchAt>syncClock&&<p className="sync-cooldown-note"><Clock size={13}/> Next public refresh is available at {new Date(syncNextFetchAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}, following Enka.Network's returned cache TTL.</p>}{persisted.enkaSnapshot&&<div className="sync-result"><div className="sync-result-top"><div><strong>Public snapshot loaded</strong><small>UID {persisted.enkaSnapshot.uid} · {new Date(persisted.enkaSnapshot.fetchedAt).toLocaleString()}</small></div><button className="text-action" onClick={syncPublicShowcase}><RefreshCw size={13}/> Refresh</button></div><div className="sync-facts"><div><small>Nickname</small><strong>{persisted.enkaSnapshot.nickname || 'Not public'}</strong></div><div><small>Adventure Rank</small><strong>{persisted.enkaSnapshot.level ?? 'Not public'}</strong></div><div><small>World Level</small><strong>{persisted.enkaSnapshot.worldLevel ?? 'Not public'}</strong></div><div><small>Profile signature</small><strong>{persisted.enkaSnapshot.signature || 'Blank / not public'}</strong></div><div><small>Public roster entries</small><strong>{persisted.enkaSnapshot.rosterEntries?.length ?? persisted.enkaSnapshot.showcase?.length ?? 0}</strong></div><div><small>Achievements</small><strong>{persisted.enkaSnapshot.achievements ?? 'Not public'}</strong></div><div><small>Abyss floor</small><strong>{persisted.enkaSnapshot.abyssFloor ? String(persisted.enkaSnapshot.abyssFloor)+'-'+String(persisted.enkaSnapshot.abyssChamber || 0) : 'Not public'}</strong></div></div>{persisted.enkaSnapshot.savedBuildsStatus && <div className="showcase-id-list"><span>Public Enka profile builds · {(persisted.enkaSnapshot.savedBuilds || []).length}</span>{persisted.enkaSnapshot.savedBuilds?.length ? persisted.enkaSnapshot.savedBuilds.map((build,i)=><details key={`${build.id}-${i}`} className="showcase-character-detail"><summary>{build.characterName} · {build.name} · {build.live ? 'Live snapshot' : 'Saved build'}</summary><div className="showcase-detail-content"><p><strong>Order:</strong> {build.order + 1}{build.isPublic === true ? ' · Public' : ''}</p>{build.weapon && <p><strong>Weapon:</strong> {build.weapon}{build.weaponLevel ? ` · Lv. ${build.weaponLevel}` : ''}</p>}{build.artifacts?.length > 0 && <div><strong>Artifacts</strong>{build.artifacts.map((artifact,j)=><div key={j} className="showcase-artifact-row"><span>{artifact.name}{artifact.level != null ? ` · +${artifact.level}` : ''}{artifact.rarity ? ` · ${artifact.rarity}★` : ''}</span>{artifact.mainStat && <small>Main stat: {artifact.mainStat}</small>}{artifact.substats?.length > 0 && <small>Substats: {artifact.substats.map(stat=>stat.name+(stat.value!=null?' '+stat.value:'')).join(' · ')}</small>}</div>)}</div>}{build.talents?.length > 0 && <p><strong>Raw talent levels:</strong> {build.talents.join(' / ')}</p>}{!build.detailsAvailable && <p>The saved-build record was imported, but this entry did not contain a character-data payload the app could read as structured equipment. Its source data is preserved in the exported tracker backup.</p>}{build.image && <p><a href={build.image} target="_blank" rel="noreferrer">Open Enka build image <ExternalLink size={12}/></a></p>}</div></details>) : <p>{persisted.enkaSnapshot.savedBuildsStatus === 'no-public-Enka-profile' ? 'No verified public Enka profile is connected to this UID. Public saved-build import requires an Enka profile with a verified, public game account.' : persisted.enkaSnapshot.savedBuildsStatus === 'no-public-saved-builds' ? 'The public Enka profile does not currently expose saved builds.' : persisted.enkaSnapshot.savedBuildsStatus === 'loaded' ? 'No public saved builds were found.' : 'Saved builds were not available on this request (' + persisted.enkaSnapshot.savedBuildsStatus + '). The showcase and public roster sync still succeeded.'}</p>}<p className="helper-note"><Info size={13}/> Enka saved builds are user-published snapshots, not a direct HoYoverse inventory API. Entries marked Live may be stale until the profile owner refreshes them. Explicitly private entries are excluded.</p></div>}{((persisted.enkaSnapshot.rosterEntries?.length || 0) > 0 || (persisted.enkaSnapshot.showcase?.length || 0) > 0)&&<div className="showcase-id-list"><span>Public display list · this is not the full owned roster</span>{(persisted.enkaSnapshot.rosterEntries || persisted.enkaSnapshot.showcase || []).map((a,i)=>{const detail=persisted.enkaSnapshot.showcase?.find(entry=>entry.avatarId===a.avatarId)||null;return <details key={`${a.avatarId}-${i}`} className="showcase-character-detail"><summary>{a.name}{a.level? ` · Lv. ${a.level}`:''}{detail?.constellation? ` · C${detail.constellation}`:''}{detail?.weapon? ` · ${detail.weapon}`:''}{!detail?' · detailed data hidden':''}</summary><div className="showcase-detail-content">{detail?.weapon&&<p><strong>Weapon:</strong> {detail.weapon}{detail.weaponLevel? ` · Lv. ${detail.weaponLevel}`:''}</p>}{detail?.artifacts?.length>0&&<div><strong>Artifacts</strong>{detail.artifacts.map((artifact,j)=><div key={j} className="showcase-artifact-row"><span>{artifact.name}{artifact.level!=null? ` · +${artifact.level}`:''}{artifact.rarity? ` · ${artifact.rarity}★`:''}</span>{artifact.mainStat&&<small>Main stat: {artifact.mainStat}</small>}{artifact.substats?.length>0&&<small>Substats: {artifact.substats.map(stat=>stat.name+(stat.value!=null?' '+stat.value:'')).join(' · ')}</small>}</div>)}</div>}{detail?.talents?.length>0&&<p><strong>Raw talent level values:</strong> {detail.talents.join(' / ')} <small>(provider order; not relabeled as Normal / Skill / Burst)</small></p>}{detail?.friendship!=null&&<p><strong>Friendship:</strong> {detail.friendship}</p>}{!detail&&<p>Only the public display-list entry was available. Enable Character Details in-game to expose detailed equipment for displayed characters.</p>}{detail&&!detail.weapon&&!detail.artifacts?.length&&!detail.talents?.length&&<p>Detailed equipment was not returned for this character.</p>}</div></details>})}</div>}<p className="helper-note"><Info size={13}/> Matched public display-list characters are marked owned and their level is updated when it is available. Constellations and equipped weapons/artifacts sync only when Enka returns detailed character data; these remain separate from your planned build notes. Other characters, goals, teams, local markers and material quantities are preserved. This is not the full owned roster or private account inventory.</p></div>}</div>
+    <div className="panel sync-panel"><div className="panel-head"><div><div className="eyebrow">OPTIONAL PUBLIC DATA</div><h3>Sync character showcase</h3></div><span className={`sync-status ${persisted.enkaSnapshot?'connected':''}`}><span className="live-dot"/>{persisted.enkaSnapshot?'Connected snapshot':'Not connected'}</span></div><p className="panel-description">Sync public Enka account data: display-list characters and levels, detailed showcase equipment when enabled, public profile statistics, and saved build snapshots when the UID is linked to a verified public Enka profile. The app honors Enka's UID cooldown and saves the last snapshot locally. It is not a HoYoverse login and cannot read hidden characters, Resin, Primogems, full inventory, wish history or the entire owned roster.</p><button className="button primary" onClick={()=>syncPublicShowcase()} disabled={syncLoading||syncWaitMs>0}>{syncLoading?<><RefreshCw className="spin" size={15}/> Connecting…</>:syncWaitMs>0?<><Clock size={15}/> Refresh available at {new Date(syncNextFetchAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</>:<><Link2 size={15}/> Sync public showcase</>}</button>{syncError&&<div className="notice warning sync-message"><Info size={15}/><span>{syncError}</span><button className="text-action" onClick={()=>setSyncError('')} aria-label="Dismiss sync message"><X size={13}/></button></div>}{syncNextFetchAt>syncClock&&<p className="sync-cooldown-note"><Clock size={13}/> Next public refresh is available at {new Date(syncNextFetchAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}, following Enka.Network's returned cache TTL.</p>}{persisted.enkaSnapshot&&<div className="sync-result"><div className="sync-result-top"><div><strong>Public snapshot loaded</strong><small>UID {persisted.enkaSnapshot.uid} · {new Date(persisted.enkaSnapshot.fetchedAt).toLocaleString()}</small></div><button className="text-action" onClick={()=>syncPublicShowcase()}><RefreshCw size={13}/> Refresh</button></div><div className="sync-facts"><div><small>Nickname</small><strong>{persisted.enkaSnapshot.nickname || 'Not public'}</strong></div><div><small>Adventure Rank</small><strong>{persisted.enkaSnapshot.level ?? 'Not public'}</strong></div><div><small>World Level</small><strong>{persisted.enkaSnapshot.worldLevel ?? 'Not public'}</strong></div><div><small>Profile signature</small><strong>{persisted.enkaSnapshot.signature || 'Blank / not public'}</strong></div><div><small>Public roster entries</small><strong>{persisted.enkaSnapshot.rosterEntries?.length ?? persisted.enkaSnapshot.showcase?.length ?? 0}</strong></div><div><small>Achievements</small><strong>{persisted.enkaSnapshot.achievements ?? 'Not public'}</strong></div><div><small>Abyss floor</small><strong>{persisted.enkaSnapshot.abyssFloor ? String(persisted.enkaSnapshot.abyssFloor)+'-'+String(persisted.enkaSnapshot.abyssChamber || 0) : 'Not public'}</strong></div></div>{persisted.enkaSnapshot.savedBuildsStatus && <div className="showcase-id-list"><span>Public Enka profile builds · {(persisted.enkaSnapshot.savedBuilds || []).length}</span>{persisted.enkaSnapshot.savedBuilds?.length ? persisted.enkaSnapshot.savedBuilds.map((build,i)=><details key={`${build.id}-${i}`} className="showcase-character-detail"><summary>{build.characterName} · {build.name} · {build.live ? 'Live snapshot' : 'Saved build'}</summary><div className="showcase-detail-content"><p><strong>Order:</strong> {build.order + 1}{build.isPublic === true ? ' · Public' : ''}</p>{build.weapon && <p><strong>Weapon:</strong> {build.weapon}{build.weaponLevel ? ` · Lv. ${build.weaponLevel}` : ''}</p>}{build.artifacts?.length > 0 && <div><strong>Artifacts</strong>{build.artifacts.map((artifact,j)=><div key={j} className="showcase-artifact-row"><span>{artifact.name}{artifact.level != null ? ` · +${artifact.level}` : ''}{artifact.rarity ? ` · ${artifact.rarity}★` : ''}</span>{artifact.mainStat && <small>Main stat: {artifact.mainStat}</small>}{artifact.substats?.length > 0 && <small>Substats: {artifact.substats.map(stat=>stat.name+(stat.value!=null?' '+stat.value:'')).join(' · ')}</small>}</div>)}</div>}{build.talents?.length > 0 && <p><strong>Raw talent levels:</strong> {build.talents.join(' / ')}</p>}{!build.detailsAvailable && <p>The saved-build record was imported, but this entry did not contain a character-data payload the app could read as structured equipment. Its source data is preserved in the exported tracker backup.</p>}{build.image && <p><a href={build.image} target="_blank" rel="noreferrer">Open Enka build image <ExternalLink size={12}/></a></p>}</div></details>) : <p>{persisted.enkaSnapshot.savedBuildsStatus === 'no-public-Enka-profile' ? 'No verified public Enka profile is connected to this UID. Public saved-build import requires an Enka profile with a verified, public game account.' : persisted.enkaSnapshot.savedBuildsStatus === 'no-public-saved-builds' ? 'The public Enka profile does not currently expose saved builds.' : persisted.enkaSnapshot.savedBuildsStatus === 'loaded' ? 'No public saved builds were found.' : 'Saved builds were not available on this request (' + persisted.enkaSnapshot.savedBuildsStatus + '). The showcase and public roster sync still succeeded.'}</p>}<p className="helper-note"><Info size={13}/> Enka saved builds are user-published snapshots, not a direct HoYoverse inventory API. Entries marked Live may be stale until the profile owner refreshes them. Explicitly private entries are excluded.</p></div>}{((persisted.enkaSnapshot.rosterEntries?.length || 0) > 0 || (persisted.enkaSnapshot.showcase?.length || 0) > 0)&&<div className="showcase-id-list"><span>Public display list · this is not the full owned roster</span>{(persisted.enkaSnapshot.rosterEntries || persisted.enkaSnapshot.showcase || []).map((a,i)=>{const detail=persisted.enkaSnapshot.showcase?.find(entry=>entry.avatarId===a.avatarId)||null;return <details key={`${a.avatarId}-${i}`} className="showcase-character-detail"><summary>{a.name}{a.level? ` · Lv. ${a.level}`:''}{detail?.constellation? ` · C${detail.constellation}`:''}{detail?.weapon? ` · ${detail.weapon}`:''}{!detail?' · detailed data hidden':''}</summary><div className="showcase-detail-content">{detail?.weapon&&<p><strong>Weapon:</strong> {detail.weapon}{detail.weaponLevel? ` · Lv. ${detail.weaponLevel}`:''}</p>}{detail?.artifacts?.length>0&&<div><strong>Artifacts</strong>{detail.artifacts.map((artifact,j)=><div key={j} className="showcase-artifact-row"><span>{artifact.slot ? artifact.slot + ' · ' : ''}{artifact.name}{artifact.level!=null? ` · +${artifact.level}`:''}{artifact.rarity? ` · ${artifact.rarity}★`:''}</span>{artifact.mainStat&&<small>Main stat: {artifact.mainStat}</small>}{artifact.substats?.length>0&&<small>Substats: {artifact.substats.map(stat=>stat.name+(stat.value!=null?' '+stat.value:'')).join(' · ')}</small>}</div>)}</div>}{detail?.talents?.length>0&&<p><strong>Raw talent level values:</strong> {detail.talents.join(' / ')} <small>(provider order; not relabeled as Normal / Skill / Burst)</small></p>}{detail?.friendship!=null&&<p><strong>Friendship:</strong> {detail.friendship}</p>}{!detail&&<p>Only the public display-list entry was available. Enable Character Details in-game to expose detailed equipment for displayed characters.</p>}{detail&&!detail.weapon&&!detail.artifacts?.length&&!detail.talents?.length&&<p>Detailed equipment was not returned for this character.</p>}</div></details>})}</div>}<p className="helper-note"><Info size={13}/> Matched public display-list characters are marked owned and their level is updated when it is available. Constellations and equipped weapons/artifacts sync only when Enka returns detailed character data; these remain separate from your planned build notes. Other characters, goals, teams, local markers and material quantities are preserved. This is not the full owned roster or private account inventory.</p></div>}</div>
     <section className="panel akasha-sync-panel">
       <div className="panel-head">
         <div><div className="eyebrow">PUBLIC LEADERBOARD & ARTIFACT DATA</div><h3>AKASHA profile sync</h3></div>
@@ -1819,7 +1945,7 @@ export default function App() {
       </div>
       <p className="panel-description">Sync public AKASHA character calculations, ranking percentiles, weapon choices and artifact-set information for the UID above. Load each character build’s artifact pieces on demand to inspect set, slot, level, main stat, substats and Crit Value. This uses AKASHA’s community API; it is not an official HoYoverse integration and does not need your password.</p>
       <div className="akasha-sync-actions">
-        <button className="button primary" onClick={syncAkashaProfile} disabled={akashaSyncLoading}>{akashaSyncLoading ? <><RefreshCw className="spin" size={15}/> Syncing AKASHA…</> : <><RefreshCw size={15}/> Sync AKASHA profile</>}</button>
+        <button className="button primary" onClick={()=>syncAkashaProfile()} disabled={akashaSyncLoading}>{akashaSyncLoading ? <><RefreshCw className="spin" size={15}/> Syncing AKASHA…</> : <><RefreshCw size={15}/> Sync AKASHA profile</>}</button>
         <a className="button secondary link-button" href={persisted.account.uid ? 'https://akasha.cv/profile/' + encodeURIComponent(persisted.account.uid) : 'https://akasha.cv/profiles'} target="_blank" rel="noreferrer"><ExternalLink size={14}/> Open AKASHA</a>
       </div>
       {akashaSyncError && <div className="notice warning sync-message"><Info size={15}/><span>{akashaSyncError}</span><button className="text-action" onClick={() => setAkashaSyncError('')} aria-label="Dismiss AKASHA message"><X size={13}/></button></div>}
@@ -2123,6 +2249,23 @@ function AkashaArtifactList({ artifacts = [] }) {
   </article>)}</div>;
 }
 
+function EnkaLiveBuildSummary({ build }) {
+  if (!build?.syncedAt) return null;
+  const slotOrder = ['Flower of Life', 'Plume of Death', 'Sands of Eon', 'Goblet of Eonothem', 'Circlet of Logos'];
+  const artifacts = [...(build.artifacts || [])].sort((a, b) =>
+    (slotOrder.indexOf(a.slot) < 0 ? 99 : slotOrder.indexOf(a.slot)) -
+    (slotOrder.indexOf(b.slot) < 0 ? 99 : slotOrder.indexOf(b.slot))
+  );
+  const talents = Array.isArray(build.talentLevels) ? build.talentLevels : [];
+  return <section className="enka-live-build-panel">
+    <div className="enka-live-build-head"><div><div className="eyebrow">LIVE SHOWCASE · ENKA.NETWORK</div><h3>Currently equipped</h3></div><span className="pill muted">Synced {new Date(build.syncedAt).toLocaleDateString()}</span></div>
+    <div className="enka-live-weapon"><Swords size={16}/><div><strong>{build.weapon || 'Weapon details unavailable'}</strong><small>{build.weaponLevel != null ? 'Weapon level ' + build.weaponLevel : 'Weapon level not provided'}{build.constellation != null ? ' · C' + build.constellation : ''}</small></div></div>
+    {talents.length > 0 && <div className="enka-live-talents"><span>Talent values · provider order</span><strong>{talents.join(' / ')}</strong></div>}
+    {artifacts.length > 0 ? <div className="enka-live-artifacts"><div className="eyebrow">ARTIFACTS · SLOT ORDER</div>{artifacts.map((artifact,index)=><div className="enka-live-artifact-row" key={(artifact.slot || artifact.name || 'artifact')+'-'+index}><div><strong>{artifact.slot || 'Artifact slot'} · {artifact.name}</strong><small>{artifact.setName || 'Unknown set'}{artifact.rarity ? ' · '+artifact.rarity+'★':''}{artifact.level != null ? ' · +'+artifact.level:''}</small></div><div><span>Main: {artifact.mainStat || 'Unknown'}</span>{artifact.substats?.length > 0 && <small>{artifact.substats.map(stat=>stat.name+(stat.value!=null?' '+stat.value:'')).join(' · ')}</small>}</div></div>)}</div> : <p className="helper-note">Enka did not return equipped artifact details for this character. Enable Character Details on your in-game profile to make them public.</p>}
+    <p className="helper-note"><Info size={13}/> Live equipment is kept separate from your planned build notes. Talent values follow Enka's raw provider order and are not guessed into Normal / Skill / Burst labels.</p>
+  </section>;
+}
+
 function CharacterModal({ character, onClose, onUpdate, onGoal, onMaterials, onToast, detailsLoading = false, detailsError = '', materialLookup = {}, onRetryDetails, onOpenBuild }) {
   const c=character;
   const [tab,setTab]=useState('overview');
@@ -2145,5 +2288,5 @@ function CharacterModal({ character, onClose, onUpdate, onGoal, onMaterials, onT
   const kqmUrl='https://keqingmains.com/?s='+encodeURIComponent(c.name||'');
   const videoUrl=youtubeSearch(String(c.name||'')+' build guide artifacts weapons talents');
   const save=()=>{onUpdate(c.id,{level:Number(level)||1,talents:talents.map(t=>Math.max(1,Math.min(10,Number(t)||1))),constellation:Number(constellation)||0,weaponName,artifact,mainStats,role,notes,owned});onToast('Character tracker updated');onClose();};
-  return <div className="modal-backdrop character-modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&onClose()}><div className="character-modal panel" style={{'--el-color':meta.color,'--el-soft':meta.soft}}><button className="modal-close icon-button" onClick={onClose}><X size={18}/></button><div className="character-modal-hero"><CharacterAvatar character={c} size="modal"/><div className="character-modal-heading"><div className="element-label" style={{color:meta.color}}><ElementGlyph element={c.element}/>{c.element} · {c.weapon}</div><h2>{c.name}</h2><div className="modal-subline"><span className="rarity-stars" aria-label={[4,5].includes(Number(c.rarity)) ? Number(c.rarity)+' star rarity' : 'Rarity data unavailable'}>{[4,5].includes(Number(c.rarity)) ? '★'.repeat(Number(c.rarity)) : 'Rarity N/A'}</span><span>{c.region||'Region not set'}</span><span>·</span><span>{c.owned?'In your roster':'Not owned yet'}</span></div><label className="toggle-owned"><input type="checkbox" checked={owned} onChange={e=>setOwned(e.target.checked)}/><span className="toggle-track"><i/></span><span>{owned?'Owned by you':'Mark as owned'}</span></label></div></div><div className="character-modal-tabs"><button className={tab==='overview'?'active':''} onClick={()=>setTab('overview')}>Overview</button><button className={tab==='build'?'active':''} onClick={()=>setTab('build')}>Build details</button><button className={tab==='gameData'?'active':''} onClick={()=>setTab('gameData')}>Talents & mats</button><button className={tab==='notes'?'active':''} onClick={()=>setTab('notes')}>Notes</button></div><div className="character-modal-body">{tab==='overview'&&<><div className="modal-section-intro"><div><div className="eyebrow">PERSONAL PROGRESSION</div><h3>Current investment</h3></div><span className="pill muted">Manual tracker</span></div><div className="character-level-control"><div><label className="field-label">Character level</label><div className="level-display"><strong>{level}</strong><span>/ 90</span></div></div><input type="range" min="1" max="90" value={level} onChange={e=>setLevel(Number(e.target.value))} aria-label="Character level"/><div className="level-markers"><span>Lv. 1</span><span>Lv. 90</span></div></div><div className="talent-levels"><label className="field-label">Talent levels <small>(manual)</small></label>{['Normal attack','Elemental skill','Elemental burst'].map((name,i)=><div className="talent-row" key={name}><span>{name}</span><div className="talent-input-wrap"><button onClick={()=>setTalents(p=>p.map((t,j)=>j===i?Math.max(1,Number(t)-1):t))} disabled={Number(talents[i])<=1}>−</button><strong>{talents[i]}</strong><button onClick={()=>setTalents(p=>p.map((t,j)=>j===i?Math.min(10,Number(t)+1):t))} disabled={Number(talents[i])>=10}>+</button></div></div>)}</div><div className="form-two-col"><label className="field-label">Constellation<select value={constellation} onChange={e=>setConstellation(e.target.value)}>{[0,1,2,3,4,5,6].map(v=><option key={v} value={v}>C{v}{v===0?' · C0': ''}</option>)}</select></label><label className="field-label">Combat role<select value={role} onChange={e=>setRole(e.target.value)}>{['Unassigned','Main DPS','Sub DPS','Support','Healer','Shielder','Off-field DPS','Driver'].map(v=><option key={v}>{v}</option>)}</select></label></div></>}{tab==='build'&&<><div className="modal-section-intro"><div><div className="eyebrow">YOUR BUILD</div><h3>Weapons & artifacts</h3></div><span className="pill muted">Editable notes</span></div><p className="helper-note"><Info size={13}/> These fields store your build notes. This starter version does not claim these are the currently optimal options for every team or patch.</p><label className="field-label">Equipped / planned weapon<input value={weaponName} onChange={e=>setWeaponName(e.target.value)} placeholder="Weapon name"/></label><label className="field-label">Artifact set<input value={artifact} onChange={e=>setArtifact(e.target.value)} placeholder="Artifact set or mixed pieces"/></label><label className="field-label">Main stats & substats<input value={mainStats} onChange={e=>setMainStats(e.target.value)} placeholder="Sands / Goblet / Circlet · priority substats"/></label><div className="build-note-card"><BookOpen size={16}/><div><strong>Need a verified build guide?</strong><p>Open community guides for the current character and compare weapon, artifact, and rotation advice.</p><button className="text-action" onClick={()=>window.open(youtubeSearch(`${c.name} build guide artifacts weapons`),'_blank','noopener,noreferrer')}>Search current guides <ArrowUpRight size={13}/></button><button className="button secondary" onClick={()=>onOpenBuild?.(c)}><BookOpen size={14}/> Open full build page</button></div></div></>}{tab==='gameData'&&<div className="game-data-tab"><div className="character-guide-links"><a className="button secondary" href={kqmUrl} target="_blank" rel="noreferrer"><BookOpen size={14}/> KeqingMains <ExternalLink size={12}/></a><a className="button secondary" href={youtubeSearch(String(c.name||'')+' Genshin Impact guide')} target="_blank" rel="noreferrer"><PlayCircle size={14}/> Video guides <ExternalLink size={12}/></a><a className="button secondary" href={wikiUrl} target="_blank" rel="noreferrer">Character wiki <ExternalLink size={12}/></a></div>{detailsLoading&&!gameData&&<p>Loading character data...</p>}{!detailsLoading&&!gameData&&<div><p>{detailsError||'Detailed game data has not loaded yet.'}</p>{c.apiId && <button className="text-action" onClick={()=>onRetryDetails?.(c)}>Try again <ArrowRight size={13}/></button>}</div>}{gameData&&<><h3>Ascension requirements</h3>{ascensionPhases.length?ascensionPhases.map((phase,i)=><div className="game-cost-group" key={phase.promoteLevel||phase.promote_level||i}><strong>Ascension {i+1}</strong><div>{normalizeCostItems(phase.costItems||phase.cost_items||phase.materials).map(item=><span className="game-material-chip" key={item.id+'-'+item.count}>{materialNameFor(item.id,materialLookup)} ×{item.count}</span>)}</div></div>):fallbackAscensionGroups.map(([stage,rows])=><div className="game-cost-group" key={stage}><strong>{stage.replace('level_','Up to Lv. ')}</strong><div className="game-material-chips">{rows.map((row,i)=><span className="game-material-chip" key={(row.name||'material')+'-'+i}>{row.name||'Material'} ×{row.value??row.count??0}</span>)}</div></div>)}{!ascensionPhases.length&&!fallbackAscensionGroups.length&&<p className="game-data-muted">Ascension requirements are unavailable in this source record. Use the linked reference and verify in-game.</p>}<h3>Talents & upgrade materials</h3>{talentDetails.map((talent,i)=>{const materialUpgrades=(talent.upgrades||[]).filter(up=>normalizeCostItems(up.costItems||up.cost_items||up.materials).length>0);return <details key={i}><summary>{talent.name||talent.type||('Talent '+(i+1))}</summary><p>{talent.description||''}</p>{materialUpgrades.map((up,j)=><div className="game-talent-upgrade" key={j}><strong>Level {up.level||up.lv||j+2}</strong><div className="game-material-chips">{normalizeCostItems(up.costItems||up.cost_items||up.materials).map(item=><span className="game-material-chip" key={item.id+'-'+item.count}>{materialNameFor(item.id,materialLookup)} ×{item.count}</span>)}</div></div>)}{!materialUpgrades.length&&<p className="game-data-muted">This source doesn't include per-level material costs for this talent. Check the character guide and verify in-game.</p>}</details>})}{materialGuides.length>0&&<section className="game-material-reference"><h3>Related farming materials</h3>{materialGuides.map((guide,i)=><div className="game-cost-group" key={guide.category+':'+guide.name+i}><strong>{guide.category}: {guide.name}</strong>{guide.items?.length>0&&<p>{guide.items.join(' · ')}</p>}{guide.availability&&<small>Domain days: {guide.availability}</small>}{guide.domain&&<small>Domain: {guide.domain}</small>}{guide.source&&<small>Source: {guide.source}</small>}</div>)}</section>}<h3>Constellations</h3>{(gameData.constellations||[]).map((node,i)=><details key={i}><summary>C{i+1} · {node.name||'Constellation'}</summary><p>{node.description||''}</p></details>)}</>}</div>}{tab==='notes'&&<><div className="modal-section-intro"><div><div className="eyebrow">PERSONAL NOTES</div><h3>What to remember</h3></div></div><label className="field-label">Build notes / team considerations<textarea rows="6" value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Add rotation reminders, teammate options, or what you want to improve…"/></label><div className="modal-quick-actions"><button className="button secondary" onClick={()=>onGoal(c)}><Target size={15}/> Add build goal</button><button className="button secondary" onClick={()=>onMaterials(c)}><PackageOpen size={15}/> Create material checklist</button></div></>}</div><div className="character-modal-footer"><div><span className="source-status"><Database size={13}/> Local tracker record</span><small>Save your edits to this browser</small></div><button className="button primary" onClick={save}><Check size={15}/> Save character</button></div></div></div>;
+  return <div className="modal-backdrop character-modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&onClose()}><div className="character-modal panel" style={{'--el-color':meta.color,'--el-soft':meta.soft}}><button className="modal-close icon-button" onClick={onClose}><X size={18}/></button><div className="character-modal-hero"><CharacterAvatar character={c} size="modal"/><div className="character-modal-heading"><div className="element-label" style={{color:meta.color}}><ElementGlyph element={c.element}/>{c.element} · {c.weapon}</div><h2>{c.name}</h2><div className="modal-subline"><span className="rarity-stars" aria-label={[4,5].includes(Number(c.rarity)) ? Number(c.rarity)+' star rarity' : 'Rarity data unavailable'}>{[4,5].includes(Number(c.rarity)) ? '★'.repeat(Number(c.rarity)) : 'Rarity N/A'}</span><span>{c.region||'Region not set'}</span><span>·</span><span>{c.owned?'In your roster':'Not owned yet'}</span></div><label className="toggle-owned"><input type="checkbox" checked={owned} onChange={e=>setOwned(e.target.checked)}/><span className="toggle-track"><i/></span><span>{owned?'Owned by you':'Mark as owned'}</span></label></div></div><div className="character-modal-tabs"><button className={tab==='overview'?'active':''} onClick={()=>setTab('overview')}>Overview</button><button className={tab==='build'?'active':''} onClick={()=>setTab('build')}>Build details</button><button className={tab==='gameData'?'active':''} onClick={()=>setTab('gameData')}>Talents & mats</button><button className={tab==='notes'?'active':''} onClick={()=>setTab('notes')}>Notes</button></div><div className="character-modal-body">{tab==='overview'&&<><div className="modal-section-intro"><div><div className="eyebrow">PERSONAL PROGRESSION</div><h3>Current investment</h3></div><span className="pill muted">Manual tracker</span></div><EnkaLiveBuildSummary build={c.enkaBuild}/><div className="character-level-control"><div><label className="field-label">Character level</label><div className="level-display"><strong>{level}</strong><span>/ 90</span></div></div><input type="range" min="1" max="90" value={level} onChange={e=>setLevel(Number(e.target.value))} aria-label="Character level"/><div className="level-markers"><span>Lv. 1</span><span>Lv. 90</span></div></div><div className="talent-levels"><label className="field-label">Talent levels <small>(manual)</small></label>{['Normal attack','Elemental skill','Elemental burst'].map((name,i)=><div className="talent-row" key={name}><span>{name}</span><div className="talent-input-wrap"><button onClick={()=>setTalents(p=>p.map((t,j)=>j===i?Math.max(1,Number(t)-1):t))} disabled={Number(talents[i])<=1}>−</button><strong>{talents[i]}</strong><button onClick={()=>setTalents(p=>p.map((t,j)=>j===i?Math.min(10,Number(t)+1):t))} disabled={Number(talents[i])>=10}>+</button></div></div>)}</div><div className="form-two-col"><label className="field-label">Constellation<select value={constellation} onChange={e=>setConstellation(e.target.value)}>{[0,1,2,3,4,5,6].map(v=><option key={v} value={v}>C{v}{v===0?' · C0': ''}</option>)}</select></label><label className="field-label">Combat role<select value={role} onChange={e=>setRole(e.target.value)}>{['Unassigned','Main DPS','Sub DPS','Support','Healer','Shielder','Off-field DPS','Driver'].map(v=><option key={v}>{v}</option>)}</select></label></div></>}{tab==='build'&&<><div className="modal-section-intro"><div><div className="eyebrow">YOUR BUILD</div><h3>Weapons & artifacts</h3></div><span className="pill muted">Editable notes</span></div><p className="helper-note"><Info size={13}/> These fields store your build notes. This starter version does not claim these are the currently optimal options for every team or patch.</p><label className="field-label">Equipped / planned weapon<input value={weaponName} onChange={e=>setWeaponName(e.target.value)} placeholder="Weapon name"/></label><label className="field-label">Artifact set<input value={artifact} onChange={e=>setArtifact(e.target.value)} placeholder="Artifact set or mixed pieces"/></label><label className="field-label">Main stats & substats<input value={mainStats} onChange={e=>setMainStats(e.target.value)} placeholder="Sands / Goblet / Circlet · priority substats"/></label><div className="build-note-card"><BookOpen size={16}/><div><strong>Need a verified build guide?</strong><p>Open community guides for the current character and compare weapon, artifact, and rotation advice.</p><button className="text-action" onClick={()=>window.open(youtubeSearch(`${c.name} build guide artifacts weapons`),'_blank','noopener,noreferrer')}>Search current guides <ArrowUpRight size={13}/></button><button className="button secondary" onClick={()=>onOpenBuild?.(c)}><BookOpen size={14}/> Open full build page</button></div></div></>}{tab==='gameData'&&<div className="game-data-tab"><div className="character-guide-links"><a className="button secondary" href={kqmUrl} target="_blank" rel="noreferrer"><BookOpen size={14}/> KeqingMains <ExternalLink size={12}/></a><a className="button secondary" href={youtubeSearch(String(c.name||'')+' Genshin Impact guide')} target="_blank" rel="noreferrer"><PlayCircle size={14}/> Video guides <ExternalLink size={12}/></a><a className="button secondary" href={wikiUrl} target="_blank" rel="noreferrer">Character wiki <ExternalLink size={12}/></a></div>{detailsLoading&&!gameData&&<p>Loading character data...</p>}{!detailsLoading&&!gameData&&<div><p>{detailsError||'Detailed game data has not loaded yet.'}</p>{c.apiId && <button className="text-action" onClick={()=>onRetryDetails?.(c)}>Try again <ArrowRight size={13}/></button>}</div>}{gameData&&<><h3>Ascension requirements</h3>{ascensionPhases.length?ascensionPhases.map((phase,i)=><div className="game-cost-group" key={phase.promoteLevel||phase.promote_level||i}><strong>Ascension {i+1}</strong><div>{normalizeCostItems(phase.costItems||phase.cost_items||phase.materials).map(item=><span className="game-material-chip" key={item.id+'-'+item.count}>{materialNameFor(item.id,materialLookup)} ×{item.count}</span>)}</div></div>):fallbackAscensionGroups.map(([stage,rows])=><div className="game-cost-group" key={stage}><strong>{stage.replace('level_','Up to Lv. ')}</strong><div className="game-material-chips">{rows.map((row,i)=><span className="game-material-chip" key={(row.name||'material')+'-'+i}>{row.name||'Material'} ×{row.value??row.count??0}</span>)}</div></div>)}{!ascensionPhases.length&&!fallbackAscensionGroups.length&&<p className="game-data-muted">Ascension requirements are unavailable in this source record. Use the linked reference and verify in-game.</p>}<h3>Talents & upgrade materials</h3>{talentDetails.map((talent,i)=>{const materialUpgrades=(talent.upgrades||[]).filter(up=>normalizeCostItems(up.costItems||up.cost_items||up.materials).length>0);return <details key={i}><summary>{talent.name||talent.type||('Talent '+(i+1))}</summary><p>{talent.description||''}</p>{materialUpgrades.map((up,j)=><div className="game-talent-upgrade" key={j}><strong>Level {up.level||up.lv||j+2}</strong><div className="game-material-chips">{normalizeCostItems(up.costItems||up.cost_items||up.materials).map(item=><span className="game-material-chip" key={item.id+'-'+item.count}>{materialNameFor(item.id,materialLookup)} ×{item.count}</span>)}</div></div>)}{!materialUpgrades.length&&<p className="game-data-muted">This source doesn't include per-level material costs for this talent. Check the character guide and verify in-game.</p>}</details>})}{materialGuides.length>0&&<section className="game-material-reference"><h3>Related farming materials</h3>{materialGuides.map((guide,i)=><div className="game-cost-group" key={guide.category+':'+guide.name+i}><strong>{guide.category}: {guide.name}</strong>{guide.items?.length>0&&<p>{guide.items.join(' · ')}</p>}{guide.availability&&<small>Domain days: {guide.availability}</small>}{guide.domain&&<small>Domain: {guide.domain}</small>}{guide.source&&<small>Source: {guide.source}</small>}</div>)}</section>}<h3>Constellations</h3>{(gameData.constellations||[]).map((node,i)=><details key={i}><summary>C{i+1} · {node.name||'Constellation'}</summary><p>{node.description||''}</p></details>)}</>}</div>}{tab==='notes'&&<><div className="modal-section-intro"><div><div className="eyebrow">PERSONAL NOTES</div><h3>What to remember</h3></div></div><label className="field-label">Build notes / team considerations<textarea rows="6" value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Add rotation reminders, teammate options, or what you want to improve…"/></label><div className="modal-quick-actions"><button className="button secondary" onClick={()=>onGoal(c)}><Target size={15}/> Add build goal</button><button className="button secondary" onClick={()=>onMaterials(c)}><PackageOpen size={15}/> Create material checklist</button></div></>}</div><div className="character-modal-footer"><div><span className="source-status"><Database size={13}/> Local tracker record</span><small>Save your edits to this browser</small></div><button className="button primary" onClick={save}><Check size={15}/> Save character</button></div></div></div>;
 }
