@@ -19,15 +19,18 @@ function publicProfileSegment(value, maxLength = 96) {
  * Fetch only a verified/public Enka profile's saved builds. This is an optional
  * enrichment: its failure must never turn a valid UID/showcase sync into a failure.
  */
-async function fetchPublicSavedBuilds(owner) {
+async function fetchPublicSavedBuilds(owner, timeoutMs = 2500) {
   const username = publicProfileSegment(owner?.username, 64);
   const hash = publicProfileSegment(owner?.hash, 96);
   if (!username || !hash) {
     return { status: owner ? 'invalid-public-profile-metadata' : 'no-public-Enka-profile', builds: null };
   }
 
+  if (!Number.isFinite(timeoutMs) || timeoutMs < 250) {
+    return { status: 'skipped-time-budget', builds: null };
+  }
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 6500);
+  const timeout = setTimeout(() => controller.abort(), Math.min(2500, timeoutMs));
   try {
     const url = 'https://enka.network/api/profile/' + encodeURIComponent(username)
       + '/hoyos/' + encodeURIComponent(hash) + '/builds/';
@@ -71,6 +74,7 @@ export default async function handler(req, res) {
     return json(res, 400, { error: 'Enter a valid 9–10 digit Genshin UID.' }, { 'Cache-Control': 'no-store' });
   }
 
+  const requestStartedAt = Date.now();
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 9000);
   try {
@@ -101,9 +105,10 @@ export default async function handler(req, res) {
     const requestedTtl = Number(payload.ttl);
     const ttl = Number.isFinite(requestedTtl) && requestedTtl > 0 ? Math.min(86400, Math.ceil(requestedTtl)) : 60;
     const includeBuilds = String(req.query?.includeBuilds || '') === '1';
-    // Saved builds are an optional, documented Enka public-profile endpoint. Keep the
-    // core showcase path successful if the secondary request is hidden or unavailable.
-    const saved = includeBuilds ? await fetchPublicSavedBuilds(payload.owner) : null;
+    // Keep enough of the function's timeout budget for the primary UID response.
+    // Saved-build enrichment is optional and must never break the core roster import.
+    const savedBudget = Math.min(2500, Math.max(0, 8500 - (Date.now() - requestStartedAt)));
+    const saved = includeBuilds ? await fetchPublicSavedBuilds(payload.owner, savedBudget) : null;
     const responsePayload = includeBuilds
       ? { ...payload, savedBuilds: saved.builds, savedBuildsStatus: saved.status }
       : payload;
