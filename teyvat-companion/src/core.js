@@ -424,6 +424,36 @@ export function mergeCharacterCatalogue(previousCharacters, freshRecords) {
 }
 
 
+/**
+ * Reject suspiciously small/invalid refresh responses instead of replacing a
+ * good local catalogue with a partial upstream response.
+ */
+export const MIN_PLAYABLE_CHARACTER_COUNT = 100;
+
+export function validateCharacterCatalogue(records, minimum = MIN_PLAYABLE_CHARACTER_COUNT) {
+  if (!Array.isArray(records)) {
+    throw new Error('The character data source returned an invalid catalogue.');
+  }
+  const byId = new Map();
+  for (const record of records) {
+    if (!record || typeof record !== 'object' || Array.isArray(record)) continue;
+    const id = String(record.id ?? '').trim();
+    const name = String(record.name ?? '').trim();
+    if (!id || !name) continue;
+    byId.set(id, { ...record, id, name });
+  }
+  const normalized = [...byId.values()];
+  const expectedMinimum = Number.isFinite(Number(minimum)) ? Math.max(1, Math.floor(Number(minimum))) : MIN_PLAYABLE_CHARACTER_COUNT;
+  if (normalized.length < expectedMinimum) {
+    throw new Error(
+      'The refresh returned only ' + normalized.length + ' unique character records; expected at least ' +
+      expectedMinimum + '. Your existing catalogue was kept. Try again when the source has recovered.'
+    );
+  }
+  return normalized;
+}
+
+
 const round2 = value => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
 
 function numberOr(value, fallback = 0) {
