@@ -1833,6 +1833,67 @@ const ADDITIONAL_ROLE_VARIANTS = {
       playstyle: 'A niche main-DPS alternative, not a claim that it outperforms her usual Sub DPS setup.',
     },
   ],
+
+  albedo: [
+    {
+      id: 'archaic-petra-team-support', role: 'Geo Team Buffer / Support', buildCategory: 'Support',
+      sourceUrl: 'https://genshin.gg/characters/albedo/',
+      sourceName: 'Genshin.gg — Albedo character build page',
+      sourceNote: 'A team-buff alternative to the standard off-field Geo damage build. The 4-piece Archaic Petra effect requires collecting the correct Crystallize shard, so it is rotation-dependent and may be awkward in fast teams.',
+      artifacts: [{ name: 'Archaic Petra', note: 'Team elemental-damage buff when the equipped character collects the correct shard.' }, { name: 'Husk of Opulent Dreams', note: 'Return to this for stronger personal Skill damage.' }],
+      stats: { sands: 'DEF%', goblet: 'Geo DMG Bonus / DEF%', circlet: 'CRIT Rate / CRIT DMG' },
+      substats: ['CRIT Rate / CRIT DMG', 'DEF%', 'Energy Recharge as needed'],
+      weapons: [{ name: 'Peak Patrol Song', note: 'Premium support/damage option.' }, { name: 'Favonius Sword', note: 'Team energy option.' }, { name: 'Harbinger of Dawn', note: 'Accessible CRIT option when its HP condition is maintained.' }],
+      talentOrder: ['Elemental Skill', 'Elemental Burst', 'Normal Attack'],
+      teamFocus: 'Equip Archaic Petra only when you can deliberately collect the shard matching your carry’s element; otherwise prioritize Albedo’s normal off-field damage.',
+      playstyle: 'Team-buff carrier, not a healer or a general-purpose buffer. His usual Sub DPS build is the more reliable default.',
+    },
+  ],
+  keqing: [
+    {
+      id: 'physical-main-dps', role: 'Physical Main DPS (legacy/niche)', buildCategory: 'Main DPS',
+      sourceUrl: 'https://genshin.gg/characters/keqing/',
+      sourceName: 'Genshin.gg — Keqing character build page',
+      sourceNote: 'Legacy physical alternative to her current Electro/Aggravate recommendation. It is a workable Normal/Charged Attack playstyle but usually gives up the reaction damage enabled by Dendro.',
+      artifacts: [{ name: 'Pale Flame', note: 'Physical damage option when Skill hits maintain its effect.' }, { name: 'Pale Flame 2-piece + Bloodstained Chivalry 2-piece', note: 'Simple physical damage combination.' }, { name: 'Gladiator’s Finale', note: 'Normal Attack-focused alternative to compare with your weapon.' }],
+      stats: { sands: 'ATK%', goblet: 'Physical DMG Bonus', circlet: 'CRIT Rate / CRIT DMG' },
+      substats: ['CRIT Rate / CRIT DMG', 'ATK%', 'Energy Recharge only as required'],
+      weapons: [{ name: 'Aquila Favonia', note: 'Physical damage option.' }, { name: 'Prototype Rancour', note: 'Craftable physical weapon.' }, { name: 'Primordial Jade Cutter', note: 'CRIT-oriented damage option.' }],
+      talentOrder: ['Normal Attack', 'Elemental Skill', 'Elemental Burst'],
+      teamFocus: 'Use a physical damage team with Superconduct and avoid pressing Skill in a way that repeatedly converts her attacks to Electro when physical damage is the goal.',
+      playstyle: 'Legacy physical carry option. For most modern teams, her Electro/Aggravate build is the recommended investment.',
+    },
+  ],
+  dahlia: [
+    {
+      id: 'scroll-team-support', role: 'Elemental Team Support', buildCategory: 'Support',
+      sourceUrl: 'https://genshin.gg/characters/dahlia/',
+      sourceName: 'Genshin.gg — Dahlia character build page',
+      sourceNote: 'Alternative support set for teams that can maintain Scroll of the Hero of Cinder City’s buff. Keep the Noblesse setup when its ATK buff is more relevant or Scroll conditions are unreliable.',
+      artifacts: [{ name: 'Scroll of the Hero of Cinder City', note: 'Elemental damage buff for compatible reaction teams.' }, { name: 'Noblesse Oblige', note: 'Current character-page support option; use when no teammate already carries it.' }, { name: 'Tenacity of the Millelith 2-piece + Vourukasha’s Glow 2-piece', note: 'HP-focused defensive alternative.' }],
+      stats: { sands: 'Energy Recharge / HP%', goblet: 'HP%', circlet: 'HP%' },
+      substats: ['Energy Recharge for Burst uptime', 'HP%', 'CRIT Rate if using Favonius Sword'],
+      weapons: [{ name: 'Favonius Sword', note: 'Team energy option.' }, { name: 'Key of Khaj-Nisut', note: 'HP/team utility option.' }, { name: 'The Dockhand’s Assistant', note: 'HP and Energy utility option.' }],
+      talentOrder: ['Elemental Skill', 'Elemental Burst', 'Normal Attack'],
+      teamFocus: 'Pick the artifact set based on the team buff the party can actually trigger; preserve enough ER and HP for his support rotation.',
+      playstyle: 'A support-set alternative, not a damage-dealer build. Use the source baseline if Scroll is unreliable in your composition.',
+    },
+  ],
+  jahoda: [
+    {
+      id: 'full-em-swirl-support', role: 'Full EM Swirl Support', buildCategory: 'Support',
+      sourceUrl: 'https://genshin.gg/characters/jahoda/',
+      sourceName: 'Genshin.gg — Jahoda character build page',
+      sourceNote: 'Swirl-focused alternative to her ATK/healing support setup. Use it only if the team benefits from her triggering Swirl and her healing/buff scaling remains adequate.',
+      artifacts: [{ name: 'Viridescent Venerer', note: 'Swirl damage and elemental resistance reduction.' }, { name: 'Noblesse Oblige', note: 'ATK-buff alternative when team application and her Burst support make it a better fit.' }],
+      stats: { sands: 'Elemental Mastery / Energy Recharge', goblet: 'Elemental Mastery', circlet: 'Elemental Mastery / Healing Bonus' },
+      substats: ['Energy Recharge', 'Elemental Mastery', 'ATK% if required for healing or buff scaling'],
+      weapons: [{ name: 'Favonius Warbow', note: 'Team energy option; build CRIT Rate for reliable triggers.' }, { name: 'Elegy for the End', note: 'Team buff option.' }, { name: 'Rainbow Serpent’s Rain Bow', note: 'Craftable team utility option.' }],
+      talentOrder: ['Elemental Skill', 'Elemental Burst', 'Normal Attack'],
+      teamFocus: 'Swirl the carry’s element while maintaining the support conditions and enough energy for her utility.',
+      playstyle: 'A reaction-support variant. The original ATK/ER profile may be better if her main buffs scale with ATK rather than EM.',
+    },
+  ],
 };
 
 for (const [characterKey, variants] of Object.entries(ADDITIONAL_ROLE_VARIANTS)) {
