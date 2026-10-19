@@ -331,6 +331,32 @@ test('imports GOOD v3 character, weapon and artifact inventory', () => {
   assert.equal(good.importedAt, '2026-10-18T12:00:00.000Z');
 });
 
+test('imports Inventory Kamera-style GOOD export as JSON text', () => {
+  const inventory = parseGoodInventory(JSON.stringify({
+    format: 'GOOD',
+    version: 3,
+    source: 'Inventory Kamera',
+    characters: [{ key: 'KaedeharaKazuha', level: 90, ascension: 6, constellation: 0, talent: { auto: 8, skill: 9, burst: 10 } }],
+    weapons: [{ key: 'FreedomSworn', level: 90, ascension: 6, refinement: 1, location: 'KaedeharaKazuha' }],
+    artifacts: [{
+      setKey: 'ViridescentVenerer',
+      slotKey: 'goblet',
+      level: 20,
+      rarity: 5,
+      mainStatKey: 'anemo_dmg_',
+      location: '',
+      lock: true,
+      substats: [{ key: 'critRate_', value: 10.1 }, { key: 'critDMG_', value: 20.2 }],
+    }],
+  }), '2026-10-19T12:00:00.000Z');
+
+  assert.equal(inventory.source, 'Inventory Kamera');
+  assert.equal(inventory.characters[0].level, 90);
+  assert.equal(inventory.weapons[0].key, 'FreedomSworn');
+  assert.equal(inventory.artifacts[0].slotKey, 'goblet');
+  assert.equal(inventory.summary.artifacts, 1);
+});
+
 test('rejects malformed or unsupported GOOD imports instead of replacing data', () => {
   assert.throws(() => parseGoodInventory('{broken'), /valid JSON/);
   assert.throws(() => parseGoodInventory({ format: 'not GOOD', version: 3 }), /not a GOOD file/);
