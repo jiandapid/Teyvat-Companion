@@ -74,6 +74,8 @@ export function flattenEnkaSavedBuilds(savedBuilds, characters = []) {
       || null;
     for (const [index, raw] of rawList.slice(0, 50).entries()) {
       if (!raw || typeof raw !== 'object' || Array.isArray(raw)) continue;
+      // Never surface a build explicitly marked private even if an API response includes it.
+      if (raw.public === false) continue;
       const rawOrder = Number(raw.order);
       result.push({
         id: String(raw.id ?? (avatarId + '-' + index)),
