@@ -2641,3 +2641,93 @@ input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible
 @media (prefers-color-scheme: light) {
   html, body, #root { color: #d1d1d5 !important; background: #050505 !important; }
 }
+
+
+/* STRICT PALETTE ENFORCEMENT — every app section, including character details,
+   build role cards, team recommendations, element badges, and rarity labels.
+   Only actual character/game artwork may retain its original colors. */
+:root {
+  --pyro: #d1d1d5 !important; --hydro: #d1d1d5 !important;
+  --cryo: #d1d1d5 !important; --electro: #d1d1d5 !important;
+  --dendro: #d1d1d5 !important; --anemo: #d1d1d5 !important;
+  --geo: #d1d1d5 !important; --success: #c4c4c8 !important;
+  --danger: #c4c4c8 !important; --warning: #d4af62 !important;
+}
+.element-glyph, .element-badge, .element-tag, .element-icon,
+.rarity, .rarity-badge, .star-rating, .character-element,
+.role-badge, .team-role, .role-chip, .team-synergy, .synergy-badge,
+.build-role-tab, .build-role, .build-stat, .build-stat-card,
+.weapon-card, .artifact-card, .talent-card, .recommendation-card,
+.team-member, .team-slot, .team-composition, .team-recommendation,
+.character-detail, .character-profile, .character-info, .character-meta,
+.character-builds, .build-section, .build-detail, .build-detail-main,
+.build-panel, .build-panel-heading, .build-recommendation, .team-section,
+.team-detail, .team-header, .team-notes, .material-row, .material-item {
+  color: #d1d1d5 !important;
+  border-color: rgba(212,175,98,.38) !important;
+}
+.element-glyph, .element-badge, .element-tag, .element-icon,
+.rarity, .rarity-badge, .star-rating, .character-element,
+.role-badge, .team-role, .role-chip, .team-synergy, .synergy-badge,
+.build-role-tab, .build-role, .build-stat-card, .weapon-card, .artifact-card,
+.talent-card, .recommendation-card, .team-member, .team-slot,
+.team-composition, .team-recommendation, .character-detail,
+.character-profile, .character-info, .character-meta, .character-builds,
+.build-section, .build-detail, .build-detail-main, .build-panel,
+.build-recommendation, .team-section, .team-detail, .team-header,
+.team-notes, .material-row, .material-item {
+  background-color: #0d0d0d !important;
+  background-image: none !important;
+}
+.element-glyph, .element-badge, .element-tag, .element-icon,
+.rarity, .rarity-badge, .star-rating, .character-element,
+.role-badge, .team-role, .role-chip, .team-synergy, .synergy-badge {
+  --el-color: #d4af62 !important;
+  --el-soft: rgba(212,175,98,.10) !important;
+  color: #d4af62 !important;
+}
+[class*="element-"]:not(img):not(svg),
+[class*="rarity"]:not(img):not(svg),
+[class*="pyro"]:not(img):not(svg),
+[class*="hydro"]:not(img):not(svg),
+[class*="cryo"]:not(img):not(svg),
+[class*="electro"]:not(img):not(svg),
+[class*="dendro"]:not(img):not(svg),
+[class*="anemo"]:not(img):not(svg),
+[class*="geo"]:not(img):not(svg),
+[class*="team-"]:not(img):not(svg),
+[class*="build-"]:not(img):not(svg) {
+  border-color: rgba(212,175,98,.34) !important;
+}
+[class*="element-"]:not(img):not(svg),
+[class*="rarity"]:not(img):not(svg),
+[class*="pyro"]:not(img):not(svg),
+[class*="hydro"]:not(img):not(svg),
+[class*="cryo"]:not(img):not(svg),
+[class*="electro"]:not(img):not(svg),
+[class*="dendro"]:not(img):not(svg),
+[class*="anemo"]:not(img):not(svg),
+[class*="geo"]:not(img):not(svg) {
+  color: #d1d1d5 !important;
+}
+[class*="element-"]:not(img):not(svg),
+[class*="rarity"]:not(img):not(svg),
+[class*="pyro"]:not(img):not(svg),
+[class*="hydro"]:not(img):not(svg),
+[class*="cryo"]:not(img):not(svg),
+[class*="electro"]:not(img):not(svg),
+[class*="dendro"]:not(img):not(svg),
+[class*="anemo"]:not(img):not(svg),
+[class*="geo"]:not(img):not(svg) {
+  background-color: #101010 !important;
+  background-image: none !important;
+}
+/* Neutralize common inline element colors without touching character images. */
+[style*="--el-color"], [style*="--el-soft"] {
+  --el-color: #d4af62 !important;
+  --el-soft: rgba(212,175,98,.10) !important;
+}
+.element-glyph svg, .element-icon svg, .role-badge svg, .team-role svg {
+  color: #d4af62 !important;
+  stroke: #d4af62 !important;
+}
