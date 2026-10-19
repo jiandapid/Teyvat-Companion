@@ -1,12 +1,14 @@
 export const ELEMENTS = ['All elements', 'Pyro', 'Hydro', 'Anemo', 'Electro', 'Dendro', 'Cryo', 'Geo'];
 export const ELEMENT_META = {
-  Pyro: { icon: '✦', color: '#f37c67', soft: 'rgba(243,124,103,.16)' },
-  Hydro: { icon: '◈', color: '#6fbaff', soft: 'rgba(111,186,255,.16)' },
-  Anemo: { icon: '❋', color: '#7ed9ba', soft: 'rgba(126,217,186,.16)' },
-  Electro: { icon: 'ϟ', color: '#bb9aff', soft: 'rgba(187,154,255,.16)' },
-  Dendro: { icon: '❧', color: '#a7d878', soft: 'rgba(167,216,120,.16)' },
-  Cryo: { icon: '❄', color: '#8edce8', soft: 'rgba(142,220,232,.16)' },
-  Geo: { icon: '⬡', color: '#eac36c', soft: 'rgba(234,195,108,.16)' },
+  // Saturated, accessible element colors work on the updated parchment UI as
+  // text/icon colors while their translucent variants stay soft in portraits.
+  Pyro: { icon: '✦', color: '#b74835', soft: 'rgba(183,72,53,.13)' },
+  Hydro: { icon: '◈', color: '#286f9b', soft: 'rgba(40,111,155,.13)' },
+  Anemo: { icon: '❋', color: '#34795f', soft: 'rgba(52,121,95,.13)' },
+  Electro: { icon: 'ϟ', color: '#7650a5', soft: 'rgba(118,80,165,.13)' },
+  Dendro: { icon: '❧', color: '#587e31', soft: 'rgba(88,126,49,.13)' },
+  Cryo: { icon: '❄', color: '#286e88', soft: 'rgba(40,110,136,.13)' },
+  Geo: { icon: '⬡', color: '#89651f', soft: 'rgba(137,101,31,.13)' },
 };
 
 // Starter records are a small, clearly editable local catalogue. Refresh game data in Settings to try the public dataset.
