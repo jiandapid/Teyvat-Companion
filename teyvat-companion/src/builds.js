@@ -957,7 +957,7 @@ const ADDITIONAL_ROLE_VARIANTS = {
       teamFocus: 'Use Skill uptime and reaction application to support the team while another character occupies most field time.',
       playstyle: 'This is a role/timing change more than a universal gear upgrade. Her main DPS build remains the default when you want Mavuika to drive the rotation.',
     },
-  ],,
+  ],
 
   yelan: [
     {
