@@ -519,7 +519,7 @@ export function analyzeTeamComposition(teamCharacters = []) {
     elements: [...elements],
     reactions,
     checks,
-    summary: members.length + '/4 slots · ' + ownedCount + '/' + members.length + ' marked owned · ' + elements.size + ' element' + (elements.size === 1 ? '' : 's'),
+    summary: members.length + '/4 slots · ' + (members.length ? ownedCount + '/' + members.length + ' marked owned' : 'no characters selected') + ' · ' + elements.size + ' element' + (elements.size === 1 ? '' : 's'),
   };
 }
 
