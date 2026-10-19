@@ -411,6 +411,7 @@ test('artifact optimizer returns a five-slot loadout and evaluates preferred 4-p
   assert.ok(best.setBreakdown.some(set => set.key === 'EmblemOfSeveredFate' && set.count >= 4 && set.preferred));
   assert.ok(best.setBonusScore > 0);
   assert.ok(best.pieces.every(piece => piece.reasons.length > 0));
+  assert.ok(best.pieces.every(piece => Number.isFinite(piece._mainStatScore) && Number.isFinite(piece._substatScore) && Number.isFinite(piece._rarityScore) && Number.isFinite(piece._levelScore)), 'each selected piece exposes transparent heuristic score components');
   assert.ok(result.combinationsSearched > 0);
 });
 
