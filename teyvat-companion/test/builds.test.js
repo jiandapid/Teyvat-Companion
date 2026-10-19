@@ -197,7 +197,7 @@ test('remaining role coverage batch has complete source-noted variants', () => {
     kachina: ['geo-team-support'],
     'traveler-hydro': ['hydro-burst-sub-dps'],
     'traveler-pyro': ['pyro-burst-sub-dps'],
-    inefaa: ['on-field-electro-driver'],
+    ineffa: ['on-field-electro-driver'],
     iansan: ['high-uptime-atk-support'],
     'yumemizuki-mizuki': ['full-em-swirl-support'],
     aloy: ['freeze-main-dps'],
