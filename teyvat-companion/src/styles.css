@@ -2540,3 +2540,7 @@ h1, h2, h3, h4, .stat-value, .material-hero-total strong {
 .cloud-sync-panel .notice{margin:12px 0}
 .cloud-sync-panel .helper-note{margin:0;color:var(--muted);font-size:10px;line-height:1.55}
 @media(max-width:700px){.cloud-sync-panel{padding:15px}.cloud-auth-form{grid-template-columns:minmax(0,1fr)}.cloud-auth-form .cloud-action-row,.cloud-auth-form>.helper-note{grid-column:auto}.cloud-action-row{align-items:stretch;flex-direction:column}.cloud-action-row .button{width:100%;justify-content:center}}
+
+.toast-undo{margin-left:7px;padding:5px 9px;border:1px solid rgba(234,201,126,.42);border-radius:5px;background:rgba(234,201,126,.12);color:var(--gold);font:inherit;font-size:10px;font-weight:700;white-space:nowrap}
+.toast-undo:hover{background:rgba(234,201,126,.2)}
+.toast-undo:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
