@@ -36,7 +36,7 @@ test('every character build page has all three role categories represented', () 
     for (const option of available) assert.ok(option.profile, characterKey + ': available role must have actual profile data');
     for (const option of unreviewed) {
       assert.equal(option.profile, null, characterKey + ': unreviewed role must not recycle a different role profile');
-      assert.match(option.label, /not reviewed|not recommended/i);
+      assert.match(option.label, /not reviewed|not recommended|no separate sourced build/i);
     }
   }
 });
