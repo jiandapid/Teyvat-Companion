@@ -2511,3 +2511,133 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 @media (max-width: 720px) {
   .hero-art:after { background: linear-gradient(90deg, #15130e 0%, rgba(15,14,11,.7) 10%, rgba(10,10,10,.05) 52%, rgba(5,5,5,.1) 100%); }
 }
+
+
+/* FINAL THEME LOCK — remove all legacy green, blue, violet, and white UI colors.
+   UI palette is strictly near-black, antique gold, and silver. Character/game artwork
+   is intentionally left untouched. */
+:root {
+  color-scheme: dark;
+  --bg: #050505 !important;
+  --panel: #101010 !important;
+  --panel-2: #171717 !important;
+  --border: rgba(212,175,98,.34) !important;
+  --border-strong: rgba(212,175,98,.65) !important;
+  --muted: #a4a4a8 !important;
+  --subtle: #c4c4c8 !important;
+  --text: #d1d1d5 !important;
+  --text-primary: #d1d1d5 !important;
+  --text-secondary: #bdbdc2 !important;
+  --gold: #d4af62 !important;
+  --gold-dark: #8e6d2d !important;
+  --blue: #c4c4c8 !important;
+  --green: #c4c4c8 !important;
+  --red: #bdbdc2 !important;
+  --accent-gold: #d4af62 !important;
+}
+html, body, #root, main, .app, .app-shell, .main-content, .page-content {
+  color: #d1d1d5 !important;
+  background-color: #050505 !important;
+}
+body {
+  background-image: radial-gradient(ellipse at 50% -20%, rgba(177,137,57,.08), transparent 48%) !important;
+}
+*:not(img):not(video):not(canvas):not(picture):not(source) {
+  scrollbar-color: #8e6d2d #080808;
+}
+h1, h2, h3, h4, h5, h6, p, span, label, li, dt, dd, strong, b, em, small,
+caption, figcaption, blockquote, summary, legend, th, td, .muted, .subtle,
+.helper-note, .stat-value, .stat-note, .breadcrumb, .eyebrow, .section-heading,
+.page-title, .panel-title, .card-title, .empty-state, .notice, .status-label {
+  color: #d1d1d5;
+}
+h1, h2, h3, h4, h5, h6, strong, b, .stat-value, .page-title, .panel-title, .card-title {
+  color: #dedee2;
+}
+a, .text-action, .eyebrow, .section-heading .eyebrow, .rank-chip, .nav-count,
+.hero-kicker, .hero-art-ornament, .hero-art-caption-mark, table th {
+  color: #d4af62 !important;
+}
+a:hover, .text-action:hover { color: #f0d895 !important; }
+svg:not([data-character-art]) { color: #c4c4c8; }
+hr, .divider, fieldset, table, th, td {
+  border-color: rgba(212,175,98,.24) !important;
+}
+.sidebar, .topbar, header, nav, aside, footer,
+.panel, .stat-card, .card, .modal, .dialog, .dropdown-menu, .popover,
+.tooltip, .menu, .menu-item, .global-search-menu, .global-search-result,
+.side-quest-card, .character-card, .character-build-card, .build-card,
+.team-card, .guide-card, .material-card, .empty-state, .notice,
+.table-wrap, .data-table, .filter-bar, .toolbar, .settings-section {
+  background-color: #0b0b0b !important;
+  border-color: rgba(212,175,98,.32) !important;
+  color: #d1d1d5 !important;
+}
+.panel, .stat-card, .card, .modal, .dialog, .character-card, .character-build-card,
+.build-card, .team-card, .guide-card, .material-card {
+  background-image: linear-gradient(145deg, #131313, #090909) !important;
+  box-shadow: 0 8px 28px rgba(0,0,0,.32), inset 0 1px 0 rgba(212,175,98,.025) !important;
+}
+.nav-item, .tab, .filter-chip, .chip, .tag, .pill, .badge, .segmented-control button {
+  color: #c4c4c8 !important;
+  background-color: #101010 !important;
+  border-color: rgba(212,175,98,.28) !important;
+}
+.nav-item.active, .tab.active, .build-role-tab.active, .filter-chip.active,
+.segmented-control button.active, [aria-current="page"] {
+  color: #e0bd70 !important;
+  background: rgba(212,175,98,.10) !important;
+  border-color: rgba(212,175,98,.62) !important;
+}
+button, .button, input[type="button"], input[type="submit"], [role="button"] {
+  color: #d1d1d5;
+  border-color: rgba(212,175,98,.42);
+}
+.button.primary, .button.gold, button.primary, button.gold, .primary-button {
+  color: #090806 !important;
+  background: linear-gradient(135deg, #e5c77d, #c49a45) !important;
+  border-color: #e5c77d !important;
+}
+.button.secondary, button.secondary, .button.glass {
+  color: #d1d1d5 !important;
+  background: #111 !important;
+  border-color: rgba(212,175,98,.48) !important;
+}
+input, select, textarea, option, .global-search, .search-field {
+  color: #d1d1d5 !important;
+  background-color: #090909 !important;
+  border-color: rgba(212,175,98,.38) !important;
+}
+input::placeholder, textarea::placeholder { color: #929298 !important; opacity: 1; }
+input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible {
+  outline-color: #d4af62 !important;
+  border-color: #d4af62 !important;
+  box-shadow: 0 0 0 2px rgba(212,175,98,.12) !important;
+}
+.progress-track, .progress-bar-track, progress {
+  background-color: #292929 !important;
+  accent-color: #d4af62 !important;
+}
+.progress-track span, .progress-fill, .progress-bar-fill {
+  background: linear-gradient(90deg, #8e6d2d, #e5c77d) !important;
+}
+.notice.success, .notice.error, .notice.warning, .success, .error, .warning,
+.status-success, .status-error, .status-warning {
+  color: #d1d1d5 !important;
+  background-color: #111 !important;
+  border-color: rgba(212,175,98,.34) !important;
+}
+[style*="color: green"], [style*="color:green"],
+[style*="color: white"], [style*="color:white"],
+[style*="color: #fff"], [style*="color:#fff"],
+[style*="color: rgb(255"], [style*="background: green"],
+[style*="background-color: green"], [style*="background: white"],
+[style*="background-color: white"] {
+  color: #d1d1d5 !important;
+  background-color: #101010 !important;
+  border-color: rgba(212,175,98,.34) !important;
+}
+::selection { color: #080808 !important; background: #d4af62 !important; }
+@media (prefers-color-scheme: light) {
+  html, body, #root { color: #d1d1d5 !important; background: #050505 !important; }
+}
