@@ -7,11 +7,13 @@ A dark fantasy-style, responsive Genshin Impact guide and tracker MVP built with
 You need Node.js 18+.
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-Open the local URL Vite prints (usually `http://localhost:5173`). To create a production build:
+Open the local URL Vite prints (usually `http://localhost:5173`).
+
+Because this repository includes `package-lock.json`, use `npm ci` for a clean, reproducible install. When intentionally adding or upgrading dependencies, run `npm install` to update the lockfile, then commit both `package.json` and `package-lock.json`. To create a production build:
 
 ```bash
 npm run build
@@ -87,4 +89,4 @@ The cloud copy is manual rather than continuous autosync; this avoids one device
 
 ### Publish without GitHub (manual alternative)
 
-You can use the Vercel CLI from the project folder: install dependencies with `npm install`, then run `npx vercel` and follow the prompts to create a preview deployment. After reviewing it, run `npx vercel --prod` to publish production. Connecting GitHub is recommended for automatic deployments.
+You can use the Vercel CLI from the project folder: install dependencies with `npm ci`, then run `npx vercel` and follow the prompts to create a preview deployment. After reviewing it, run `npx vercel --prod` to publish production. Connecting GitHub is recommended for automatic deployments.
