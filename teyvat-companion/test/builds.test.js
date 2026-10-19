@@ -115,3 +115,27 @@ test('Kaeya is included and alternate sources remain direct and role-specific', 
     }
   }
 });
+
+test('more characters expose additional role-specific recommendations', () => {
+  const expected = {
+    nahida: ['full-em-dendro-support'],
+    collei: ['burst-sub-dps'],
+    tighnari: ['on-field-charged-shot-carry'],
+    'traveler-dendro': ['dendro-burst-sub-dps'],
+    'traveler-electro': ['electro-burst-sub-dps'],
+    'traveler-anemo': ['full-em-swirl-support'],
+    ororon: ['scroll-team-buffer'],
+    mavuika: ['off-field-pyro-sub-dps'],
+    zhongli: ['burst-sub-dps'],
+    kaeya: ['cryo-battery-support'],
+  };
+  for (const [key, ids] of Object.entries(expected)) {
+    for (const id of ids) {
+      const variant = CHARACTER_BUILD_GUIDES[key].alternateBuilds.find(build => build.id === id);
+      assert.ok(variant, key + ': expected additional build ' + id);
+      assertCompleteProfile(key + '/' + id, variant);
+      assert.ok(variant.sourceName && variant.sourceNote, key + '/' + id + ': source metadata is required');
+    }
+  }
+  assert.equal(CHARACTER_BUILD_GUIDES['traveler-anemo'].buildCategory, 'Sub DPS');
+});
