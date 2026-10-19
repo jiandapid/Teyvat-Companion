@@ -2,6 +2,60 @@ export function isValidGenshinUid(value) {
   return /^[0-9]{9,10}$/.test(String(value ?? '').trim());
 }
 
+
+/**
+ * Validate and normalize the outer shape of a Teyvat Companion backup before
+ * importing it. A malformed file must never silently reset a user's workspace.
+ */
+function isBackupRecord(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+export function normalizeTrackerBackup(input) {
+  if (!isBackupRecord(input)) {
+    throw new Error('The backup must be a JSON object.');
+  }
+  if (input.format != null && input.format !== 'teyvat-companion-backup-v1') {
+    throw new Error('This backup format is not supported by this version of Teyvat Companion.');
+  }
+
+  const rawCharacters = Array.isArray(input.characters)
+    ? input.characters
+    : isBackupRecord(input.characters)
+      ? Object.entries(input.characters).map(([id, character]) =>
+          isBackupRecord(character) ? { ...character, id: character.id ?? id } : character)
+      : null;
+  if (!rawCharacters) {
+    throw new Error('No character data was found. Choose a Teyvat Companion backup.');
+  }
+
+  const charactersById = new Map();
+  for (const character of rawCharacters) {
+    if (!isBackupRecord(character) || character.id == null || !String(character.id).trim()) continue;
+    const id = String(character.id).trim();
+    charactersById.set(id, { ...character, id });
+  }
+  if (!charactersById.size) {
+    throw new Error('The backup contains no valid character records. Your current data was not changed.');
+  }
+
+  for (const key of ['materials', 'teams', 'goals', 'tasks', 'mapMarkers']) {
+    if (input[key] !== undefined && !Array.isArray(input[key])) {
+      throw new Error('The backup has an invalid "' + key + '" section. Your current data was not changed.');
+    }
+  }
+  if (input.account != null && !isBackupRecord(input.account)) {
+    throw new Error('The backup has an invalid account section. Your current data was not changed.');
+  }
+  for (const key of ['enkaSnapshot', 'goodInventory', 'akashaSnapshot']) {
+    if (input[key] != null && !isBackupRecord(input[key])) {
+      throw new Error('The backup has an invalid "' + key + '" section. Your current data was not changed.');
+    }
+  }
+
+  return { ...input, characters: [...charactersById.values()] };
+}
+
 export function enkaTtlSeconds(value) {
   const ttl = Number(value);
   return Number.isFinite(ttl) && ttl > 0 ? Math.min(86400, Math.ceil(ttl)) : 60;
