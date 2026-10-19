@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildProgressionPlan, enkaTtlSeconds, isValidGenshinUid, matchGoodCharacterKey, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory } from '../src/core.js';
+import { buildProgressionPlan, enkaTtlSeconds, flattenEnkaSavedBuilds, isValidGenshinUid, matchGoodCharacterKey, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory } from '../src/core.js';
 import { CHARACTER_BUILD_GUIDES } from '../src/builds.js';
 import { MATERIAL_STARTER, NAV_ITEMS, STARTER_CHARACTERS, STARTER_TEAMS } from '../src/data.js';
 
@@ -69,6 +69,40 @@ test('detailed Enka records still work if the basic public display list is absen
   assert.equal(roster[0].characterId, 'kazuha');
   assert.equal(roster[0].level, 90);
   assert.equal(roster[0].detailsAvailable, true);
+});
+
+test('flattens public Enka saved builds, maps characters, and orders build choices', () => {
+  const builds = flattenEnkaSavedBuilds({
+    '10000046': [
+      { id: 3, name: 'Live Kazuha', order: 2, live: true, avatar_data: { genshin: { equipList: [] } } },
+      { id: 1, name: 'EM Support', order: 0, live: false, public: true, settings: { mainStat: 'EM' } },
+      { id: 9, name: 'Private draft', order: 1, live: false, public: false },
+    ],
+    '10000025': [{ id: 4, name: 'Raiden Burst', order: 0, live: false }],
+  }, [
+    { id: 'kazuha', name: 'Kaedehara Kazuha', apiId: '10000046' },
+    { id: 'raiden', name: 'Raiden Shogun', apiId: '10000025' },
+  ]);
+
+  assert.equal(builds.length, 3, 'explicitly private builds are excluded');
+  assert.deepEqual(builds.map(build => build.name), ['EM Support', 'Live Kazuha', 'Raiden Burst']);
+  assert.equal(builds[0].characterId, 'kazuha');
+  assert.equal(builds[0].characterName, 'Kaedehara Kazuha');
+  assert.equal(builds[0].live, false);
+  assert.equal(builds[1].live, true);
+  assert.equal(builds[1].avatarData.genshin.equipList.length, 0);
+  assert.equal(builds[0].settings.mainStat, 'EM');
+});
+
+test('ignores invalid Enka saved-build payloads and malformed items', () => {
+  assert.deepEqual(flattenEnkaSavedBuilds(null), []);
+  assert.deepEqual(flattenEnkaSavedBuilds([]), []);
+  const builds = flattenEnkaSavedBuilds({
+    '12345': [null, 'bad', [], { name: 'Unmatched' }],
+  });
+  assert.equal(builds.length, 1);
+  assert.equal(builds[0].characterId, '');
+  assert.equal(builds[0].characterName, 'Character ID 12345');
 });
 
 test('sync imports account equipment without overwriting the planned build', () => {
