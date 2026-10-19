@@ -4,7 +4,7 @@
 
 export const CHARACTER_BUILD_GUIDES = {
   skirk: {
-    role: 'Main DPS', sourceUrl: 'https://genshin.gg/builds/', buildCategory: 'Main DPS',
+    role: 'Main DPS', sourceUrl: 'https://genshin.gg/characters/skirk/', buildCategory: 'Main DPS',
     artifacts: [{ name: 'Finale of the Deep Galleries', note: 'Primary set in the existing tracker profile.' }],
     stats: { sands: 'ATK%', goblet: 'Cryo DMG Bonus / ATK%', circlet: 'CRIT Rate / CRIT DMG' },
     substats: ['CRIT Rate / CRIT DMG', 'ATK%', 'Useful ATK rolls'],
@@ -24,7 +24,7 @@ export const CHARACTER_BUILD_GUIDES = {
     playstyle: 'Balance damage, healing and Burst uptime instead of choosing artifact stats from damage alone.',
   },
   xingqiu: {
-    role: 'Off-field Hydro / Sub DPS', sourceUrl: 'https://genshin.gg/builds/', buildCategory: 'Sub DPS',
+    role: 'Off-field Hydro / Sub DPS', sourceUrl: 'https://genshin.gg/characters/xingqiu/', buildCategory: 'Sub DPS',
     artifacts: [{ name: 'Emblem of Severed Fate', note: 'Strong general-purpose set for Burst damage and Energy Recharge.' }],
     stats: { sands: 'ER% or ATK%', goblet: 'Hydro DMG Bonus', circlet: 'CRIT Rate / CRIT DMG' },
     substats: ['Enough ER to Burst every rotation', 'CRIT Rate / CRIT DMG', 'ATK%'],
@@ -35,7 +35,7 @@ export const CHARACTER_BUILD_GUIDES = {
     featuredVideo: { id: 'y9NHP1bxEo8', start: 1279, title: 'Complete Support Guide — Xingqiu section', creator: 'Zy0x', era: 'Jan 2021 · older reference' },
   },
   mona: {
-    role: 'Support / Buffer', sourceUrl: 'https://genshin.gg/builds/', buildCategory: 'Support',
+    role: 'Support / Buffer', sourceUrl: 'https://genshin.gg/characters/mona/', buildCategory: 'Support',
     artifacts: [{ name: 'Noblesse Oblige', note: 'Team-support option when no teammate already carries the 4-piece effect.' }, { name: 'Emblem of Severed Fate', note: 'Personal Burst-damage option to compare.' }],
     stats: { sands: 'ER% / ATK%', goblet: 'Hydro DMG Bonus', circlet: 'CRIT Rate / CRIT DMG' },
     substats: ['ER for the intended Burst cycle', 'CRIT', 'ATK%'],
@@ -46,7 +46,7 @@ export const CHARACTER_BUILD_GUIDES = {
     featuredVideo: { id: 'y9NHP1bxEo8', start: 1410, title: 'Complete Support Guide — Mona section', creator: 'Zy0x', era: 'Jan 2021 · older reference' },
   },
   furina: {
-    role: 'Off-field Hydro / Buffer', sourceUrl: 'https://genshin.gg/builds/', buildCategory: 'Sub DPS',
+    role: 'Off-field Hydro / Buffer', sourceUrl: 'https://genshin.gg/characters/furina/', buildCategory: 'Sub DPS',
     artifacts: [{ name: 'Golden Troupe', note: 'General-purpose off-field Skill damage set.' }],
     stats: { sands: 'HP% / ER%', goblet: 'HP% / Hydro DMG Bonus', circlet: 'CRIT Rate / CRIT DMG' },
     substats: ['ER until Burst is comfortable', 'CRIT Rate / CRIT DMG', 'HP%'],
@@ -110,7 +110,7 @@ export const CHARACTER_BUILD_GUIDES = {
     ],
   },
   bennett: {
-    role: 'Support / Healer / ATK Buffer', sourceUrl: 'https://genshin.gg/builds/', buildCategory: 'Support',
+    role: 'Support / Healer / ATK Buffer', sourceUrl: 'https://genshin.gg/characters/bennett/', buildCategory: 'Support',
     artifacts: [{ name: 'Noblesse Oblige', note: 'Team-support set if another party member does not already provide its buff.' }],
     stats: { sands: 'ER% / HP%', goblet: 'HP% / Pyro DMG Bonus', circlet: 'Healing Bonus / HP% / CRIT' },
     substats: ['ER until Burst is ready each rotation', 'HP% for more healing', 'CRIT Rate if using Favonius Sword'],
@@ -147,7 +147,7 @@ export const CHARACTER_BUILD_GUIDES = {
     ],
   },
   zhongli: {
-    role: 'Shielder / Support', sourceUrl: 'https://genshin.gg/builds/', buildCategory: 'Support',
+    role: 'Shielder / Support', sourceUrl: 'https://genshin.gg/characters/zhongli/', buildCategory: 'Support',
     artifacts: [{ name: 'Tenacity of the Millelith', note: 'Support option when the team benefits from its buffs.' }, { name: 'Archaic Petra', note: 'Alternative team-buff route that requires picking up the correct Crystallize shard.' }],
     stats: { sands: 'HP%', goblet: 'HP%', circlet: 'HP%' },
     substats: ['HP%', 'ER if using Burst regularly', 'CRIT Rate if using Favonius Lance'],
@@ -158,7 +158,7 @@ export const CHARACTER_BUILD_GUIDES = {
     featuredVideo: { id: 'y9NHP1bxEo8', start: 476, title: 'Complete Support Guide — Zhongli section', creator: 'Zy0x', era: 'Jan 2021 · older reference' },
   },
   neuvillette: {
-    role: 'On-field Hydro DPS', sourceUrl: 'https://genshin.gg/builds/', buildCategory: 'Main DPS',
+    role: 'On-field Hydro DPS', sourceUrl: 'https://genshin.gg/characters/neuvillette/', buildCategory: 'Main DPS',
     artifacts: [{ name: 'Marechaussee Hunter', note: 'Pairs with his HP fluctuations and Charged Attack playstyle.' }],
     stats: { sands: 'HP%', goblet: 'Hydro DMG Bonus / HP%', circlet: 'CRIT DMG / CRIT Rate' },
     substats: ['CRIT Rate / CRIT DMG', 'HP%', 'ER only as needed'],
@@ -168,7 +168,7 @@ export const CHARACTER_BUILD_GUIDES = {
     playstyle: 'Consider CRIT Rate carefully with Marechaussee Hunter’s in-combat bonus; avoid overcapping.',
   },
   xiangling: {
-    role: 'Off-field Pyro / Sub DPS', sourceUrl: 'https://genshin.gg/builds/', buildCategory: 'Sub DPS',
+    role: 'Off-field Pyro / Sub DPS', sourceUrl: 'https://genshin.gg/characters/xiangling/', buildCategory: 'Sub DPS',
     artifacts: [{ name: 'Emblem of Severed Fate', note: 'Common general-purpose set for Burst damage and ER.' }],
     stats: { sands: 'ER% / EM / ATK%', goblet: 'Pyro DMG Bonus', circlet: 'CRIT Rate / CRIT DMG' },
     substats: ['ER for Burst uptime', 'CRIT Rate / CRIT DMG', 'EM and ATK%'],
@@ -179,7 +179,7 @@ export const CHARACTER_BUILD_GUIDES = {
     featuredVideo: { id: 'y9NHP1bxEo8', start: 1692, title: 'Complete Support Guide — Xiangling section', creator: 'Zy0x', era: 'Jan 2021 · older reference' },
   },
   yelan: {
-    role: 'Off-field Hydro / Sub DPS', sourceUrl: 'https://genshin.gg/builds/', buildCategory: 'Sub DPS',
+    role: 'Off-field Hydro / Sub DPS', sourceUrl: 'https://genshin.gg/characters/yelan/', buildCategory: 'Sub DPS',
     artifacts: [{ name: 'Emblem of Severed Fate', note: 'Common general-purpose set for Burst damage and ER.' }],
     stats: { sands: 'HP% / ER%', goblet: 'Hydro DMG Bonus', circlet: 'CRIT Rate / CRIT DMG' },
     substats: ['ER until the planned rotation is reliable', 'CRIT Rate / CRIT DMG', 'HP%'],
@@ -190,7 +190,7 @@ export const CHARACTER_BUILD_GUIDES = {
     featuredVideo: { id: 'gnm47TtjmQE', title: 'Updated Yelan Guide — artifacts, weapons, teams', creator: 'Zy0x', era: 'Feb 2023 · check for newer updates' },
   },
   qiqi: {
-    role: 'Healer', sourceUrl: 'https://genshin.gg/builds/', buildCategory: 'Support',
+    role: 'Healer', sourceUrl: 'https://genshin.gg/characters/qiqi/', buildCategory: 'Support',
     artifacts: [{ name: 'Ocean-Hued Clam', note: 'Healing-to-damage set option.' }, { name: 'Tenacity of the Millelith', note: 'Alternative when team buffing is the goal and uptime works.' }],
     stats: { sands: 'ATK%', goblet: 'ATK%', circlet: 'Healing Bonus / ATK%' },
     substats: ['ATK%', 'ER for Burst use', 'ER or utility as needed'],
@@ -201,7 +201,7 @@ export const CHARACTER_BUILD_GUIDES = {
     featuredVideo: { id: 'y9NHP1bxEo8', start: 1022, title: 'Complete Support Guide — Qiqi section', creator: 'Zy0x', era: 'Jan 2021 · older reference' },
   },
   wanderer: {
-    role: 'On-field Anemo DPS', sourceUrl: 'https://genshin.gg/builds/', buildCategory: 'Main DPS',
+    role: 'On-field Anemo DPS', sourceUrl: 'https://genshin.gg/characters/wanderer/', buildCategory: 'Main DPS',
     artifacts: [{ name: 'Desert Pavilion Chronicle', note: 'Dedicated Normal/Charged Attack playstyle set.' }, { name: 'Shimenawa’s Reminiscence', note: 'Alternative to compare for personal damage.' }],
     stats: { sands: 'ATK%', goblet: 'Anemo DMG Bonus', circlet: 'CRIT Rate / CRIT DMG' },
     substats: ['CRIT Rate / CRIT DMG', 'ATK%', 'ER if using Burst every rotation'],
@@ -211,7 +211,7 @@ export const CHARACTER_BUILD_GUIDES = {
     playstyle: 'Keep normal attacks inside his Skill window and check CRIT Rate after external buffs.',
   },
   layla: {
-    role: 'Shielder / Support', sourceUrl: 'https://genshin.gg/builds/', buildCategory: 'Support',
+    role: 'Shielder / Support', sourceUrl: 'https://genshin.gg/characters/layla/', buildCategory: 'Support',
     artifacts: [{ name: 'Tenacity of the Millelith', note: 'Support set that can complement her Skill hits.' }, { name: '2-piece HP% sets', note: 'Straightforward shield-strength alternative.' }],
     stats: { sands: 'HP%', goblet: 'HP%', circlet: 'HP% / CRIT Rate' },
     substats: ['HP%', 'ER if using Burst regularly', 'CRIT Rate if using Favonius Sword'],
@@ -221,7 +221,7 @@ export const CHARACTER_BUILD_GUIDES = {
     playstyle: 'HP/HP/HP is an easy shield-first baseline, then add enough ER for your rotation.',
   },
   gaming: {
-    role: 'On-field Plunge DPS', sourceUrl: 'https://genshin.gg/builds/', buildCategory: 'Main DPS',
+    role: 'On-field Plunge DPS', sourceUrl: 'https://genshin.gg/characters/gaming/', buildCategory: 'Main DPS',
     artifacts: [{ name: 'Marechaussee Hunter', note: 'Strong option with reliable HP fluctuation.' }, { name: 'Crimson Witch of Flames', note: 'Reaction-focused alternative.' }],
     stats: { sands: 'ATK% / EM', goblet: 'Pyro DMG Bonus', circlet: 'CRIT Rate / CRIT DMG' },
     substats: ['CRIT Rate / CRIT DMG', 'ATK%', 'EM in reaction teams'],
@@ -231,7 +231,7 @@ export const CHARACTER_BUILD_GUIDES = {
     playstyle: 'Evaluate weapon passives in the real team; some choices require reliable healing to activate.',
   },
   fischl: {
-    role: 'Off-field Electro / Sub DPS', sourceUrl: 'https://genshin.gg/builds/', buildCategory: 'Sub DPS',
+    role: 'Off-field Electro / Sub DPS', sourceUrl: 'https://genshin.gg/characters/fischl/', buildCategory: 'Sub DPS',
     artifacts: [{ name: 'Golden Troupe', note: 'Strong off-field Skill damage option.' }],
     stats: { sands: 'ATK%', goblet: 'Electro DMG Bonus', circlet: 'CRIT Rate / CRIT DMG' },
     substats: ['CRIT Rate / CRIT DMG', 'ATK%', 'EM in reaction-focused teams'],
@@ -242,7 +242,7 @@ export const CHARACTER_BUILD_GUIDES = {
     featuredVideo: { id: 'y9NHP1bxEo8', start: 1156, title: 'Complete Support Guide — Fischl section', creator: 'Zy0x', era: 'Jan 2021 · older reference' },
   },
   sucrose: {
-    role: 'Anemo Support / Reaction Enabler', sourceUrl: 'https://genshin.gg/builds/', buildCategory: 'Support',
+    role: 'Anemo Support / Reaction Enabler', sourceUrl: 'https://genshin.gg/characters/sucrose/', buildCategory: 'Support',
     artifacts: [{ name: 'Viridescent Venerer', note: 'Default support set for Swirl and resistance reduction.' }],
     stats: { sands: 'Elemental Mastery', goblet: 'Elemental Mastery', circlet: 'Elemental Mastery' },
     substats: ['ER as needed', 'Elemental Mastery', 'CRIT Rate if using Favonius Codex'],
@@ -285,6 +285,17 @@ export const CHARACTER_BUILD_GUIDES = {
   faruzan: {role:'Anemo Support', buildCategory: 'Support',artifacts:[{name:'Viridescent Venerer',note:'General Anemo set; team-specific buff sets may be preferable.'}],stats:{sands:'Energy Recharge',goblet:'Anemo DMG Bonus',circlet:'CRIT Rate / CRIT DMG'},substats:['Energy Recharge','CRIT Rate if using Favonius','CRIT DMG'],weapons:[{name:'Favonius Warbow',note:'Utility option listed by Genshin.gg'}],talentOrder:['Elemental Burst','Elemental Skill','Normal Attack'],teamFocus:'Prioritize Burst uptime for Anemo carry buffing.',playstyle:'ER is often the first requirement, especially at lower constellations.',sourceUrl:'https://genshin.gg/builds/' },
   gorou: {role:'Geo Support', buildCategory: 'Support',artifacts:[{name:'The Exile',note:'Team energy support option.'}],stats:{sands:'Energy Recharge',goblet:'Geo DMG Bonus',circlet:'CRIT Rate'},substats:['Energy Recharge','CRIT Rate if using Favonius','DEF%'],weapons:[{name:'Favonius Warbow',note:'Utility option listed by Genshin.gg'}],talentOrder:['Elemental Skill','Elemental Burst','Normal Attack'],teamFocus:'Best value in DEF-scaling Geo teams; Favonius supports team energy.',playstyle:'Meet ER needs before optimizing personal damage.',sourceUrl:'https://genshin.gg/builds/' },
   heizou: {role:'On-field Anemo driver / Sub DPS', buildCategory: 'Sub DPS',artifacts:[{name:'Viridescent Venerer',note:'Current Genshin.gg top-listed set for Swirl and resistance reduction.'}],stats:{sands:'Elemental Mastery',goblet:'Elemental Mastery',circlet:'Elemental Mastery'},substats:['Elemental Mastery','ATK%','Energy Recharge as needed'],weapons:[{name:'A Thousand Floating Dreams',note:'Top-listed weapon on the current Genshin.gg Heizou page.'},{name:'Sacrificial Fragments',note:'EM alternative listed by Genshin.gg.'},{name:'Wandering Evenstar',note:'EM/team support option listed by Genshin.gg.'}],talentOrder:['Elemental Skill','Elemental Burst','Normal Attack'],teamFocus:'Use him as an on-field Swirl driver for off-field elemental damage dealers; Swirl and team support are central to this build.',playstyle:'The EM/Swirl setup is the primary source-backed baseline; personal CRIT damage is a different build direction and should not be mixed casually.',sourceUrl:'https://genshin.gg/characters/heizou/' },
+  kaeya: {
+    role: 'Cryo Sub DPS', buildCategory: 'Sub DPS', sourceUrl: 'https://genshin.gg/characters/kaeya/',
+    artifacts: [{ name: 'Emblem of Severed Fate', note: 'Genshin.gg top-listed set for Burst-oriented off-field damage.' }, { name: 'Blizzard Strayer 2-piece + Noblesse Oblige 2-piece', note: 'Cryo damage plus Burst damage alternative.' }, { name: 'Noblesse Oblige 4-piece', note: 'Team buff alternative if no teammate already provides it.' }],
+    stats: { sands: 'Energy Recharge / ATK%', goblet: 'Cryo DMG Bonus', circlet: 'CRIT Rate / CRIT DMG' },
+    substats: ['Energy Recharge for the intended Burst cycle', 'CRIT Rate / CRIT DMG', 'ATK%'],
+    weapons: [{ name: 'Primordial Jade Cutter', note: 'Top-listed weapon on current Genshin.gg Kaeya page.' }, { name: 'Mistsplitter Reforged', note: 'Premium Cryo damage alternative.' }, { name: 'Light of Foliar Incision', note: 'CRIT-oriented alternative listed by Genshin.gg.' }, { name: 'Favonius Sword', note: 'Team-energy option.' }],
+    talentOrder: ['Elemental Burst', 'Elemental Skill', 'Normal Attack'],
+    teamFocus: 'Use his Burst as off-field Cryo damage in Freeze or Reverse Melt teams; pair with a clear on-field carry when he is a Sub DPS.',
+    playstyle: 'Prioritize enough ER to use Burst when needed, then build CRIT and ATK. Freeze and Reverse Melt change the value of CRIT Rate and EM.',
+    featuredVideo: { id: 'boSN2ScIPj0', start: 497, title: 'Kaeya — DPS build section', creator: 'Zy0x', era: 'Feb 2021 · legacy reference' },
+  },
   "kuki-shinobu": {
     role: 'Off-field Hyperbloom trigger / Sub DPS', buildCategory: 'Sub DPS',
     sourceUrl: 'https://genshin.gg/characters/kukishinobu/',
