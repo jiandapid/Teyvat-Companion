@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { BUILD_ROLE_CATEGORIES, CHARACTER_BUILD_GUIDES, getCharacterBuildRoleOptions } from '../src/builds.js';
+import { BUILD_ROLE_CATEGORIES, CHARACTER_BUILD_ALIASES, CHARACTER_BUILD_GUIDES, getCharacterBuildRoleOptions } from '../src/builds.js';
 
 const validCategories = new Set(BUILD_ROLE_CATEGORIES);
 
@@ -17,8 +17,11 @@ function assertCompleteProfile(key, profile) {
 
 test('every character has a complete primary build profile', () => {
   const entries = Object.entries(CHARACTER_BUILD_GUIDES);
-  assert.ok(entries.length >= 100, 'expected the full character build catalogue');
-  for (const [key, profile] of entries) assertCompleteProfile(key, profile);
+  assert.ok(entries.length >= 123, 'expected the complete current character build catalogue');
+  for (const [key, profile] of entries) {
+    assertCompleteProfile(key, profile);
+    assert.ok(!profile.sourceUrl.endsWith('/builds/'), key + ': use a character-specific source URL');
+  }
 });
 
 test('every character build page has all three role categories represented', () => {
@@ -69,4 +72,46 @@ test('the build selector catalogue has the intended evidence-backed variants', (
   );
   assert.ok(CHARACTER_BUILD_GUIDES.nahida.alternateBuilds.some(build => build.id === 'on-field-driver'));
   assert.ok(CHARACTER_BUILD_GUIDES.kazuha.alternateBuilds.some(build => build.id === 'quickswap-dps'));
+});
+
+test('recent roster additions have current source-backed primary build profiles', () => {
+  for (const key of ['ineffa', 'iansan', 'yumemizuki-mizuki']) {
+    assertCompleteProfile(key, CHARACTER_BUILD_GUIDES[key]);
+  }
+  assert.equal(CHARACTER_BUILD_GUIDES.ineffa.buildCategory, 'Sub DPS');
+  assert.equal(CHARACTER_BUILD_GUIDES.iansan.buildCategory, 'Support');
+  assert.equal(CHARACTER_BUILD_GUIDES['yumemizuki-mizuki'].buildCategory, 'Main DPS');
+  assert.equal(CHARACTER_BUILD_ALIASES.mizuki, 'yumemizuki-mizuki');
+});
+
+test('current Genshin.gg role labels are reflected for recently corrected profiles', () => {
+  assert.equal(CHARACTER_BUILD_GUIDES.raiden.buildCategory, 'Sub DPS');
+  assert.equal(CHARACTER_BUILD_GUIDES['escoffier'].buildCategory, 'Sub DPS');
+  assert.equal(CHARACTER_BUILD_GUIDES.tighnari.buildCategory, 'Sub DPS');
+  assert.equal(CHARACTER_BUILD_GUIDES.heizou.buildCategory, 'Sub DPS');
+  assert.equal(CHARACTER_BUILD_GUIDES.lisa.buildCategory, 'Support');
+  assert.equal(CHARACTER_BUILD_GUIDES.dehya.buildCategory, 'Support');
+  assert.equal(CHARACTER_BUILD_GUIDES.ifa.buildCategory, 'Main DPS');
+  assert.ok(CHARACTER_BUILD_GUIDES.raiden.alternateBuilds.some(build => build.id === 'on-field-burst-carry'));
+});
+
+test('Kaeya is included and alternate sources remain direct and role-specific', () => {
+  assertCompleteProfile('kaeya', CHARACTER_BUILD_GUIDES.kaeya);
+  assert.ok(CHARACTER_BUILD_GUIDES.kaeya.alternateBuilds.some(build => build.id === 'freeze-main-dps'));
+  for (const [key, ids] of Object.entries({
+    escoffier: ['freeze-support-buffer'],
+    dehya: ['main-dps-burst-carry', 'burgeon-sub-dps'],
+    thoma: ['burgeon-sub-dps'],
+    venti: ['full-em-support'],
+    'yae-miko': ['on-field-aggravate'],
+    sucrose: ['on-field-reaction-driver'],
+    barbara: ['on-field-hydro-driver'],
+  })) {
+    for (const id of ids) {
+      const variant = CHARACTER_BUILD_GUIDES[key].alternateBuilds.find(build => build.id === id);
+      assert.ok(variant, key + ': expected researched alternate ' + id);
+      assert.ok(variant.sourceName && variant.sourceNote, key + '/' + id + ': source and caveat are required');
+      assertCompleteProfile(key + '/' + id, variant);
+    }
+  }
 });
