@@ -425,6 +425,105 @@ export function mergeCharacterCatalogue(previousCharacters, freshRecords) {
 
 
 /**
+ * Give practical, deliberately non-authoritative checks for a saved/draft team.
+ * Element checks suggest possible reactions; they do not model application,
+ * internal cooldowns, rotations, buffs, or exact damage.
+ */
+export function analyzeTeamComposition(teamCharacters = []) {
+  const members = Array.isArray(teamCharacters)
+    ? teamCharacters.filter(member => member && typeof member === 'object' && !Array.isArray(member))
+    : [];
+  const ids = members.map(member => String(member.id ?? '')).filter(Boolean);
+  const uniqueIds = new Set(ids);
+  const duplicateCount = ids.length - uniqueIds.size;
+  const elements = new Set(members.map(member => String(member.element || '').trim().toLowerCase()).filter(Boolean));
+  const roles = members.map(member => String(member.role || '').trim().toLowerCase());
+  const ownedCount = members.filter(member => member.owned === true).length;
+  const reactions = [];
+  const has = (...names) => names.every(name => elements.has(name));
+  const add = (name) => { if (!reactions.includes(name)) reactions.push(name); };
+
+  if (has('hydro', 'pyro')) add('Vaporize');
+  if (has('cryo', 'pyro')) add('Melt');
+  if (has('hydro', 'cryo')) add('Freeze');
+  if (has('hydro', 'electro')) add('Electro-Charged');
+  if (has('cryo', 'electro')) add('Superconduct');
+  if (has('dendro', 'hydro')) {
+    add('Bloom');
+    if (elements.has('electro')) add('Hyperbloom');
+    if (elements.has('pyro')) add('Burgeon');
+  }
+  if (has('dendro', 'electro')) add('Quicken (Aggravate / Spread)');
+  if (has('dendro', 'pyro')) add('Burning');
+  if (elements.has('anemo') && ['pyro', 'hydro', 'cryo', 'electro'].some(element => elements.has(element))) add('Swirl');
+  if (elements.has('geo') && ['pyro', 'hydro', 'cryo', 'electro'].some(element => elements.has(element))) add('Crystallize');
+
+  const checks = [];
+  if (members.length < 4) {
+    checks.push({
+      level: 'tip',
+      title: 'Party has ' + members.length + ' of 4 slots filled',
+      detail: 'Add the rest of your planned lineup if you want a full-team review. Partial teams are fine for planning.',
+    });
+  }
+  if (duplicateCount > 0) {
+    checks.push({
+      level: 'warning',
+      title: 'Duplicate character slots',
+      detail: 'This lineup repeats ' + duplicateCount + ' character slot(s). A normal party cannot use the same character twice.',
+    });
+  }
+  const hasOnFieldRole = roles.some(role => /main dps|on.field|driver|main damage/.test(role));
+  if (members.length > 0 && !hasOnFieldRole) {
+    checks.push({
+      level: 'tip',
+      title: 'Check who stays on field',
+      detail: 'No clear on-field carry is marked in the tracked roles. This can be intentional in quick-swap teams; check your rotation and build roles.',
+    });
+  }
+  const hasSustainRole = roles.some(role => /healer|shielder|shield|survivability/.test(role));
+  if (members.length > 0 && !hasSustainRole) {
+    checks.push({
+      level: 'tip',
+      title: 'Survivability not identified',
+      detail: 'No healer or shielder is identified from the tracked role labels. That is not automatically wrong, but consider comfort and interruption resistance.',
+    });
+  }
+  if (reactions.length > 0) {
+    checks.push({
+      level: 'positive',
+      title: 'Potential reactions: ' + reactions.slice(0, 4).join(', ') + (reactions.length > 4 ? '…' : ''),
+      detail: 'These reactions are possible from the elements present. Reliable application, timing, ICDs, and the best reaction for your carry still depend on the actual kits and rotation.',
+    });
+  } else if (members.length > 1) {
+    checks.push({
+      level: 'tip',
+      title: 'No common reaction pair detected',
+      detail: 'This can be intentional for mono-element or non-reaction teams. Check the carry’s kit before changing elements just to add a reaction.',
+    });
+  }
+  if (members.length > 1) {
+    checks.push({
+      level: 'tip',
+      title: 'Review Energy Recharge and rotation',
+      detail: 'Check each character’s Burst cost and personal Energy Recharge needs against your actual teammates. This overview does not calculate ER requirements.',
+    });
+  }
+
+  return {
+    memberCount: members.length,
+    uniqueMemberCount: uniqueIds.size,
+    duplicateCount,
+    ownedCount,
+    elementCount: elements.size,
+    elements: [...elements],
+    reactions,
+    checks,
+    summary: members.length + '/4 slots · ' + ownedCount + '/' + members.length + ' marked owned · ' + elements.size + ' element' + (elements.size === 1 ? '' : 's'),
+  };
+}
+
+/**
  * Reject suspiciously small/invalid refresh responses instead of replacing a
  * good local catalogue with a partial upstream response.
  */
