@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { ELEMENTS, ELEMENT_META, MATERIAL_STARTER, NAV_ITEMS, STARTER_CHARACTERS, STARTER_TEAMS } from './data';
 import { CHARACTER_BUILD_ALIASES, CHARACTER_BUILD_GUIDES, CREATOR_CHANNELS, getCharacterBuildRoleOptions } from './builds';
-import { buildProgressionPlan, enkaTtlSeconds, flattenEnkaSavedBuilds, isValidGenshinUid, matchGoodCharacterKey, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, normalizeAkashaArtifacts, normalizeAkashaProfiles, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory } from './core';
+import { buildProgressionPlan, enkaTtlSeconds, flattenEnkaSavedBuilds, isValidGenshinUid, matchGoodCharacterKey, normalizeTrackerBackup, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, normalizeAkashaArtifacts, normalizeAkashaProfiles, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory } from './core';
 
 const ICONS = { LayoutDashboard, Users, Swords, PackageOpen, MapPinned, ChartNoAxesCombined, PlayCircle, Settings2, Bot, BookOpen, Layers3 };
 const STORAGE_KEY = 'teyvat-companion-v1';
@@ -24,32 +24,120 @@ const TASK_STARTER = [
   { id:'task-domain', title:'Check today’s domain rotation', detail:'Confirm the book or weapon material schedule in-game', done:false, kind:'domain' },
 ];
 
-function loadInitial() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
-    if (saved) {
-      return {
-        characters: STARTER_CHARACTERS.map(c => ({...c, ...(saved.characters?.[c.id] || {})})).concat((saved.extraCharacters || []).filter(c => !STARTER_CHARACTERS.some(s => s.id === c.id))),
-        materials: saved.materials || MATERIAL_STARTER,
-        teams: saved.teams || STARTER_TEAMS,
-        goals: saved.goals || [],
-        mapMarkers: saved.mapMarkers || [],
-        account: { ar: saved.account?.ar ?? 58, worldLevel: saved.account?.worldLevel ?? 8, abyss: saved.account?.abyss || 'Not set', primogems: saved.account?.primogems ?? 0, wishes: saved.account?.wishes ?? 0, pity: saved.account?.pity ?? 0, uid: saved.account?.uid || '', nickname: saved.account?.nickname || '', resinAvailable: Math.max(0, Math.min(200, Number(saved.account?.resinAvailable) || 0)) },
-        tasks: saved.tasks || TASK_STARTER,
-        enkaSnapshot: saved.enkaSnapshot || null,
-        enkaNextFetchAt: Number(saved.enkaNextFetchAt || saved.enkaSnapshot?.nextFetchAt || 0),
-        goodInventory: saved.goodInventory || null,
-        akashaSnapshot: saved.akashaSnapshot || null,
-        lastUpdated: saved.lastUpdated || null,
-      };
-    }
-  } catch (e) { console.warn('Could not read local tracker data', e); }
+const isRecord = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+const clampInteger = (value, min, max, fallback) => {
+  if (value === '' || value === null || value === undefined) return fallback;
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? Math.max(min, Math.min(max, Math.floor(numeric))) : fallback;
+};
+
+function createDefaultState() {
   return {
-    characters: STARTER_CHARACTERS.map(c => ({...c})), materials: MATERIAL_STARTER.map(m => ({...m})), teams: STARTER_TEAMS.map(t => ({...t})), goals: [], mapMarkers: [],
-    account: { ar: 58, worldLevel: 8, abyss: 'Not set', primogems: 0, wishes: 0, pity: 0, uid: '', nickname: '', resinAvailable: 0 }, tasks: TASK_STARTER.map(t => ({...t})), enkaSnapshot: null, enkaNextFetchAt: 0, goodInventory: null, akashaSnapshot: null, lastUpdated: null,
+    characters: STARTER_CHARACTERS.map(c => ({ ...c })),
+    materials: MATERIAL_STARTER.map(m => ({ ...m })),
+    teams: STARTER_TEAMS.map(t => ({ ...t })),
+    goals: [],
+    mapMarkers: [],
+    account: { ar: 58, worldLevel: 8, abyss: 'Not set', primogems: 0, wishes: 0, pity: 0, uid: '', nickname: '', resinAvailable: 0 },
+    tasks: TASK_STARTER.map(t => ({ ...t })),
+    enkaSnapshot: null,
+    enkaNextFetchAt: 0,
+    goodInventory: null,
+    akashaSnapshot: null,
+    lastUpdated: null,
   };
 }
 
+function loadInitial() {
+  const defaults = createDefaultState();
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+    if (!isRecord(saved)) return defaults;
+
+    const storedCharacters = Array.isArray(saved.characters)
+      ? Object.fromEntries(saved.characters.filter(c => isRecord(c) && c.id != null).map(c => [String(c.id), c]))
+      : (isRecord(saved.characters) ? saved.characters : {});
+    const standardIds = new Set(defaults.characters.map(c => c.id));
+    const extraCharacters = (Array.isArray(saved.extraCharacters) ? saved.extraCharacters : [])
+      .filter(c => isRecord(c) && c.id != null && String(c.id).trim() && !standardIds.has(String(c.id)));
+    const characters = defaults.characters.map(c => ({
+      ...c,
+      ...(isRecord(storedCharacters[c.id]) ? storedCharacters[c.id] : {}),
+      id: c.id,
+    }));
+    const characterMap = new Map(characters.map(c => [c.id, c]));
+    for (const character of extraCharacters) characterMap.set(String(character.id), { ...character, id: String(character.id) });
+
+    const account = isRecord(saved.account) ? saved.account : {};
+    const materials = Array.isArray(saved.materials) ? saved.materials
+      .filter(m => isRecord(m) && m.id != null && typeof m.name === 'string' && m.name.trim())
+      .map(m => ({ ...m, id: String(m.id), name: m.name.trim(), category: typeof m.category === 'string' ? m.category : 'Other', required: clampInteger(m.required, 0, 1000000000, 0), owned: clampInteger(m.owned, 0, 1000000000, 0) }))
+      : defaults.materials;
+    const teams = Array.isArray(saved.teams) ? saved.teams
+      .filter(t => isRecord(t) && t.id != null && typeof t.name === 'string' && Array.isArray(t.characters))
+      .map(t => ({ ...t, id: String(t.id), name: t.name.trim() || 'Untitled team', characters: [...new Set(t.characters.filter(id => id != null).map(String))].slice(0, 4) }))
+      : defaults.teams;
+    const goals = Array.isArray(saved.goals) ? saved.goals
+      .filter(g => isRecord(g) && typeof g.title === 'string' && g.title.trim())
+      .map((g, i) => ({ ...g, id: String(g.id || 'goal-restored-' + i), title: g.title.trim(), done: Boolean(g.done) }))
+      : [];
+    const mapMarkers = Array.isArray(saved.mapMarkers) ? saved.mapMarkers
+      .filter(m => isRecord(m) && typeof m.name === 'string' && m.name.trim())
+      .map((m, i) => ({ ...m, id: String(m.id || 'marker-restored-' + i), name: m.name.trim() }))
+      : [];
+    const tasks = Array.isArray(saved.tasks) ? saved.tasks
+      .filter(t => isRecord(t) && typeof t.title === 'string' && t.title.trim())
+      .map((t, i) => ({ ...t, id: String(t.id || 'task-restored-' + i), title: t.title.trim(), done: Boolean(t.done) }))
+      : defaults.tasks;
+    const enkaSnapshot = isRecord(saved.enkaSnapshot) ? {
+      ...saved.enkaSnapshot,
+      characters: Array.isArray(saved.enkaSnapshot.characters) ? saved.enkaSnapshot.characters.filter(isRecord) : [],
+      savedBuilds: Array.isArray(saved.enkaSnapshot.savedBuilds) ? saved.enkaSnapshot.savedBuilds.filter(isRecord) : [],
+    } : null;
+    const goodInventory = isRecord(saved.goodInventory) ? {
+      ...saved.goodInventory,
+      characters: Array.isArray(saved.goodInventory.characters) ? saved.goodInventory.characters.filter(isRecord) : [],
+      weapons: Array.isArray(saved.goodInventory.weapons) ? saved.goodInventory.weapons.filter(isRecord) : [],
+      artifacts: Array.isArray(saved.goodInventory.artifacts) ? saved.goodInventory.artifacts.filter(isRecord) : [],
+      summary: isRecord(saved.goodInventory.summary) ? saved.goodInventory.summary : {},
+    } : null;
+    const akashaSnapshot = isRecord(saved.akashaSnapshot) ? {
+      ...saved.akashaSnapshot,
+      profiles: Array.isArray(saved.akashaSnapshot.profiles) ? saved.akashaSnapshot.profiles.filter(isRecord) : [],
+    } : null;
+
+    return {
+      ...defaults,
+      characters: [...characterMap.values()],
+      materials,
+      teams,
+      goals,
+      mapMarkers,
+      account: {
+        ...defaults.account,
+        ...account,
+        ar: clampInteger(account.ar, 1, 60, defaults.account.ar),
+        worldLevel: clampInteger(account.worldLevel, 0, 9, defaults.account.worldLevel),
+        abyss: typeof account.abyss === 'string' ? account.abyss : defaults.account.abyss,
+        primogems: clampInteger(account.primogems, 0, 1000000000, 0),
+        wishes: clampInteger(account.wishes, 0, 100000000, 0),
+        pity: clampInteger(account.pity, 0, 90, 0),
+        uid: typeof account.uid === 'string' ? account.uid.trim() : '',
+        nickname: typeof account.nickname === 'string' ? account.nickname : '',
+        resinAvailable: clampInteger(account.resinAvailable, 0, 200, 0),
+      },
+      tasks,
+      enkaSnapshot,
+      enkaNextFetchAt: clampInteger(saved.enkaNextFetchAt ?? enkaSnapshot?.nextFetchAt, 0, Number.MAX_SAFE_INTEGER, 0),
+      goodInventory,
+      akashaSnapshot,
+      lastUpdated: typeof saved.lastUpdated === 'string' ? saved.lastUpdated : null,
+    };
+  } catch (e) {
+    console.warn('Could not read local tracker data', e);
+  }
+  return defaults;
+}
 const formatNumber = n => Number(n || 0).toLocaleString('en-US');
 const humanizeGameKey = value => String(value || 'Unknown').replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
 const formatArtifactStat = value => {
@@ -193,6 +281,7 @@ function EmptyState({ icon: Icon = Sparkles, title, description, action }) {
 
 export default function App() {
   const [persisted, setPersisted] = useState(loadInitial);
+  const [storageStatus, setStorageStatus] = useState('saving');
   const [page, setPage] = useState('dashboard');
   const [buildCharacterId, setBuildCharacterId] = useState('');
   const [buildVariantId, setBuildVariantId] = useState('');
@@ -259,7 +348,11 @@ export default function App() {
       const standardIds = new Set(STARTER_CHARACTERS.map(c => c.id));
       const extraCharacters = persisted.characters.filter(c => !standardIds.has(c.id));
       localStorage.setItem(STORAGE_KEY, JSON.stringify({...persisted, characters: characterMap, extraCharacters, lastUpdated: new Date().toISOString()}));
-    } catch (e) { console.warn('Local save failed', e); }
+      setStorageStatus('saved');
+    } catch (e) {
+      console.warn('Local save failed', e);
+      setStorageStatus('error');
+    }
   }, [persisted]);
   useEffect(() => { if (!toast) return; const timer = setTimeout(() => setToast(''), 2600); return () => clearTimeout(timer); }, [toast]);
   useEffect(() => {
@@ -419,6 +512,7 @@ export default function App() {
     e.preventDefault();
     const ids = [newTeam.slot1,newTeam.slot2,newTeam.slot3,newTeam.slot4].filter(Boolean);
     if (!newTeam.name.trim() || ids.length < 2) { setToast('Add a team name and at least two characters'); return; }
+    if (new Set(ids).size !== ids.length) { setToast('Choose a different character for each team slot'); return; }
     const team = {id:`team-${Date.now()}`,name:newTeam.name.trim(),characters:ids,description:'Custom team saved from your current roster.'};
     saveState(prev => ({...prev, teams:[team,...prev.teams]})); setNewTeam({name:'My team',slot1:'',slot2:'',slot3:'',slot4:''}); setToast('Team saved');
   };
@@ -888,13 +982,120 @@ export default function App() {
     const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download=`teyvat-companion-backup-${new Date().toISOString().slice(0,10)}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); setToast('Backup exported');
   }
   function importTrackerObject(obj) {
-    if (!obj || typeof obj !== 'object' || (!obj.characters && !obj.account)) { setToast('That file does not look like a Teyvat Companion backup'); return; }
-    const importedCharacters = Array.isArray(obj.characters) ? obj.characters : Object.values(obj.characters || {});
-    const merged = new Map(STARTER_CHARACTERS.map(c=>[c.id,{...c}]));
-    importedCharacters.forEach(c=> { if (c?.id) merged.set(c.id,{...merged.get(c.id),...c}); });
-    const base = loadInitial();
-    saveState({...base,...obj,characters:[...merged.values()],account:{...base.account,...obj.account},materials:obj.materials || base.materials,teams:obj.teams || base.teams,goals:obj.goals || [],mapMarkers:obj.mapMarkers || [],tasks:obj.tasks || base.tasks});
-    setShowImport(false); setImportText(''); setToast('Tracker backup imported');
+    let backup;
+    try {
+      backup = normalizeTrackerBackup(obj);
+    } catch (error) {
+      setToast(error?.message || 'That file is not a valid Teyvat Companion backup.');
+      return;
+    }
+
+    const base = createDefaultState();
+    const merged = new Map(STARTER_CHARACTERS.map(c => [c.id, { ...c }]));
+    for (const character of backup.characters) {
+      const id = String(character.id).trim();
+      const previous = merged.get(id) || {};
+      const importedTalents = Array.isArray(character.talents) ? character.talents : [];
+      merged.set(id, {
+        ...previous,
+        ...character,
+        id,
+        name: typeof character.name === 'string' && character.name.trim() ? character.name.trim() : (previous.name || id),
+        owned: typeof character.owned === 'boolean' ? character.owned : Boolean(previous.owned),
+        level: clampInteger(character.level, 1, 90, clampInteger(previous.level, 1, 90, 1)),
+        talents: [0, 1, 2].map(i => clampInteger(importedTalents[i] ?? previous.talents?.[i], 1, 15, 1)),
+        constellation: clampInteger(character.constellation ?? previous.constellation, 0, 6, 0),
+        weaponName: typeof character.weaponName === 'string' ? character.weaponName : (previous.weaponName || ''),
+        artifact: typeof character.artifact === 'string' ? character.artifact : (previous.artifact || ''),
+        mainStats: typeof character.mainStats === 'string' ? character.mainStats : (previous.mainStats || ''),
+        notes: typeof character.notes === 'string' ? character.notes : (previous.notes || ''),
+        role: typeof character.role === 'string' ? character.role : (previous.role || 'Unassigned'),
+      });
+    }
+    const knownCharacterIds = new Set(merged.keys());
+    const materials = Array.isArray(backup.materials) ? backup.materials
+      .filter(m => isRecord(m) && m.id != null && typeof m.name === 'string' && m.name.trim())
+      .map(m => ({
+        ...m,
+        id: String(m.id),
+        name: m.name.trim(),
+        category: typeof m.category === 'string' && m.category ? m.category : 'Other',
+        required: clampInteger(m.required, 0, 1000000000, 0),
+        owned: clampInteger(m.owned, 0, 1000000000, 0),
+        note: typeof m.note === 'string' ? m.note : '',
+      })) : base.materials;
+    const teams = Array.isArray(backup.teams) ? backup.teams
+      .filter(t => isRecord(t) && t.id != null && typeof t.name === 'string' && Array.isArray(t.characters))
+      .map((t, i) => ({
+        ...t,
+        id: String(t.id || 'team-import-' + i),
+        name: t.name.trim() || 'Untitled team',
+        characters: [...new Set(t.characters.filter(id => id != null).map(String).filter(id => knownCharacterIds.has(id)))].slice(0, 4),
+        description: typeof t.description === 'string' ? t.description : '',
+      }))
+      .filter(t => t.characters.length >= 2) : base.teams;
+    const goals = Array.isArray(backup.goals) ? backup.goals
+      .filter(g => isRecord(g) && typeof g.title === 'string' && g.title.trim())
+      .map((g, i) => ({ ...g, id: String(g.id || 'goal-import-' + i), title: g.title.trim(), character: typeof g.character === 'string' ? g.character : '', target: typeof g.target === 'string' ? g.target : 'Level 90', done: Boolean(g.done) }))
+      : base.goals;
+    const tasks = Array.isArray(backup.tasks) ? backup.tasks
+      .filter(t => isRecord(t) && typeof t.title === 'string' && t.title.trim())
+      .map((t, i) => ({ ...t, id: String(t.id || 'task-import-' + i), title: t.title.trim(), detail: typeof t.detail === 'string' ? t.detail : '', done: Boolean(t.done) }))
+      : base.tasks;
+    const mapMarkers = Array.isArray(backup.mapMarkers) ? backup.mapMarkers
+      .filter(m => isRecord(m) && typeof m.name === 'string' && m.name.trim())
+      .map((m, i) => ({ ...m, id: String(m.id || 'marker-import-' + i), name: m.name.trim(), region: typeof m.region === 'string' ? m.region : 'Other', type: typeof m.type === 'string' ? m.type : 'Other', note: typeof m.note === 'string' ? m.note : '', collected: Boolean(m.collected) }))
+      : base.mapMarkers;
+
+    const rawAccount = isRecord(backup.account) ? backup.account : {};
+    const account = {
+      ...base.account,
+      ...rawAccount,
+      ar: clampInteger(rawAccount.ar, 1, 60, base.account.ar),
+      worldLevel: clampInteger(rawAccount.worldLevel, 0, 9, base.account.worldLevel),
+      abyss: typeof rawAccount.abyss === 'string' ? rawAccount.abyss : base.account.abyss,
+      primogems: clampInteger(rawAccount.primogems, 0, 1000000000, 0),
+      wishes: clampInteger(rawAccount.wishes, 0, 100000000, 0),
+      pity: clampInteger(rawAccount.pity, 0, 90, 0),
+      uid: typeof rawAccount.uid === 'string' ? rawAccount.uid.trim() : '',
+      nickname: typeof rawAccount.nickname === 'string' ? rawAccount.nickname : '',
+      resinAvailable: clampInteger(rawAccount.resinAvailable, 0, 200, 0),
+    };
+    const enkaSnapshot = isRecord(backup.enkaSnapshot) ? {
+      ...backup.enkaSnapshot,
+      characters: Array.isArray(backup.enkaSnapshot.characters) ? backup.enkaSnapshot.characters.filter(isRecord) : [],
+      savedBuilds: Array.isArray(backup.enkaSnapshot.savedBuilds) ? backup.enkaSnapshot.savedBuilds.filter(isRecord) : [],
+    } : null;
+    const goodInventory = isRecord(backup.goodInventory) ? {
+      ...backup.goodInventory,
+      characters: Array.isArray(backup.goodInventory.characters) ? backup.goodInventory.characters.filter(isRecord) : [],
+      weapons: Array.isArray(backup.goodInventory.weapons) ? backup.goodInventory.weapons.filter(isRecord) : [],
+      artifacts: Array.isArray(backup.goodInventory.artifacts) ? backup.goodInventory.artifacts.filter(isRecord) : [],
+      summary: isRecord(backup.goodInventory.summary) ? backup.goodInventory.summary : {},
+    } : null;
+    const akashaSnapshot = isRecord(backup.akashaSnapshot) ? {
+      ...backup.akashaSnapshot,
+      profiles: Array.isArray(backup.akashaSnapshot.profiles) ? backup.akashaSnapshot.profiles.filter(isRecord) : [],
+    } : null;
+
+    saveState({
+      ...base,
+      characters: [...merged.values()],
+      materials,
+      teams,
+      goals,
+      tasks,
+      mapMarkers,
+      account,
+      enkaSnapshot,
+      enkaNextFetchAt: clampInteger(backup.enkaNextFetchAt ?? enkaSnapshot?.nextFetchAt, 0, Number.MAX_SAFE_INTEGER, 0),
+      goodInventory,
+      akashaSnapshot,
+      lastUpdated: typeof backup.lastUpdated === 'string' ? backup.lastUpdated : null,
+    });
+    setShowImport(false);
+    setImportText('');
+    setToast('Tracker backup imported');
   }
   function importFromText(e) {
     e.preventDefault(); try { importTrackerObject(JSON.parse(importText)); } catch { setToast('Could not parse JSON. Paste a valid backup file.'); }
@@ -1032,7 +1233,7 @@ export default function App() {
     </nav>
     <div className="sidebar-spacer"/>
     <div className="side-quest-card"><div className="quest-top"><span className="quest-gem"><Gem size={16}/></span><span className="eyebrow">ADVENTURE OBJECTIVE</span></div><strong>{persisted.goals.find(goal=>!goal.done)?.title || (persisted.goals.length ? 'All recorded goals complete' : 'Choose your next goal')}</strong><p>{persisted.goals.length ? `${persisted.goals.filter(g=>g.done).length} of ${persisted.goals.length} goals complete` : 'Track a character, plan materials, and work through one goal at a time.'}</p><button className="text-action" onClick={()=>navigate('account')}>Open journal <ArrowRight size={14}/></button></div>
-    <div className="sidebar-bottom"><div className="local-badge"><span className="live-dot"/> <span>Saved on this device</span></div><button className="user-mini" onClick={()=>navigate('settings')} title="Open settings"><div className="user-avatar">{(persisted.account.nickname || 'T').slice(0,1).toUpperCase()}</div><div><strong>{persisted.account.nickname || 'Traveler'}</strong><small>Local adventure record</small></div><MoreHorizontal size={18}/></button></div>
+    <div className="sidebar-bottom"><div className="local-badge" role="status" aria-live="polite">{storageStatus === 'error' ? <Info size={12}/> : <span className="live-dot"/>}<span>{storageStatus === 'error' ? 'Save failed — export a backup' : storageStatus === 'saving' ? 'Saving locally…' : 'Saved on this device'}</span></div><button className="user-mini" onClick={()=>navigate('settings')} title="Open settings"><div className="user-avatar">{(persisted.account.nickname || 'T').slice(0,1).toUpperCase()}</div><div><strong>{persisted.account.nickname || 'Traveler'}</strong><small>Local adventure record</small></div><MoreHorizontal size={18}/></button></div>
   </>;
 
   const dashboardPage = <div className="page-content">
@@ -1429,8 +1630,8 @@ export default function App() {
   const settingsPage = <div className="page-content">
     <SectionHeader eyebrow="PREFERENCES & DATA SOURCES" title="Settings" subtitle="Manage your local data, public data connections, and tracker setup."/>
     <div className="settings-grid"><div className="panel settings-card"><div className="settings-icon gold"><Database size={20}/></div><div className="eyebrow">CHARACTER CATALOGUE</div><h3>Refresh public game data</h3><p>Try loading a broader static character catalogue from the community genshin.dev API. Character data availability and image formats can vary; imported builds and materials are not treated as verified.</p>{dataNotice&&<div className={`notice compact-notice ${dataNotice.startsWith('Could not')?'warning':'success'}`}><Info size={14}/><span>{dataNotice}</span></div>}<button className="button primary" onClick={loadPublicCharacterData} disabled={isLoadingData}>{isLoadingData?<><RefreshCw className="spin" size={15}/> Loading catalogue…</>:<><RefreshCw size={15}/> Refresh characters</>}</button><a className="source-link" href="https://github.com/genshindev/api" target="_blank" rel="noreferrer">Dataset docs & license <ExternalLink size={12}/></a></div><div className="panel settings-card"><div className="settings-icon blue"><Link2 size={20}/></div><div className="eyebrow">PUBLIC ACCOUNT DATA</div><h3>Enka.Network showcase</h3><p>Use your UID to sync the public display list, detailed showcase gear when enabled, and optional saved builds from a verified public Enka profile. It remains a public-data integration, not a HoYoverse login. Respect provider refresh limits.</p><button className="button secondary" onClick={()=>navigate('account')}>Manage account connection <ArrowRight size={14}/></button><a className="source-link" href="https://github.com/EnkaNetwork/API-docs" target="_blank" rel="noreferrer">API usage rules <ExternalLink size={12}/></a></div><div className="panel settings-card"><div className="settings-icon green"><FileJson size={20}/></div><div className="eyebrow">BACKUP & PORTABILITY</div><h3>Your data belongs to you</h3><p>Export everything to a JSON backup file and import it on another browser/device. This version stores tracker data in this browser's local storage; no cloud account is configured.</p><div className="settings-button-row"><button className="button primary" onClick={exportTracker}><Download size={15}/> Export backup</button><button className="button secondary" onClick={()=>setShowImport(true)}><Upload size={15}/> Import backup</button></div></div><div className="panel settings-card"><div className="settings-icon violet"><ShieldCheck size={20}/></div><div className="eyebrow">PRIVACY & LIMITATIONS</div><h3>Safe by design</h3><p>No HoYoverse password or login token is requested. Account showcase sync is public-data only. Live material coordinates, exact upgrade calculator data, cloud sync, and authenticated accounts are not configured in this build.</p><ul className="settings-bullets"><li><Check size={14}/> Local persistent tracker</li><li><Check size={14}/> Editable quantities and goals</li><li><Check size={14}/> JSON export/import</li><li><Info size={14}/> No cloud authentication yet</li></ul></div></div>
-    <div className="panel data-health-panel"><div className="panel-head"><div><div className="eyebrow">WORKSPACE STATUS</div><h3>Data health</h3></div><span className="pill success"><span className="live-dot"/> Local storage available</span></div><div className="data-health-grid"><div><span>Tracked characters</span><strong>{characters.length}</strong></div><div><span>Materials</span><strong>{persisted.materials.length}</strong></div><div><span>Saved teams</span><strong>{persisted.teams.length}</strong></div><div><span>Personal map markers</span><strong>{persisted.mapMarkers.length}</strong></div><div><span>Goals</span><strong>{persisted.goals.length}</strong></div><div><span>Enka snapshot</span><strong>{persisted.enkaSnapshot?'Available':'Not connected'}</strong></div></div></div>
-    <div className="reset-zone"><div><strong>Reset local workspace</strong><p>Remove all custom progress and return to the starter example. Export a backup first if you want to keep your data.</p></div><button className="button danger-outline" onClick={()=>{if(window.confirm('Reset your Teyvat Companion data in this browser? Export a backup first if you want to keep it.')){localStorage.removeItem(STORAGE_KEY);setPersisted({characters:STARTER_CHARACTERS.map(c=>({...c})),materials:MATERIAL_STARTER.map(m=>({...m})),teams:STARTER_TEAMS.map(t=>({...t})),goals:[],mapMarkers:[],account:{ar:58,worldLevel:8,abyss:'Not set',primogems:0,wishes:0,pity:0,uid:'',nickname:'',resinAvailable:0},tasks:TASK_STARTER.map(t=>({...t})),enkaSnapshot:null,enkaNextFetchAt:0,goodInventory:null,akashaSnapshot:null,lastUpdated:null});setToast('Workspace reset');}}}><Trash2 size={14}/> Reset workspace</button></div>
+    <div className="panel data-health-panel"><div className="panel-head"><div><div className="eyebrow">WORKSPACE STATUS</div><h3>Data health</h3></div><span className={`pill ${storageStatus === 'error' ? 'warning' : storageStatus === 'saved' ? 'success' : 'muted'}`}>{storageStatus === 'error' ? <Info size={13}/> : <span className="live-dot"/>}{storageStatus === 'error' ? 'Save failed' : storageStatus === 'saving' ? 'Saving changes…' : 'Saved locally'}</span></div><div className="data-health-grid"><div><span>Tracked characters</span><strong>{characters.length}</strong></div><div><span>Materials</span><strong>{persisted.materials.length}</strong></div><div><span>Saved teams</span><strong>{persisted.teams.length}</strong></div><div><span>Personal map markers</span><strong>{persisted.mapMarkers.length}</strong></div><div><span>Goals</span><strong>{persisted.goals.length}</strong></div><div><span>Enka snapshot</span><strong>{persisted.enkaSnapshot?'Available':'Not connected'}</strong></div></div></div>
+    <div className="reset-zone"><div><strong>Reset local workspace</strong><p>Remove all custom progress and return to the starter example. Export a backup first if you want to keep your data.</p></div><button className="button danger-outline" onClick={()=>{if(window.confirm('Reset your Teyvat Companion data in this browser? Export a backup first if you want to keep it.')){localStorage.removeItem(STORAGE_KEY);setPersisted(createDefaultState());setToast('Workspace reset');}}}><Trash2 size={14}/> Reset workspace</button></div>
   </div>;
 
 
