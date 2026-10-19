@@ -9,7 +9,7 @@ import {
 import { ELEMENTS, ELEMENT_META, MATERIAL_STARTER, NAV_ITEMS, STARTER_CHARACTERS, STARTER_TEAMS } from './data';
 import { CHARACTER_BUILD_ALIASES, CHARACTER_BUILD_GUIDES, CREATOR_CHANNELS, getCharacterBuildRoleOptions } from './builds';
 import { supabase, supabaseConfigured } from './lib/supabase.js';
-import { buildProgressionPlan, enkaTtlSeconds, flattenEnkaSavedBuilds, isValidGenshinUid, matchGoodCharacterKey, normalizeTrackerBackup, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, normalizeAkashaArtifacts, normalizeAkashaProfiles, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory, validateCharacterCatalogue } from './core';
+import { buildProgressionPlan, enkaTtlSeconds, flattenEnkaSavedBuilds, getCharacterUpgradeMaterialRequirements, isValidGenshinUid, matchGoodCharacterKey, normalizeTrackerBackup, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, normalizeAkashaArtifacts, normalizeAkashaProfiles, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory, validateCharacterCatalogue } from './core';
 
 const ICONS = { LayoutDashboard, Users, Swords, PackageOpen, MapPinned, ChartNoAxesCombined, PlayCircle, Settings2, Bot, BookOpen, Layers3 };
 const STORAGE_KEY = 'teyvat-companion-v1';
@@ -562,11 +562,81 @@ export default function App() {
   const deleteTeam = id => saveState(prev => ({...prev, teams:prev.teams.filter(t=>t.id!==id)}));
   const addGoalForCharacter = c => { saveState(prev=>({...prev,goals:[{id:`goal-${Date.now()}`,title:`Build ${c.name}`,character:c.id,target:'Level 90',done:false},...prev.goals]})); setActiveCharacter(null); setToast(`${c.name} added to goals`); };
   const addCharacterMaterialsToPlan = c => {
-    const newRows = [
-      {id:`mat-${Date.now()}-1`,name:`${c.name} ascension materials`,category:'Character ascension',required:0,owned:0,note:'Enter your exact remaining requirement from the in-game character screen.'},
-      {id:`mat-${Date.now()}-2`,name:`${c.name} talent materials`,category:'Talent',required:0,owned:0,note:'Add the specific talent book and boss drops you still need.'},
-    ];
-    saveState(prev=>({...prev,materials:[...prev.materials,...newRows]})); setActiveCharacter(null); setPage('materials'); setToast('Material checklist created — fill in exact quantities');
+    if (!c?.gameData) {
+      setToast('Load the character’s Talents & mats tab first so the planner can use source-provided costs.');
+      if (c) openCharacter(c);
+      return;
+    }
+
+    const requirements = getCharacterUpgradeMaterialRequirements(c, gameMaterialLookupRef.current);
+    if (!requirements.length) {
+      const idPrefix = 'manual-' + c.id + '-';
+      const placeholders = [
+        { id:idPrefix + 'ascension', name:`${c.name} ascension materials`, category:'Character ascension', required:0, owned:0, note:'Exact ascension costs were not returned by the game-data source. Enter totals verified in-game.' },
+        { id:idPrefix + 'talents', name:`${c.name} talent materials`, category:'Talent', required:0, owned:0, note:'Exact talent upgrade costs were not returned by the game-data source. Enter totals verified in-game.' },
+      ];
+      saveState(prev => {
+        const materials = [...prev.materials];
+        for (const row of placeholders) {
+          if (!materials.some(item => item.id === row.id)) materials.push(row);
+        }
+        return { ...prev, materials };
+      });
+      setActiveCharacter(null);
+      setPage('materials');
+      setToast('Created a manual checklist; exact source costs were unavailable');
+      return;
+    }
+
+    let addedPieces = 0;
+    const at = new Date().toISOString();
+    saveState(prev => {
+      const materials = [...prev.materials];
+      for (const requirement of requirements) {
+        const sourceKey = String(requirement.id);
+        const existingIndex = materials.findIndex(item => String(item.sourceMaterialId || '') === sourceKey);
+        const category = requirement.categories.length > 1
+          ? 'Character upgrade'
+          : (requirement.categories[0] || 'Character upgrade');
+        const requirementNote = requirement.resolved
+          ? 'Source-provided total for a full Level 90 / level-10 talent plan. Verify the target before farming.'
+          : 'Source returned an unnamed material ID. Confirm its name in-game before farming.';
+        if (existingIndex === -1) {
+          materials.push({
+            id: 'game-material-' + sourceKey,
+            sourceMaterialId: sourceKey,
+            name: requirement.name,
+            category,
+            required: requirement.required,
+            owned: 0,
+            includedCharacters: [c.id],
+            note: requirementNote + ' Added for ' + c.name + '.',
+            source: 'Project Amber character upgrade data',
+            sourceUpdatedAt: at,
+          });
+          addedPieces += 1;
+          continue;
+        }
+
+        const existing = materials[existingIndex];
+        const includedCharacters = Array.isArray(existing.includedCharacters) ? existing.includedCharacters : [];
+        if (includedCharacters.includes(c.id)) continue;
+        materials[existingIndex] = {
+          ...existing,
+          required: Math.max(0, Number(existing.required) || 0) + requirement.required,
+          owned: Math.max(0, Number(existing.owned) || 0),
+          includedCharacters: [...includedCharacters, c.id],
+          category: existing.category === category ? category : 'Character upgrade',
+          note: [existing.note, 'Added ' + requirement.required + ' more for ' + c.name + ' (full Level 90 / level-10 talent plan).'].filter(Boolean).join(' '),
+          sourceUpdatedAt: at,
+        };
+        addedPieces += 1;
+      }
+      return { ...prev, materials };
+    });
+    setActiveCharacter(null);
+    setPage('materials');
+    setToast(addedPieces ? 'Added source-provided upgrade costs for ' + c.name : 'This character’s material requirements are already in your plan');
   };
   const addMarker = e => {
     e.preventDefault(); if (!newMarker.name.trim()) return;
@@ -588,7 +658,7 @@ export default function App() {
         const items = avatarPayload?.items || avatarPayload?.data?.items || {};
         records = Object.entries(items).map(([key, item]) => ({ ...item, id: item?.id ?? key }));
         records = records.filter(item => item?.name && Number(item?.rank ?? item?.rarity ?? 0) >= 4 && (item?.weaponType || item?.weapon_type || item?.weapon));
-        if (records.length < 70) throw new Error(`The character index returned only ${records.length} usable records.`);
+        if (records.length < 100) throw new Error(`The character index returned only ${records.length} usable records; the current playable roster should be substantially larger.`);
         const itemIndex = materialPayload?.items || materialPayload?.data?.items || {};
         gameMaterialLookupRef.current = Object.fromEntries(Object.entries(itemIndex).map(([key, item]) => [
           String(item?.id ?? key),
@@ -600,7 +670,10 @@ export default function App() {
         const raw = await response.json();
         records = (Array.isArray(raw) ? raw : Object.entries(raw || {}).map(([id, value]) => ({ id, ...value })))
           .filter(item => item?.name || item?.title || item?.id);
-        source = 'genshin.dev fallback (coverage may be incomplete)';
+        if (records.length < 100) {
+          throw new Error('The fallback source returned only ' + records.length + ' character records; it does not meet the minimum catalogue coverage.');
+        }
+        source = 'genshin.dev fallback';
       }
 
       // Traveler's element variants are often modelled as separate records by Genshin data providers.
@@ -756,9 +829,9 @@ export default function App() {
           source: item._catalogSource || source,
         };
       });
-      const mapped = [...new Map(mappedRecords.map(record => [record.id, record])).values()];
+      const mapped = validateCharacterCatalogue([...new Map(mappedRecords.map(record => [record.id, record])).values()], 100);
       saveState(prev => ({ ...prev, characters: mergeCharacterCatalogue(prev.characters, mapped) }));
-      setDataNotice(`Loaded ${mapped.length} character records from ${source}. Detailed talent and ascension costs load when you open a character profile. Existing owned status, levels, team presets, goals, and inventory were kept.`);
+      setDataNotice(`Loaded ${mapped.length} unique character records from ${source}. Full refreshes with fewer than 100 characters are rejected so an incomplete upstream response cannot replace your roster. Character details and material costs load on demand; your tracked ownership, levels, teams, goals and inventory were kept.`);
       setToast(`Character catalogue refreshed · ${mapped.length} records`);
     } catch (error) {
       setDataNotice(`Could not refresh the full character catalogue: ${error.message}. Your local records remain available; retry from Settings when the data source is reachable.`);
