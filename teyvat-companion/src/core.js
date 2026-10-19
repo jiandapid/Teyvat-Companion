@@ -59,6 +59,48 @@ export function parseEnkaPublicRoster(playerInfo, detailedAvatars = [], characte
   return [...output.values()];
 }
 
+/**
+ * Flatten Enka's public saved-build object into displayable, character-matched records.
+ * Preserve raw avatar_data/settings because the provider can evolve these payloads.
+ */
+export function flattenEnkaSavedBuilds(savedBuilds, characters = []) {
+  if (!savedBuilds || typeof savedBuilds !== 'object' || Array.isArray(savedBuilds)) return [];
+  const result = [];
+  for (const [avatarKey, rawList] of Object.entries(savedBuilds)) {
+    if (!Array.isArray(rawList)) continue;
+    const avatarId = String(avatarKey);
+    const character = (characters || []).find(item => String(item?.apiId ?? '') === avatarId)
+      || (characters || []).find(item => String(item?.id ?? '') === avatarId)
+      || null;
+    for (const [index, raw] of rawList.slice(0, 50).entries()) {
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) continue;
+      // Never surface a build explicitly marked private even if an API response includes it.
+      if (raw.public === false) continue;
+      const rawOrder = Number(raw.order);
+      result.push({
+        id: String(raw.id ?? (avatarId + '-' + index)),
+        avatarId: String(raw.avatar_id ?? raw.avatarId ?? avatarId),
+        characterId: character?.id || '',
+        characterName: character?.name || ('Character ID ' + avatarId),
+        name: String(raw.name || ('Build ' + (Number.isFinite(rawOrder) ? rawOrder + 1 : index + 1))),
+        order: Number.isFinite(rawOrder) ? rawOrder : index,
+        live: raw.live === true,
+        isPublic: typeof raw.public === 'boolean' ? raw.public : null,
+        image: typeof raw.image === 'string' ? raw.image : '',
+        avatarData: raw.avatar_data ?? raw.avatarData ?? null,
+        settings: raw.settings ?? null,
+      });
+      if (result.length >= 500) break;
+    }
+    if (result.length >= 500) break;
+  }
+  return result.sort((a, b) =>
+    a.characterName.localeCompare(b.characterName) ||
+    a.order - b.order ||
+    a.name.localeCompare(b.name)
+  );
+}
+
 export function mergeEnkaShowcaseCharacter(character, imported, syncedAt) {
   const current = character || {};
   const entry = imported || {};
