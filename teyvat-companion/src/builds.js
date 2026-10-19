@@ -987,7 +987,7 @@ const ADDITIONAL_ROLE_VARIANTS = {
       playstyle: 'For most teams, Furina’s off-field Sub DPS/Support role is more effective.',
     },
   ],
-  kuki-shinobu: [
+  "kuki-shinobu": [
     {
       id: 'hyperbloom-sub-dps', role: 'Full EM Hyperbloom Sub DPS', buildCategory: 'Sub DPS',
       sourceUrl: 'https://genshin.gg/characters/kuki-shinobu/',
