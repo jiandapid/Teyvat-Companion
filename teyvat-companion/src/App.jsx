@@ -1015,6 +1015,20 @@ export default function App() {
             {buildCharacter.enkaBuild.talentLevels?.length ? <p className="helper-note"><Info size={13}/> Raw talent level values from the showcase: {buildCharacter.enkaBuild.talentLevels.join(' / ')}. The source order is preserved rather than guessed into Normal / Skill / Burst.</p> : null}
             {buildCharacter.enkaBuild.syncedAt ? <p className="build-video-note">Last synced {new Date(buildCharacter.enkaBuild.syncedAt).toLocaleString()}</p> : null}
           </section>}
+          {enkaSavedBuildsForCharacter.length > 0 && <section className="panel build-section-panel build-synced-profile enka-saved-builds-panel">
+            <div className="build-panel-heading"><div><div className="eyebrow">PUBLIC ENKA PROFILE SYNC</div><h2>Saved builds from Enka.Network</h2><p>These are profile snapshots supplied by the public Enka account, separate from your live showcase gear and planned build.</p></div><span className="pill muted"><Database size={12}/> {enkaSavedBuildsForCharacter.length} build(s)</span></div>
+            <div className="showcase-id-list">{enkaSavedBuildsForCharacter.map((build,index)=><details key={build.id+'-'+index} className="showcase-character-detail">
+              <summary>{build.name} · {build.live ? 'Live snapshot' : 'Saved build'}{build.level ? ' · Lv. '+build.level : ''}</summary>
+              <div className="showcase-detail-content">
+                {build.weapon && <p><strong>Weapon:</strong> {build.weapon}{build.weaponLevel ? ' · Lv. '+build.weaponLevel : ''}</p>}
+                {build.artifacts?.length > 0 && <div><strong>Artifacts</strong>{build.artifacts.map((artifact,j)=><div key={j} className="showcase-artifact-row"><span>{artifact.name}{artifact.level != null ? ' · +'+artifact.level : ''}{artifact.rarity ? ' · '+artifact.rarity+'★' : ''}</span>{artifact.mainStat && <small>Main stat: {artifact.mainStat}</small>}{artifact.substats?.length > 0 && <small>Substats: {artifact.substats.map(stat=>stat.name+(stat.value!=null?' '+stat.value:'')).join(' · ')}</small>}</div>)}</div>}
+                {build.talents?.length > 0 && <p><strong>Raw talent levels:</strong> {build.talents.join(' / ')} <small>(source skill order retained)</small></p>}
+                {!build.detailsAvailable && <p>The saved build is listed by name, but its character data was not in a shape this version could parse into equipped gear. Account Tracker preserves the provider payload in your local snapshot and JSON backup.</p>}
+                {build.image && <p><a href={build.image} target="_blank" rel="noreferrer">Open saved-build image <ExternalLink size={12}/></a></p>}
+              </div>
+            </details>)}</div>
+            <p className="helper-note"><Info size={13}/> A Live snapshot reflects the last refresh performed by the Enka profile owner and may be stale. Only publicly available builds are imported; this does not connect to a HoYoverse login.</p>
+          </section>}
           {(goodCharacterRecord || goodEquippedWeapons.length || goodEquippedArtifacts.length) && <section className="panel build-section-panel build-synced-profile good-character-inventory-panel">
             <div className="build-panel-heading"><div><div className="eyebrow">GOOD INVENTORY IMPORT</div><h2>Imported account gear</h2><p>From your latest GOOD file, not scraped or guessed.</p></div><span className="pill muted"><Database size={12}/> Local import</span></div>
             {goodCharacterRecord && <div className="build-synced-grid"><div><span>Imported character level</span><strong>Lv. {goodCharacterRecord.level}</strong></div><div><span>Constellation</span><strong>C{goodCharacterRecord.constellation}</strong></div><div><span>Talents (A / E / Q)</span><strong>{goodCharacterRecord.talent.auto} / {goodCharacterRecord.talent.skill} / {goodCharacterRecord.talent.burst}</strong></div><div><span>GOOD ascension stage</span><strong>{goodCharacterRecord.ascension}</strong></div></div>}
