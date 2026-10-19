@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { analyzeTeamComposition, buildProgressionPlan, enkaTtlSeconds, flattenEnkaSavedBuilds, getCharacterUpgradeMaterialRequirements, isValidGenshinUid, matchGoodCharacterKey, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, MIN_PLAYABLE_CHARACTER_COUNT, normalizeAkashaArtifacts, normalizeAkashaProfiles, normalizeTrackerBackup, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory, validateCharacterCatalogue } from '../src/core.js';
+import { analyzeTeamComposition, buildProgressionPlan, enkaTtlSeconds, flattenEnkaSavedBuilds, getCharacterUpgradeMaterialRequirements, isValidGenshinUid, matchGoodCharacterKey, mergeCharacterCatalogue, mergeCharacterSourceRecords, mergeEnkaShowcaseCharacter, MIN_PLAYABLE_CHARACTER_COUNT, normalizeAkashaArtifacts, normalizeAkashaProfiles, normalizeTrackerBackup, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory, validateCharacterCatalogue } from '../src/core.js';
 import { CHARACTER_BUILD_GUIDES } from '../src/builds.js';
 import { MATERIAL_STARTER, NAV_ITEMS, STARTER_CHARACTERS, STARTER_TEAMS } from '../src/data.js';
 
@@ -619,4 +619,41 @@ test('team composition analysis never treats possible reactions as exact rotatio
   assert.ok(result.reactions.includes('Hyperbloom'));
   assert.ok(result.reactions.includes('Burgeon'));
   assert.match(reactionCheck.detail, /application, timing, ICDs/);
+});
+
+
+test('source reconciliation fills metadata gaps from a second provider while preserving primary IDs and image data', () => {
+  const records = mergeCharacterSourceRecords([
+    { id: '100100', name: 'Example Hero', rank: 5, weaponType: 'Sword', icon: 'assets/UI/AvatarIconExample.png' },
+    { id: 'traveler-anemo', name: 'Traveler', element: 'Anemo', weaponType: 'Sword', rarity: 5 },
+    { id: 'traveler-geo', name: 'Traveler', element: 'Geo', weaponType: 'Sword', rarity: 5 },
+  ], [
+    { id: 'example-hero', name: 'Example Hero', element: 'Cryo', weapon: 'Sword', region: 'Fontaine', image: 'https://example.test/hero.png' },
+    { id: 'traveler-anemo', name: 'Traveler (Anemo)', element: 'Anemo', region: 'Mondstadt' },
+    { id: 'traveler-geo', name: 'Traveler (Geo)', element: 'Geo', region: 'Liyue' },
+  ]);
+
+  assert.equal(records.length, 3);
+  const hero = records.find(record => record.name === 'Example Hero');
+  assert.equal(hero.id, '100100');
+  assert.equal(hero.rank, 5);
+  assert.equal(hero.element, 'Cryo');
+  assert.equal(hero.region, 'Fontaine');
+  assert.equal(hero.icon, 'assets/UI/AvatarIconExample.png');
+  assert.equal(hero.image, 'https://example.test/hero.png');
+  assert.equal(records.filter(record => String(record.id).startsWith('traveler-')).length, 2);
+  assert.equal(records.find(record => record.id === 'traveler-anemo').region, 'Mondstadt');
+});
+
+test('source reconciliation ignores malformed rows and remains stable when the same source is reused', () => {
+  const source = [
+    { id: 'skirk', name: 'Skirk', element: 'Cryo', rarity: 5 },
+    null,
+    { name: 'Missing ID' },
+    { id: 'mona', name: 'Mona', element: 'Hydro', rarity: 5 },
+  ];
+  const once = mergeCharacterSourceRecords(source, []);
+  const twice = mergeCharacterSourceRecords(once, source);
+  assert.deepEqual(twice.map(row => row.id), ['skirk', 'mona']);
+  assert.equal(twice.length, 2);
 });
