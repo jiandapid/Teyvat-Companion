@@ -496,10 +496,11 @@ export default function App() {
       if (character.apiId) {
         rawDetail = await fetchAmbrData('avatar/' + encodeURIComponent(character.apiId));
       } else {
-        const rawSlug = String(character.apiSlug || character.id || '').trim();
-        const detailSlug = /^\d+$/.test(rawSlug) ? character.id : rawSlug;
+        const detailSlug = [character.apiSlug, character.id, character.rawName, character.name]
+          .map(value => slugify(value))
+          .find(value => value && !/^\d+$/.test(value));
         if (!detailSlug) throw new Error('No stable character slug is available from the catalogue.');
-        const response = await fetchWithTimeout('https://genshin.jmp.blue/characters/' + encodeURIComponent(slugify(detailSlug)) + '?lang=en', {}, 9000);
+        const response = await fetchWithTimeout('https://genshin.jmp.blue/characters/' + encodeURIComponent(detailSlug) + '?lang=en', {}, 9000);
         if (!response.ok) throw new Error('Character detail fallback returned ' + response.status);
         rawDetail = await response.json();
       }
