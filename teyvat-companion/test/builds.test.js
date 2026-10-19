@@ -36,7 +36,7 @@ test('every character build page has all three role categories represented', () 
     for (const option of available) assert.ok(option.profile, characterKey + ': available role must have actual profile data');
     for (const option of unreviewed) {
       assert.equal(option.profile, null, characterKey + ': unreviewed role must not recycle a different role profile');
-      assert.match(option.label, /not reviewed|not recommended/i);
+      assert.match(option.label, /not reviewed|not recommended|no separate sourced build/i);
     }
   }
 });
@@ -91,7 +91,7 @@ test('current Genshin.gg role labels are reflected for recently corrected profil
   assert.equal(CHARACTER_BUILD_GUIDES.heizou.buildCategory, 'Sub DPS');
   assert.equal(CHARACTER_BUILD_GUIDES.lisa.buildCategory, 'Support');
   assert.equal(CHARACTER_BUILD_GUIDES.dehya.buildCategory, 'Support');
-  assert.equal(CHARACTER_BUILD_GUIDES.ifa.buildCategory, 'Main DPS');
+  assert.equal(CHARACTER_BUILD_GUIDES.ifa.buildCategory, 'Sub DPS');
   assert.ok(CHARACTER_BUILD_GUIDES.raiden.alternateBuilds.some(build => build.id === 'on-field-burst-carry'));
 });
 
@@ -160,4 +160,68 @@ test('additional alternate-role profiles are complete and source-linked', () => 
   }
   assert.match(CHARACTER_BUILD_GUIDES.yanfei.alternateBuilds.find(b => b.id === 'c4-shield-support').sourceNote, /Constellation 4/);
   assert.equal(CHARACTER_BUILD_GUIDES['kuki-shinobu'].alternateBuilds.find(b => b.id === 'hyperbloom-sub-dps').buildCategory, 'Sub DPS');
+});
+
+
+test('remaining role coverage batch has complete source-noted variants', () => {
+  const expected = {
+    alhaitham: ['quickswap-dendro-sub-dps'],
+    ayaka: ['burst-sub-dps'],
+    ayato: ['burst-hydro-sub-dps'],
+    childe: ['burst-nuke-sub-dps'],
+    diluc: ['plunge-main-dps'],
+    eula: ['burst-swap-sub-dps'],
+    cyno: ['quickbloom-em-carry'],
+    nilou: ['hydro-driver-bloom'],
+    shenhe: ['cryo-burst-sub-dps'],
+    beidou: ['electro-team-support'],
+    heizou: ['on-field-swirl-driver'],
+    razor: ['thundering-furry-reaction-carry'],
+    rosaria: ['freeze-main-dps'],
+    sara: ['burst-sub-dps'],
+    sayu: ['on-field-swirl-driver'],
+    baizhu: ['quickbloom-sub-dps'],
+    kirara: ['burst-sub-dps'],
+    wriothesley: ['melt-main-dps'],
+    clorinde: ['quickbloom-main-dps'],
+    sethos: ['charged-shot-aggravate'],
+    xilonen: ['geo-burst-sub-dps'],
+    citlali: ['cryo-burst-sub-dps'],
+    'lan-yan': ['on-field-swirl-driver'],
+    lauma: ['off-field-bloom-sub-dps'],
+    columbina: ['hydro-support-buffer'],
+    durin: ['burst-main-dps'],
+    dori: ['electro-hyperbloom-support'],
+    lynette: ['on-field-swirl-driver'],
+    sigewinne: ['burst-sub-dps'],
+    kachina: ['geo-team-support'],
+    'traveler-hydro': ['hydro-burst-sub-dps'],
+    'traveler-pyro': ['pyro-burst-sub-dps'],
+    ineffa: ['on-field-electro-driver'],
+    iansan: ['high-uptime-atk-support'],
+    'yumemizuki-mizuki': ['full-em-swirl-support'],
+    aloy: ['freeze-main-dps'],
+    freminet: ['cryo-shatter-main-dps'],
+    xingqiu: ['energy-buffer-support'],
+    yoimiya: ['off-field-burst-sub-dps'],
+    faruzan: ['burst-damage-sub-dps'],
+    ifa: ['full-em-swirl-support'],
+    linnea: ['lunar-crystallize-sub-dps'],
+    charlotte: ['cryo-burst-sub-dps'],
+    prune: ['full-em-swirl-driver'],
+    odette: ['on-field-cryo-main-dps'],
+    albedo: ['archaic-petra-team-support'],
+    keqing: ['physical-main-dps'],
+    dahlia: ['scroll-team-support'],
+    jahoda: ['full-em-swirl-support'],
+  };
+  for (const [key, ids] of Object.entries(expected)) {
+    assert.ok(CHARACTER_BUILD_GUIDES[key], key + ': profile missing');
+    for (const id of ids) {
+      const variant = (CHARACTER_BUILD_GUIDES[key].alternateBuilds || []).find(build => build.id === id);
+      assert.ok(variant, key + ': expected alternate ' + id);
+      assertCompleteProfile(key + '/' + id, variant);
+      assert.ok(variant.sourceName && variant.sourceNote, key + '/' + id + ': source rationale required');
+    }
+  }
 });
