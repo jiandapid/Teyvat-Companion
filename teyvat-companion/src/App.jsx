@@ -189,10 +189,12 @@ export default function App() {
   const [persisted, setPersisted] = useState(loadInitial);
   const [page, setPage] = useState('dashboard');
   const [buildCharacterId, setBuildCharacterId] = useState('');
+  const [buildVariantId, setBuildVariantId] = useState('');
   const [buildSearch, setBuildSearch] = useState('');
   const [buildElement, setBuildElement] = useState('All elements');
   const [mobileNav, setMobileNav] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
+  useEffect(() => { setBuildVariantId(''); }, [buildCharacterId]);
   const [activeCharacter, setActiveCharacter] = useState(null);
   const [toast, setToast] = useState('');
   const [isLoadingData, setIsLoadingData] = useState(false);
@@ -314,7 +316,8 @@ export default function App() {
     }).sort((a, b) => a.name.localeCompare(b.name));
   }, [characters, buildSearch, buildElement]);
   const buildCharacter = characters.find(c => c.id === buildCharacterId) || null;
-  const activeBuildProfile = findCharacterBuildGuide(buildCharacter);
+  const activeBuildBaseProfile = findCharacterBuildGuide(buildCharacter);
+  const activeBuildProfile = activeBuildBaseProfile?.alternateBuilds?.find(profile => profile.id === buildVariantId) || activeBuildBaseProfile;
   const activeBuildStats = activeBuildProfile?.stats || null;
   const activeBuildArtifacts = activeBuildProfile?.artifacts?.length ? activeBuildProfile.artifacts : (buildCharacter?.artifact ? [{ name: buildCharacter.artifact, note: 'Saved tracker value only — this is not a ranked or source-verified recommendation.' }] : []);
   const activeBuildWeapons = activeBuildProfile?.weapons?.length ? activeBuildProfile.weapons : (buildCharacter?.weaponName ? [{ name: buildCharacter.weaponName, note: 'Saved tracker value only — check the creator guides for weapon rankings.' }] : []);
@@ -898,6 +901,15 @@ export default function App() {
           {!activeBuildProfile && <div className="notice warning build-profile-warning"><Info size={16}/><span>This character has a dedicated page, but its structured build has not been reviewed in this app yet. Any saved weapon/artifact values are shown separately below and are not presented as a ranking. Use the IWTL and Zy0x guide searches to verify a current build.</span></div>}
           <section className="panel build-section-panel">
             <div className="build-panel-heading"><div><div className="eyebrow">START HERE</div><h2>{activeBuildProfile?.buildCategory ? activeBuildProfile.buildCategory + ' build' : 'Recommended build'}</h2><p>Recommended role and stats for this character; adjust for your weapon, team and rotation.</p></div><span className="pill muted">Quick reference</span></div>
+            {activeBuildBaseProfile?.alternateBuilds?.length ? <div className="build-role-picker">
+              <label htmlFor="build-role-select">BUILD ROLE / PLAYSTYLE
+                <select id="build-role-select" value={activeBuildProfile?.id || ''} onChange={e => setBuildVariantId(e.target.value)}>
+                  <option value="">Recommended — {activeBuildBaseProfile.buildCategory || 'Primary'} ({activeBuildBaseProfile.role || 'default build'})</option>
+                  {activeBuildBaseProfile.alternateBuilds.map(variant => <option value={variant.id} key={variant.id}>{variant.buildCategory} — {variant.role}</option>)}
+                </select>
+              </label>
+              {activeBuildProfile?.sourceNote ? <p>{activeBuildProfile.sourceNote}</p> : null}
+            </div> : null}
             {activeBuildStats ? <div className="build-mainstats-grid">{[['Sands', activeBuildStats.sands], ['Goblet', activeBuildStats.goblet], ['Circlet', activeBuildStats.circlet]].map(([label, value]) => <div className="build-mainstat-tile" key={label}><span>{label}</span><strong>{value || 'Check current creator guide'}</strong></div>)}</div> : <div className="build-unavailable"><Info size={16}/><span>Main-stat recommendations are not curated for this character yet. Check the character-specific creator guide before farming.</span></div>}
             {activeBuildProfile?.substats?.length ? <div className="build-substats"><span className="build-section-label">SUBSTAT PRIORITY</span><div className="build-chip-row">{activeBuildProfile.substats.map((stat, index) => <span key={stat} className="build-priority-chip"><b>{index + 1}</b>{stat}</span>)}</div></div> : null}
             {activeBuildProfile?.playstyle && <div className="build-tip-box"><Sparkles size={17}/><p>{activeBuildProfile.playstyle}</p></div>}
@@ -963,7 +975,7 @@ export default function App() {
           <section className="panel build-source-panel">
             <div className="eyebrow">DATA CONFIDENCE</div><h3>{activeBuildProfile ? 'Quick-reference profile' : 'Source-first profile'}</h3>
             <p>{activeBuildProfile ? 'This profile is a quick-reference summary, not a universal best-in-slot ranking. Compare it against current Zy0x / IWTL content and the Genshin.gg baseline before spending resources.' : 'The character has a dedicated page, but no reviewed in-app build profile yet. Use the linked Genshin.gg baseline and creator-specific searches rather than treating saved tracker values as recommendations.'}</p>
-            <div className="build-source-mini"><span><Database size={13}/> Game catalogue</span><span><BookOpen size={13}/> Build reference</span><span><PlayCircle size={13}/> Creator video/search</span><a href={activeBuildProfile?.sourceUrl || 'https://genshin.gg/builds/'} target="_blank" rel="noreferrer"><ExternalLink size={13}/> Genshin.gg source</a></div>
+            <div className="build-source-mini"><span><Database size={13}/> Game catalogue</span><span><BookOpen size={13}/> Build reference</span><span><PlayCircle size={13}/> Creator video/search</span><a href={activeBuildProfile?.sourceUrl || 'https://genshin.gg/builds/'} target="_blank" rel="noreferrer"><ExternalLink size={13}/> {activeBuildProfile?.sourceName || 'Genshin.gg character page'}</a></div>
           </section>
         </aside>
       </div>
