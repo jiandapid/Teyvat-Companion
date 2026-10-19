@@ -1636,7 +1636,7 @@ const ADDITIONAL_ROLE_VARIANTS = {
     },
   ],
 
-  inefaa: [
+  ineffa: [
     {
       id: 'on-field-electro-driver', role: 'On-field Electro Reaction Driver (niche)', buildCategory: 'Main DPS',
       sourceUrl: 'https://genshin.gg/characters/ineffa/',
