@@ -78,16 +78,19 @@ The current MVP saves your tracker in browser local storage. This means the webs
 
 ### Optional cloud accounts and cross-device backup
 
-Cloud sync is opt-in. No Supabase project is connected by default, so local saving and JSON backups continue to work without cloud credentials.
+The Teyvat Companion Supabase project is now provisioned on the **$0/month quoted plan** in Frankfurt, and the private workspace table has been created with row-level security. The app has its public publishable key configured as a safe browser default, so you do not need a Vercel secret to connect it. The cloud UI will appear once the updated frontend deploys. Free plans have usage limits; do not upgrade or enable paid add-ons for this project.
 
-1. Create or select a Supabase project in your own account.
-2. Open the Supabase SQL Editor and run `supabase/cloud-sync.sql`. It creates one private workspace row per authenticated user and enables row-level security so users can access only their own data.
-3. In Supabase Authentication, enable email/password sign-in and configure the site URL plus allowed redirect URL for your deployed website (and `http://localhost:5173` for local development). If email confirmation is on, confirm the sign-up message before signing in.
-4. Copy `.env.example` to `.env.local` for local use and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`. Add the same two variables in Vercel Project Settings → Environment Variables, then redeploy.
-5. Use only the **publishable** key in browser code. Never use a service-role/secret key as a Vite environment variable.
-6. Sign in under Settings → Cloud save. Choose **Save local tracker to cloud** to upload this browser's current tracker, or **Restore cloud backup** on another device to replace its local workspace. Restore requires confirmation and a valid backup. Export a JSON backup before restoring.
+Before email confirmation redirects work, set Supabase Auth's URL Configuration:
+1. Open the [Supabase project](https://supabase.com/dashboard/project/ktsgeuswodqhfbfbmeci).
+2. Set **Site URL** to `https://teyvatcompanion.vercel.app`.
+3. Add `https://teyvatcompanion.vercel.app/**` and `http://localhost:5173/**` to the allowed redirect URLs.
+4. Under Authentication → Providers, ensure **Email** sign-in is enabled.
 
-The cloud copy is manual rather than continuous autosync; this avoids one device silently overwriting another. A successful GitHub build does not mean your live Vercel deployment has picked up the environment variables.
+No service-role or secret key is included in the app. The publishable key is public by design; row-level security ensures each signed-in user can read or write only their own workspace.
+
+After the latest website deploys, open Settings → Cloud save. Create an account, confirm your email, then sign in. Choose **Save local tracker to cloud** on the current browser; on another device, sign in and choose **Restore cloud backup**. Restore requires confirmation and replaces that browser's local workspace, so export a JSON backup before restoring. Saving is manual, not continuous autosync, to prevent devices silently overwriting each other.
+
+For local development, blank entries in `.env.example` work because the project URL and public key have safe defaults in `src/lib/supabase.js`. You can override both with `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` if you intentionally test another project.
 
 ### Publish without GitHub (manual alternative)
 
