@@ -4,7 +4,59 @@ export function isValidGenshinUid(value) {
 
 export function enkaTtlSeconds(value) {
   const ttl = Number(value);
-  return Number.isFinite(ttl) && ttl > 0 ? Math.ceil(ttl) : 60;
+  return Number.isFinite(ttl) && ttl > 0 ? Math.min(86400, Math.ceil(ttl)) : 60;
+}
+
+/**
+ * Normalize the account's public display-list entries plus detailed showcase entries.
+ * This is deliberately a public display list, NOT a complete owned-character inventory.
+ */
+export function parseEnkaPublicRoster(playerInfo, detailedAvatars = [], characters = []) {
+  const basicRows = Array.isArray(playerInfo?.showAvatarInfoList) ? playerInfo.showAvatarInfoList : [];
+  const detailRows = Array.isArray(detailedAvatars) ? detailedAvatars : [];
+  const output = new Map();
+
+  const avatarIdOf = row => String(row?.avatarId ?? row?.avatarID ?? row?.id ?? '').trim();
+  const levelOf = row => {
+    const raw = row?.level ?? row?.propMap?.['4001']?.val ?? row?.propMap?.['4001']?.ival;
+    const value = Number(raw);
+    return Number.isFinite(value) && value > 0 ? Math.floor(value) : null;
+  };
+  const matchOf = avatarId => (characters || []).find(character =>
+    avatarId && String(character?.apiId ?? '') === avatarId
+  ) || (characters || []).find(character => avatarId && String(character?.id ?? '') === avatarId) || null;
+
+  for (const row of basicRows) {
+    const avatarId = avatarIdOf(row);
+    if (!avatarId) continue;
+    const match = matchOf(avatarId);
+    output.set(avatarId, {
+      avatarId,
+      characterId: match?.id || '',
+      name: match?.name || row?.name || `Character ID ${avatarId}`,
+      level: levelOf(row),
+      costumeId: row?.costumeId ?? null,
+      detailsAvailable: false,
+    });
+  }
+
+  for (const row of detailRows) {
+    const avatarId = avatarIdOf(row);
+    if (!avatarId) continue;
+    const previous = output.get(avatarId) || {};
+    const match = matchOf(avatarId);
+    output.set(avatarId, {
+      ...previous,
+      avatarId,
+      characterId: match?.id || previous.characterId || '',
+      name: match?.name || previous.name || row?.name || `Character ID ${avatarId}`,
+      level: levelOf(row) ?? previous.level ?? null,
+      costumeId: row?.costumeId ?? previous.costumeId ?? null,
+      detailsAvailable: true,
+    });
+  }
+
+  return [...output.values()];
 }
 
 export function mergeEnkaShowcaseCharacter(character, imported, syncedAt) {
