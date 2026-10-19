@@ -24,8 +24,9 @@ npm run preview
 
 - Dashboard and all eight navigation sections
 - Character catalogue with search, elemental / ownership / role filters, editable owned status, levels, talents, constellations, role, weapon and artifact notes
-- Startup and manual character catalogue refresh using Project Amber with a genshin.dev fallback; refresh responses with fewer than 120 unique characters are rejected so a partial response cannot replace a larger saved roster
+- Startup and manual character catalogue refresh using Project Amber reconciled with the genshin.dev catalogue; records are merged by character identity and Traveler element, supplemental fields fill source gaps, refreshes with fewer than 120 unique records are rejected, and missing character details can fall back to the name slug
 - Source-derived material requirements for full Level 90 ascension and level-10 talent upgrades when the provider returns complete costs; unresolved material IDs are visibly flagged rather than treated as verified names
+- Settings data-health report for metadata warnings, image references, build-reference matches and cached character detail records
 - Custom team presets saved locally, with live roster-level hints for possible elemental reactions, duplicate slots, missing party members, on-field role, and sustain
 - Artifact optimizer shows each selected piece’s main-stat, weighted-substat, rarity, and level contributions so its heuristic ranking is easier to inspect
 - Material inventory with editable required / owned quantities, automatic missing totals and progress, custom material creation and deletion
