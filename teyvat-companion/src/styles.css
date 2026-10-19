@@ -1623,8 +1623,8 @@ body { color: #293b33; background-color: #e9e5d9; }
 .team-section-head h2, .guide-section-head h2 {
   color: #293b33;
 }
-.panel p, .settings-card p, .build-video-note, .build-source-panel p,
-.guide-feature-copy p { color: #59655c; }
+.panel p, .settings-card p, .build-video-note, .build-source-panel p { color: #59655c; }
+.guide-feature-copy p { color: #e1e7d9; }
 .panel small, .settings-card small { color: #636d62; }
 .helper-note { color: #566259; }
 .helper-note svg { color: #735b2c; }
