@@ -395,3 +395,59 @@ export const CREATOR_CHANNELS = [
   { name: 'IWinToLose Gaming', handle: 'IWinToLoseGaming', url: 'https://www.youtube.com/@IWinToLoseGaming', description: 'Build guides, weapon comparisons, team testing and damage analysis.' },
   { name: 'Zy0x', handle: 'Zy0x', url: 'https://www.youtube.com/@Zy0x', description: 'Character builds, rotations, artifact stats and team guides.' },
 ];
+
+// Every character build page exposes all three target role categories. A role is only
+// marked available when a real profile exists; missing profiles remain explicit rather
+// than copying a different role's stats into an unsupported slot.
+export const BUILD_ROLE_CATEGORIES = ['Main DPS', 'Sub DPS', 'Support'];
+
+const BUILD_ROLE_IDS = {
+  'Main DPS': 'main-dps',
+  'Sub DPS': 'sub-dps',
+  'Support': 'support',
+};
+
+export function getCharacterBuildRoleOptions(profile) {
+  const options = [];
+  const coveredRoles = new Set();
+
+  if (profile) {
+    const primaryRole = BUILD_ROLE_CATEGORIES.includes(profile.buildCategory) ? profile.buildCategory : null;
+    if (primaryRole) {
+      coveredRoles.add(primaryRole);
+      options.push({
+        id: '',
+        buildCategory: primaryRole,
+        role: profile.role || primaryRole,
+        label: `Recommended — ${primaryRole}: ${profile.role || primaryRole}`,
+        status: 'available',
+        profile,
+      });
+    }
+
+    for (const variant of profile.alternateBuilds || []) {
+      if (!BUILD_ROLE_CATEGORIES.includes(variant.buildCategory)) continue;
+      coveredRoles.add(variant.buildCategory);
+      options.push({
+        ...variant,
+        label: `${variant.buildCategory} — ${variant.role || variant.buildCategory}`,
+        status: 'available',
+        profile: variant,
+      });
+    }
+  }
+
+  for (const role of BUILD_ROLE_CATEGORIES) {
+    if (coveredRoles.has(role)) continue;
+    options.push({
+      id: `unreviewed-${BUILD_ROLE_IDS[role]}`,
+      buildCategory: role,
+      role: `No source-backed ${role} build curated yet`,
+      label: `${role} — not reviewed / not recommended yet`,
+      status: 'unreviewed',
+      profile: null,
+    });
+  }
+
+  return options;
+}
