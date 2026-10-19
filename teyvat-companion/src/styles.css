@@ -2573,3 +2573,45 @@ h1, h2, h3, h4, .stat-value, .material-hero-total strong {
 .optimizer-piece-explain span{font-size:9px;line-height:1.4;color:var(--muted)}
 .optimizer-piece-explain b{font-size:10px;font-variant-numeric:tabular-nums;color:var(--subtle)}
 .optimizer-score-caption{margin:4px 0 8px;font-size:9px;line-height:1.4;color:var(--muted)}
+
+
+/* Homepage UID import — compact, calm, and responsive */
+.uid-import-panel{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,.92fr);gap:24px;align-items:center;margin:0 0 18px;padding:20px 23px;border:1px solid rgba(234,201,126,.2);background:linear-gradient(110deg,rgba(29,44,59,.96),rgba(18,30,45,.97));}
+.uid-import-copy .eyebrow{display:flex;align-items:center;gap:7px;color:#e7ce93;font-size:9px;font-weight:800;letter-spacing:.13em}
+.uid-import-copy h2{font:800 19px/1.3 Manrope,sans-serif;letter-spacing:-.03em;color:#edf1f6;margin:9px 0 6px}
+.uid-import-copy p{max-width:620px;color:#a1b0c3;font-size:10px;line-height:1.75;margin:0}
+.uid-import-form{min-width:0}
+.uid-import-form>label{display:block;color:#d7e0eb;font-size:10px;font-weight:700;margin-bottom:7px}
+.uid-import-controls{display:flex;gap:8px;align-items:stretch}
+.uid-import-controls input{min-width:0;flex:1;width:100%;padding:11px 12px;border:1px solid var(--border-strong);border-radius:8px;background:#101a29;color:#eaf0fa;font-size:11px;outline:0}
+.uid-import-controls input:focus{border-color:rgba(234,201,126,.58);box-shadow:0 0 0 3px rgba(234,201,126,.07)}
+.uid-import-controls input::placeholder{color:#718199}
+.uid-import-controls .button{white-space:nowrap;justify-content:center}
+.uid-import-form>small{display:block;color:#8292a8;font-size:8.5px;line-height:1.5;margin-top:6px}
+.uid-import-status,.uid-import-error{display:flex;gap:7px;align-items:flex-start;margin-top:10px;padding:9px 10px;border-radius:7px;font-size:9px;line-height:1.6}
+.uid-import-status{color:#c9d9df;background:rgba(105,171,169,.07);border:1px solid rgba(105,171,169,.18)}
+.uid-import-error{color:#f2c5ad;background:rgba(220,133,106,.07);border:1px solid rgba(220,133,106,.18)}
+.uid-import-status svg,.uid-import-error svg{flex:0 0 auto;margin-top:1px}
+.uid-import-links{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px;color:#8092a9;font-size:8.5px}
+.uid-import-links .text-action{font-size:9px;white-space:nowrap}
+.enka-live-build-panel{margin:0 0 18px;padding:14px;border:1px solid rgba(112,164,196,.18);border-radius:10px;background:rgba(69,122,157,.045)}
+.enka-live-build-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:11px}
+.enka-live-build-head h3{font-size:13px;margin:4px 0 0;color:#e9eff7}
+.enka-live-build-head>.pill{flex-shrink:0;font-size:8px}
+.enka-live-weapon{display:flex;align-items:center;gap:10px;padding:10px 11px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.018)}
+.enka-live-weapon>svg{color:#eac97e;flex:0 0 auto}
+.enka-live-weapon>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.enka-live-weapon strong{font-size:10px;color:#e5edf7}
+.enka-live-weapon small,.enka-live-talents>span{font-size:8.5px;color:#8f9fb5}
+.enka-live-talents{display:flex;justify-content:space-between;gap:14px;padding:10px 2px;border-bottom:1px solid var(--border)}
+.enka-live-talents strong{font-size:10px;color:#eac97e}
+.enka-live-artifacts{margin-top:12px}
+.enka-live-artifacts>.eyebrow{margin-bottom:7px;color:#8597ac}
+.enka-live-artifact-row{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:12px;padding:9px 2px;border-bottom:1px solid var(--border)}
+.enka-live-artifact-row:last-child{border-bottom:0}
+.enka-live-artifact-row>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.enka-live-artifact-row strong{font-size:9px;color:#d8e2ee}
+.enka-live-artifact-row span,.enka-live-artifact-row small{font-size:8.5px;line-height:1.5;color:#90a0b5}
+.enka-live-build-panel>.helper-note{margin-top:11px;font-size:8.5px;line-height:1.6}
+@media(max-width:950px){.uid-import-panel{grid-template-columns:1fr;gap:14px}}
+@media(max-width:760px){.uid-import-panel{padding:15px;gap:13px}.uid-import-copy h2{font-size:16px}.uid-import-controls{flex-direction:column}.uid-import-controls .button{width:100%}.uid-import-links{align-items:flex-start;flex-direction:column;gap:5px}.enka-live-artifact-row{grid-template-columns:1fr;gap:6px}}
