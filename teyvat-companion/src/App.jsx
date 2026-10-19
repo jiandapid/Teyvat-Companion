@@ -373,6 +373,30 @@ export default function App() {
 
   const characters = persisted.characters;
   const ownedCharacters = characters.filter(c => c.owned);
+  const catalogueHealth = useMemo(() => {
+    const validWeapons = new Set(['Sword', 'Claymore', 'Polearm', 'Bow', 'Catalyst']);
+    const metadataWarnings = characters.filter(character =>
+      !ELEMENT_META[character.element]
+      || !validWeapons.has(character.weapon)
+      || ![4, 5].includes(Number(character.rarity))
+    ).length;
+    const imageReferences = characters.filter(character =>
+      Boolean(character.dripMarketingImage || character.image || character.iconImage || character.portraitImage)
+    ).length;
+    const buildReferences = characters.filter(character => Boolean(findCharacterBuildGuide(character))).length;
+    const detailedRecords = characters.filter(character => Boolean(character.gameData)).length;
+    const supplementalRecords = characters.filter(character =>
+      /supplemental|fallback supplement/i.test(String(character.source || ''))
+    ).length;
+    return {
+      total: characters.length,
+      metadataWarnings,
+      imageReferences,
+      buildReferences,
+      detailedRecords,
+      supplementalRecords,
+    };
+  }, [characters]);
   const syncNextFetchAt = Number(persisted.enkaNextFetchAt || persisted.enkaSnapshot?.nextFetchAt || 0);
   const syncWaitMs = Math.max(0, syncNextFetchAt - syncClock);
   const progressionPlan = useMemo(() => buildProgressionPlan({ characters, goals: persisted.goals, materials: persisted.materials, goodInventory: persisted.goodInventory }), [characters, persisted.goals, persisted.materials, persisted.goodInventory]);
@@ -1991,7 +2015,7 @@ export default function App() {
         <p className="helper-note">{cloudLastSyncedAt ? 'Last cloud operation: ' + new Date(cloudLastSyncedAt).toLocaleString() + '. ' : 'No cloud operation has been completed in this session. '}Save and restore are manual so one device cannot silently overwrite another device’s progress.</p>
       </div>}
     </section>
-    <div className="panel data-health-panel"><div className="panel-head"><div><div className="eyebrow">WORKSPACE STATUS</div><h3>Data health</h3></div><span className={`pill ${storageStatus === 'error' ? 'warning' : storageStatus === 'saved' ? 'success' : 'muted'}`}>{storageStatus === 'error' ? <Info size={13}/> : <span className="live-dot"/>}{storageStatus === 'error' ? 'Save failed' : storageStatus === 'saving' ? 'Saving changes…' : 'Saved locally'}</span></div><div className="data-health-grid"><div><span>Tracked characters</span><strong>{characters.length}</strong></div><div><span>Materials</span><strong>{persisted.materials.length}</strong></div><div><span>Saved teams</span><strong>{persisted.teams.length}</strong></div><div><span>Personal map markers</span><strong>{persisted.mapMarkers.length}</strong></div><div><span>Goals</span><strong>{persisted.goals.length}</strong></div><div><span>Enka snapshot</span><strong>{persisted.enkaSnapshot?'Available':'Not connected'}</strong></div></div></div>
+    <div className="panel data-health-panel"><div className="panel-head"><div><div className="eyebrow">WORKSPACE STATUS</div><h3>Data health</h3></div><span className={`pill ${storageStatus === 'error' ? 'warning' : storageStatus === 'saved' ? 'success' : 'muted'}`}>{storageStatus === 'error' ? <Info size={13}/> : <span className="live-dot"/>}{storageStatus === 'error' ? 'Save failed' : storageStatus === 'saving' ? 'Saving changes…' : 'Saved locally'}</span></div><div className="data-health-grid"><div><span>Tracked characters</span><strong>{characters.length}</strong></div><div><span>Materials</span><strong>{persisted.materials.length}</strong></div><div><span>Saved teams</span><strong>{persisted.teams.length}</strong></div><div><span>Personal map markers</span><strong>{persisted.mapMarkers.length}</strong></div><div><span>Goals</span><strong>{persisted.goals.length}</strong></div><div><span>Enka snapshot</span><strong>{persisted.enkaSnapshot?'Available':'Not connected'}</strong></div><div><span>Metadata warnings</span><strong>{catalogueHealth.metadataWarnings}</strong></div><div><span>Build references found</span><strong>{catalogueHealth.buildReferences} / {catalogueHealth.total}</strong></div><div><span>Detailed records cached</span><strong>{catalogueHealth.detailedRecords} / {catalogueHealth.total}</strong></div><div><span>Image references set</span><strong>{catalogueHealth.imageReferences} / {catalogueHealth.total}</strong></div><div><span>Supplemental-source records</span><strong>{catalogueHealth.supplementalRecords}</strong></div></div><p className="helper-note"><Info size={13}/> These are metadata coverage checks. A recorded image URL or build reference is not proof that the external asset is still reachable or every recommendation is current.</p></div>
     <div className="reset-zone"><div><strong>Reset local workspace</strong><p>Remove all custom progress and return to the starter example. Export a backup first if you want to keep your data.</p></div><button className="button danger-outline" onClick={()=>{if(window.confirm('Reset your Teyvat Companion data in this browser? Export a backup first if you want to keep it.')){localStorage.removeItem(STORAGE_KEY);setPersisted(createDefaultState());setToast('Workspace reset');}}}><Trash2 size={14}/> Reset workspace</button></div>
   </div>;
 
