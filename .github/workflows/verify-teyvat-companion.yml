@@ -24,7 +24,7 @@ jobs:
         run: npm test
       - name: Check Vercel API function syntax
         working-directory: teyvat-companion
-        run: node --check api/enka.js
+        run: node --check api/enka.js && node --check api/akasha.js
       - name: Build Vite app
         working-directory: teyvat-companion
         run: npm run build
