@@ -51,7 +51,7 @@ export const NAV_ITEMS = [
   { id:'builds', label:'Character Builds', icon:'BookOpen' },
   { id:'optimizer', label:'Artifact Optimizer', icon:'Layers3' },
   { id:'teams', label:'Builds & Teams', icon:'Swords' },
-  { id:'advisor', label:'Teyvat Advisor', icon:'Bot' },
+  { id:'advisor', label:'Teyvat Advisor', icon:'Compass' },
   { id:'materials', label:'Materials & Farming', icon:'PackageOpen' },
   { id:'map', label:'Interactive Map', icon:'MapPinned' },
   { id:'account', label:'Account Tracker', icon:'ChartNoAxesCombined' },
