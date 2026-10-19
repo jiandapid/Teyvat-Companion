@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildProgressionPlan, enkaTtlSeconds, flattenEnkaSavedBuilds, isValidGenshinUid, matchGoodCharacterKey, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, normalizeAkashaArtifacts, normalizeAkashaProfiles, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory } from '../src/core.js';
+import { buildProgressionPlan, enkaTtlSeconds, flattenEnkaSavedBuilds, isValidGenshinUid, matchGoodCharacterKey, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, normalizeAkashaArtifacts, normalizeAkashaProfiles, normalizeTrackerBackup, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory } from '../src/core.js';
 import { CHARACTER_BUILD_GUIDES } from '../src/builds.js';
 import { MATERIAL_STARTER, NAV_ITEMS, STARTER_CHARACTERS, STARTER_TEAMS } from '../src/data.js';
 
@@ -471,4 +471,44 @@ test('optimizer returns an actionable error when a slot is missing', () => {
   });
   assert.match(result.error,/missing artifacts for/);
   assert.ok(result.missingSlots.includes('circlet'));
+});
+
+
+test('normalizes a valid tracker backup and deduplicates character IDs', () => {
+  const backup = normalizeTrackerBackup({
+    format: 'teyvat-companion-backup-v1',
+    characters: [
+      { id: 'skirk', name: 'Skirk' },
+      null,
+      { id: 'mona', name: 'Mona' },
+      { id: 'skirk', name: 'Skirk Updated' },
+    ],
+    account: { uid: '123456789' },
+    materials: [],
+    teams: [],
+    goals: [],
+    tasks: [],
+    mapMarkers: [],
+  });
+
+  assert.deepEqual(backup.characters.map(character => character.id), ['skirk', 'mona']);
+  assert.equal(backup.characters[0].name, 'Skirk Updated');
+  assert.equal(backup.account.uid, '123456789');
+});
+
+test('normalizes legacy character maps and includes extra-character records', () => {
+  const backup = normalizeTrackerBackup({
+    characters: { skirk: { name: 'Skirk' } },
+    extraCharacters: [{ id: 'custom-character', name: 'Custom Character' }],
+  });
+
+  assert.deepEqual(backup.characters.map(character => character.id), ['skirk', 'custom-character']);
+});
+
+test('rejects invalid backup shapes and malformed tracker sections', () => {
+  assert.throws(() => normalizeTrackerBackup(null), /JSON object/);
+  assert.throws(() => normalizeTrackerBackup({ account: { uid: '123456789' } }), /character data/);
+  assert.throws(() => normalizeTrackerBackup({ format: 'future-format', characters: [{ id: 'skirk' }] }), /format is not supported/);
+  assert.throws(() => normalizeTrackerBackup({ characters: [{ id: 'skirk' }], materials: {} }), /invalid "materials"/);
+  assert.throws(() => normalizeTrackerBackup({ characters: [null, {}] }), /no valid character records/);
 });
