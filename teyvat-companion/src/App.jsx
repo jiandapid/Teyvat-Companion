@@ -204,6 +204,7 @@ export default function App() {
     try { return localStorage.getItem('teyvat-companion-sidebar-collapsed') === 'true'; } catch { return false; }
   });
   const [globalSearch, setGlobalSearch] = useState('');
+  const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
   const globalSearchRef = useRef(null);
   useEffect(() => { setBuildVariantId(''); setBuildPlaystyleId(''); }, [buildCharacterId]);
   const [activeCharacter, setActiveCharacter] = useState(null);
@@ -280,6 +281,7 @@ export default function App() {
       }
       if (event.key === 'Escape') {
         setMobileNav(false);
+        setGlobalSearchOpen(false);
         globalSearchRef.current?.blur();
       }
     };
@@ -355,6 +357,19 @@ export default function App() {
       return textMatch && elementMatch;
     }).sort((a, b) => a.name.localeCompare(b.name));
   }, [characters, buildSearch, buildElement]);
+  const quickNavResults = useMemo(() => {
+    const query = globalSearch.trim().toLowerCase();
+    const pageMatches = NAV_ITEMS
+      .filter(item => !query || (item.label + ' ' + item.id).toLowerCase().includes(query))
+      .slice(0, query ? 4 : 5)
+      .map(item => ({ type: 'page', id: item.id, label: item.label, detail: NAV_GROUPS.find(group => group.ids.includes(item.id))?.label || 'Character Builds' }));
+    const characterMatches = query ? characters
+      .filter(character => [character.name, character.element, character.weapon, character.role, character.region].filter(Boolean).join(' ').toLowerCase().includes(query))
+      .sort((a,b) => Number(Boolean(b.owned))-Number(Boolean(a.owned)) || a.name.localeCompare(b.name))
+      .slice(0, 5)
+      .map(character => ({ type:'character', id:character.id, character, label:character.name, detail:[character.element, character.weapon, character.owned ? 'Owned' : 'Not owned'].filter(Boolean).join(' · ') })) : [];
+    return [...pageMatches, ...characterMatches].slice(0, 8);
+  }, [globalSearch, characters]);
   const buildCharacter = characters.find(c => c.id === buildCharacterId) || null;
   const enkaSavedBuildsForCharacter = buildCharacter ? (persisted.enkaSnapshot?.savedBuilds || []).filter(build => build.characterId === buildCharacter.id) : [];
   const akashaProfilesForCharacter = buildCharacter ? (persisted.akashaSnapshot?.profiles || []).filter(profile => profile.characterId === buildCharacter.id) : [];
@@ -1502,7 +1517,16 @@ export default function App() {
   return <div className={`app-shell ${sidebarCollapsed?'sidebar-is-collapsed':''}`}>
     <aside className={`sidebar ${mobileNav?'mobile-open':''} ${sidebarCollapsed?'is-collapsed':''}`}>{sidebar}</aside>
     {mobileNav&&<button className="mobile-backdrop" aria-label="Close menu" onClick={()=>setMobileNav(false)}/>}
-    <main className="main-area"><header className="topbar"><div className="topbar-left"><button className="mobile-menu icon-button" onClick={()=>setMobileNav(true)} aria-label="Open navigation"><Menu size={20}/></button><div className="breadcrumb"><span>TEYVAT</span><ChevronRight size={13}/><span>{breadcrumbGroup}</span><ChevronRight size={13}/><strong>{breadcrumbTitle}</strong></div></div><div className="topbar-actions"><div className="global-search"><Search size={16}/><input ref={globalSearchRef} value={globalSearch} onChange={e=>{setGlobalSearch(e.target.value);if(e.target.value) setPage('characters');}} aria-label="Search characters" placeholder="Find characters…"/><kbd>⌘ K</kbd></div><button className="button secondary topbar-build-shortcut" onClick={()=>navigate('builds')} title="Open Character Builds"><BookOpen size={15}/><span>Builds</span></button><div className="topbar-divider"/><button className="icon-button quick-settings" title="Settings" onClick={()=>navigate('settings')}><Settings2 size={18}/></button><button className="topbar-profile" title="Account tracker" onClick={()=>navigate('account')}><span className="user-avatar">{(persisted.account.nickname || 'T').slice(0,1).toUpperCase()}</span><span className="rank-chip">AR {persisted.account.ar}</span><ChevronDown size={14}/></button></div></header><div key={page} className="page-animate">{pageContent}</div><footer className="global-footer"><span>✦ Teyvat Companion</span><span>Unofficial fan-made companion · Not affiliated with HoYoverse</span><span>Made for Travelers <span className="footer-heart">♡</span></span></footer></main>
+    <main className="main-area"><header className="topbar"><div className="topbar-left"><button className="mobile-menu icon-button" onClick={()=>setMobileNav(true)} aria-label="Open navigation"><Menu size={20}/></button><div className="breadcrumb"><span>TEYVAT</span><ChevronRight size={13}/><span>{breadcrumbGroup}</span><ChevronRight size={13}/><strong>{breadcrumbTitle}</strong></div></div><div className="topbar-actions"><div className="global-search-wrap" onBlur={event=>{if(!event.currentTarget.contains(event.relatedTarget))setGlobalSearchOpen(false);}}>
+      <div className="global-search"><Search size={16}/><input ref={globalSearchRef} value={globalSearch} onFocus={()=>setGlobalSearchOpen(true)} onChange={event=>{setGlobalSearch(event.target.value);setGlobalSearchOpen(true);}} onKeyDown={event=>{if(event.key==='Enter'&&quickNavResults[0]){event.preventDefault();const match=quickNavResults[0];setGlobalSearchOpen(false);if(match.type==='page')navigate(match.id);else openBuildPage(match.character);}}} aria-label="Search pages and characters" aria-expanded={globalSearchOpen} aria-controls="quick-nav-results" placeholder="Search pages & characters…"/><kbd>⌘ K</kbd></div>
+      {globalSearchOpen && <div className="global-search-menu" id="quick-nav-results" role="listbox" aria-label="Quick navigation results">
+        <div className="global-search-menu-heading">{globalSearch.trim() ? 'SEARCH RESULTS' : 'QUICK ACCESS'}</div>
+        {quickNavResults.length ? quickNavResults.map(match=><button type="button" role="option" aria-selected="false" className="quick-nav-result" key={match.type+'-'+match.id} onMouseDown={event=>event.preventDefault()} onClick={()=>{setGlobalSearchOpen(false);if(match.type==='page')navigate(match.id);else openBuildPage(match.character);}}>
+          <span className={'quick-nav-icon '+(match.type==='character'?'character':'page')}>{match.type==='character'?<Users size={15}/>:<Compass size={15}/>}</span><span className="quick-nav-copy"><strong>{match.label}</strong><small>{match.detail}</small></span>{match.type==='character'?<ArrowUpRight size={14}/>:<ChevronRight size={14}/>}
+        </button>) : <div className="quick-nav-empty">No page or character matched “{globalSearch}”.</div>}
+        <div className="quick-nav-footer"><span><kbd>↵</kbd> Open first result</span><span><kbd>esc</kbd> Close</span></div>
+      </div>}
+    </div><button className="button secondary topbar-build-shortcut" onClick={()=>navigate('builds')} title="Open Character Builds"><BookOpen size={15}/><span>Builds</span></button><div className="topbar-divider"/><button className="icon-button quick-settings" title="Settings" onClick={()=>navigate('settings')}><Settings2 size={18}/></button><button className="topbar-profile" title="Account tracker" onClick={()=>navigate('account')}><span className="user-avatar">{(persisted.account.nickname || 'T').slice(0,1).toUpperCase()}</span><span className="rank-chip">AR {persisted.account.ar}</span><ChevronDown size={14}/></button></div></header><div key={page} className="page-animate">{pageContent}</div><footer className="global-footer"><span>✦ Teyvat Companion</span><span>Unofficial fan-made companion · Not affiliated with HoYoverse</span><span>Made for Travelers <span className="footer-heart">♡</span></span></footer></main>
     {activeCharacter && <CharacterModal character={characters.find(c=>c.id===activeCharacter.id)||activeCharacter} onClose={()=>setActiveCharacter(null)} onUpdate={updateCharacter} onGoal={addGoalForCharacter} onMaterials={addCharacterMaterialsToPlan} onToast={setToast} detailsLoading={characterDataLoadingId===activeCharacter.id} detailsError={characterDataError} materialLookup={gameMaterialLookupRef.current} onRetryDetails={openCharacter} onOpenBuild={openBuildPage}/>}
     {showImport && <div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&setShowImport(false)}><div className="import-modal panel"><button className="modal-close icon-button" onClick={()=>setShowImport(false)}><X size={18}/></button><div className="modal-icon"><FileJson size={21}/></div><div className="eyebrow">RESTORE WORKSPACE</div><h2>Import a backup</h2><p>Paste the contents of a Teyvat Companion JSON backup, or select a file below.</p><button className="button secondary full-width" onClick={()=>uploadRef.current?.click()}><Upload size={15}/> Choose JSON backup file</button><input ref={uploadRef} className="hidden-input" type="file" accept="application/json,.json" onChange={async e=>{const file=e.target.files?.[0];if(!file)return;try{importTrackerObject(JSON.parse(await file.text()));}catch{setToast('Could not read that JSON backup.');}e.target.value='';}}/><div className="import-divider"><span>OR PASTE JSON</span></div><form onSubmit={importFromText}><textarea value={importText} onChange={e=>setImportText(e.target.value)} rows="7" placeholder={'{\n  "format": "teyvat-companion-backup-v1", ...\n}'} required/><button className="button primary full-width" type="submit"><Upload size={15}/> Import tracker data</button></form><p className="modal-footnote"><Info size={13}/> Import replaces the current tracker state. Export your current data first if needed.</p></div></div>}
     {toast&&<div className="toast"><CheckCircle2 size={16}/>{toast}</div>}
