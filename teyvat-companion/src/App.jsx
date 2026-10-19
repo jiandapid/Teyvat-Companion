@@ -8,7 +8,8 @@ import {
 } from 'lucide-react';
 import { ELEMENTS, ELEMENT_META, MATERIAL_STARTER, NAV_ITEMS, STARTER_CHARACTERS, STARTER_TEAMS } from './data';
 import { CHARACTER_BUILD_ALIASES, CHARACTER_BUILD_GUIDES, CREATOR_CHANNELS, getCharacterBuildRoleOptions } from './builds';
-import { buildProgressionPlan, enkaTtlSeconds, flattenEnkaSavedBuilds, isValidGenshinUid, matchGoodCharacterKey, normalizeTrackerBackup, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, normalizeAkashaArtifacts, normalizeAkashaProfiles, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory } from './core';
+import { supabase, supabaseConfigured } from './lib/supabase.js';
+import { buildProgressionPlan, enkaTtlSeconds, flattenEnkaSavedBuilds, isValidGenshinUid, matchGoodCharacterKey, normalizeTrackerBackup, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, normalizeAkashaArtifacts, normalizeAkashaProfiles, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory, validateCharacterCatalogue } from './core';
 
 const ICONS = { LayoutDashboard, Users, Swords, PackageOpen, MapPinned, ChartNoAxesCombined, PlayCircle, Settings2, Bot, BookOpen, Layers3 };
 const STORAGE_KEY = 'teyvat-companion-v1';
@@ -191,9 +192,25 @@ function findCharacterBuildGuide(character) {
 
 const AMBR_API_ROOT = 'https://gi.yatta.moe/api/v2';
 let ambrVersionPromise = null;
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = 9000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      throw new Error('The game-data source timed out. Your saved tracker data was kept; try again shortly.');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function fetchAmbrData(endpoint) {
   if (!ambrVersionPromise) {
-    ambrVersionPromise = fetch(`${AMBR_API_ROOT}/static/version`).then(async response => {
+    ambrVersionPromise = fetchWithTimeout(`${AMBR_API_ROOT}/static/version`, {}, 8000).then(async response => {
       if (!response.ok) throw new Error(`Project Amber version endpoint returned ${response.status}`);
       const payload = await response.json();
       if (!payload?.data?.vh) throw new Error('Project Amber did not return a data version.');
@@ -201,7 +218,7 @@ async function fetchAmbrData(endpoint) {
     }).catch(error => { ambrVersionPromise = null; throw error; });
   }
   const version = await ambrVersionPromise;
-  const response = await fetch(`${AMBR_API_ROOT}/en/${endpoint}?vh=${encodeURIComponent(version)}`);
+  const response = await fetchWithTimeout(`${AMBR_API_ROOT}/en/${endpoint}?vh=${encodeURIComponent(version)}`, {}, 9000);
   if (!response.ok) throw new Error(`Project Amber returned ${response.status} for ${endpoint}`);
   const payload = await response.json();
   if (!payload || payload.data == null) throw new Error(`Project Amber returned no data for ${endpoint}`);
@@ -282,6 +299,13 @@ function EmptyState({ icon: Icon = Sparkles, title, description, action }) {
 export default function App() {
   const [persisted, setPersisted] = useState(loadInitial);
   const [storageStatus, setStorageStatus] = useState('saving');
+  const [cloudUser, setCloudUser] = useState(null);
+  const [cloudEmail, setCloudEmail] = useState('');
+  const [cloudPassword, setCloudPassword] = useState('');
+  const [cloudAuthMode, setCloudAuthMode] = useState('signin');
+  const [cloudBusy, setCloudBusy] = useState(false);
+  const [cloudMessage, setCloudMessage] = useState('');
+  const [cloudLastSyncedAt, setCloudLastSyncedAt] = useState('');
   const [page, setPage] = useState('dashboard');
   const [buildCharacterId, setBuildCharacterId] = useState('');
   const [buildVariantId, setBuildVariantId] = useState('');
@@ -354,6 +378,25 @@ export default function App() {
       setStorageStatus('error');
     }
   }, [persisted]);
+  useEffect(() => {
+    if (!supabaseConfigured || !supabase) return undefined;
+    let active = true;
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (!active) return;
+      if (error) setCloudMessage('Could not restore your cloud session: ' + error.message);
+      setCloudUser(data?.session?.user || null);
+    }).catch(error => {
+      if (active) setCloudMessage('Could not restore your cloud session: ' + (error?.message || 'Unknown error'));
+    });
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      setCloudUser(session?.user || null);
+      if (!session?.user) setCloudLastSyncedAt('');
+    });
+    return () => {
+      active = false;
+      data?.subscription?.unsubscribe();
+    };
+  }, []);
   useEffect(() => { if (!toast) return; const timer = setTimeout(() => setToast(''), 2600); return () => clearTimeout(timer); }, [toast]);
   useEffect(() => {
     try { localStorage.setItem('teyvat-companion-sidebar-collapsed', String(sidebarCollapsed)); } catch { /* storage may be unavailable */ }
@@ -400,7 +443,7 @@ export default function App() {
     try {
       let rawDetail;
       if (String(character.id || '').startsWith('traveler-') && !character.apiId) {
-        const response = await fetch('https://genshin.jmp.blue/characters/' + encodeURIComponent(character.id) + '?lang=en');
+        const response = await fetchWithTimeout('https://genshin.jmp.blue/characters/' + encodeURIComponent(character.id) + '?lang=en', {}, 9000);
         if (!response.ok) throw new Error('Traveler detail source returned ' + response.status);
         rawDetail = await response.json();
       } else if (character.apiId) {
@@ -552,7 +595,7 @@ export default function App() {
           { name: item?.name || item?.name2 || item?.route || `Material ${key}`, icon: item?.icon || item?.iconPath || '' },
         ]));
       } catch (primaryError) {
-        const response = await fetch('https://genshin.jmp.blue/characters/all?lang=en');
+        const response = await fetchWithTimeout('https://genshin.jmp.blue/characters/all?lang=en', {}, 9000);
         if (!response.ok) throw new Error(`Primary character data unavailable (${primaryError.message}) and fallback returned ${response.status}`);
         const raw = await response.json();
         records = (Array.isArray(raw) ? raw : Object.entries(raw || {}).map(([id, value]) => ({ id, ...value })))
@@ -564,7 +607,7 @@ export default function App() {
       // Supplement the Project Amber index with public variant entries when missing.
       let travelerSupplement = [];
       try {
-        const variantResponse = await fetch('https://genshin.jmp.blue/characters/all?lang=en');
+        const variantResponse = await fetchWithTimeout('https://genshin.jmp.blue/characters/all?lang=en', {}, 9000);
         if (variantResponse.ok) {
           const rawVariants = await variantResponse.json();
           travelerSupplement = (Array.isArray(rawVariants) ? rawVariants : Object.entries(rawVariants || {}).map(([id, value]) => ({ id, ...value })));
@@ -583,7 +626,7 @@ export default function App() {
       const materialSourceTypes = ['talent-book','talent-boss','common-ascension','local-specialties','boss-material'];
       await Promise.all(materialSourceTypes.map(async type => {
         try {
-          const response = await fetch('https://genshin.jmp.blue/materials/' + type + '?lang=en');
+          const response = await fetchWithTimeout('https://genshin.jmp.blue/materials/' + type + '?lang=en', {}, 8000);
           if (response.ok) materialAssociationSources[type] = await response.json();
         } catch (error) {
           console.warn('Material reference source unavailable: ' + type, error);
