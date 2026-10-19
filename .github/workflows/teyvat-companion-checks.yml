@@ -1,0 +1,35 @@
+name: Teyvat Companion checks
+
+on:
+  push:
+    paths:
+      - 'teyvat-companion/**'
+      - '.github/workflows/teyvat-companion-checks.yml'
+  pull_request:
+    paths:
+      - 'teyvat-companion/**'
+      - '.github/workflows/teyvat-companion-checks.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: teyvat-companion
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies
+        run: npm install
+      - name: Run regression tests
+        run: npm test
+      - name: Build production bundle
+        run: npm run build
