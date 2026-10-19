@@ -646,7 +646,13 @@ export default function App() {
       const materials = [...prev.materials];
       for (const requirement of requirements) {
         const sourceKey = String(requirement.id);
-        const existingIndex = materials.findIndex(item => String(item.sourceMaterialId || '') === sourceKey);
+        const normalizedName = value => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        // Reuse a manually tracked row (notably Mora and Hero's Wit) instead of
+        // creating duplicate inventory lines for the same in-game material.
+        const existingIndex = materials.findIndex(item =>
+          String(item.sourceMaterialId || '') === sourceKey
+          || (!item.sourceMaterialId && normalizedName(item.name) === normalizedName(requirement.name))
+        );
         const category = requirement.categories.length > 1
           ? 'Character upgrade'
           : (requirement.categories[0] || 'Character upgrade');
@@ -673,13 +679,18 @@ export default function App() {
         const existing = materials[existingIndex];
         const includedCharacters = Array.isArray(existing.includedCharacters) ? existing.includedCharacters : [];
         if (includedCharacters.includes(c.id)) continue;
+        const isFirstSourcePlan = !existing.sourceMaterialId;
         materials[existingIndex] = {
           ...existing,
-          required: Math.max(0, Number(existing.required) || 0) + requirement.required,
+          sourceMaterialId: sourceKey,
+          required: isFirstSourcePlan
+            ? Math.max(0, Number(existing.required) || 0, requirement.required)
+            : Math.max(0, Number(existing.required) || 0) + requirement.required,
           owned: Math.max(0, Number(existing.owned) || 0),
           includedCharacters: [...includedCharacters, c.id],
           category: existing.category === category ? category : 'Character upgrade',
-          note: [existing.note, 'Added ' + requirement.required + ' more for ' + c.name + ' (full Level 90 / level-10 talent plan).'].filter(Boolean).join(' '),
+          note: [existing.note, (isFirstSourcePlan ? 'Added a source-verified upgrade target for ' : 'Added ') + c.name + ' (' + requirement.required + ' required for a full Level 90 / level-10 talent plan).'].filter(Boolean).join(' '),
+          source: existing.source || 'Project Amber character upgrade data',
           sourceUpdatedAt: at,
         };
         addedPieces += 1;
