@@ -529,7 +529,7 @@ test('catalogue validation deduplicates IDs and rejects partial or malformed ref
   assert.equal(normalized.find(row => row.id === 'skirk').name, 'Skirk Revised');
   assert.throws(() => validateCharacterCatalogue(rows, 3), /only 2 unique character records/);
   assert.throws(() => validateCharacterCatalogue({ items: rows }, 2), /invalid catalogue/);
-  assert.equal(MIN_PLAYABLE_CHARACTER_COUNT, 100);
+  assert.equal(MIN_PLAYABLE_CHARACTER_COUNT, 120);
 });
 
 test('full upgrade material planning aggregates ascension and talent counts by material ID', () => {
