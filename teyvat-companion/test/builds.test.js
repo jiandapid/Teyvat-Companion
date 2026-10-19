@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { BUILD_ROLE_CATEGORIES, CHARACTER_BUILD_GUIDES, getCharacterBuildRoleOptions } from '../src/builds.js';
+import { BUILD_ROLE_CATEGORIES, CHARACTER_BUILD_ALIASES, CHARACTER_BUILD_GUIDES, getCharacterBuildRoleOptions } from '../src/builds.js';
 
 const validCategories = new Set(BUILD_ROLE_CATEGORIES);
 
@@ -17,7 +17,7 @@ function assertCompleteProfile(key, profile) {
 
 test('every character has a complete primary build profile', () => {
   const entries = Object.entries(CHARACTER_BUILD_GUIDES);
-  assert.ok(entries.length >= 100, 'expected the full character build catalogue');
+  assert.ok(entries.length >= 122, 'expected the complete current character build catalogue');
   for (const [key, profile] of entries) assertCompleteProfile(key, profile);
 });
 
@@ -69,4 +69,25 @@ test('the build selector catalogue has the intended evidence-backed variants', (
   );
   assert.ok(CHARACTER_BUILD_GUIDES.nahida.alternateBuilds.some(build => build.id === 'on-field-driver'));
   assert.ok(CHARACTER_BUILD_GUIDES.kazuha.alternateBuilds.some(build => build.id === 'quickswap-dps'));
+});
+
+test('recent roster additions have current source-backed primary build profiles', () => {
+  for (const key of ['ineffa', 'iansan', 'yumemizuki-mizuki']) {
+    assertCompleteProfile(key, CHARACTER_BUILD_GUIDES[key]);
+  }
+  assert.equal(CHARACTER_BUILD_GUIDES.ineffa.buildCategory, 'Sub DPS');
+  assert.equal(CHARACTER_BUILD_GUIDES.iansan.buildCategory, 'Support');
+  assert.equal(CHARACTER_BUILD_GUIDES['yumemizuki-mizuki'].buildCategory, 'Main DPS');
+  assert.equal(CHARACTER_BUILD_ALIASES.mizuki, 'yumemizuki-mizuki');
+});
+
+test('current Genshin.gg role labels are reflected for recently corrected profiles', () => {
+  assert.equal(CHARACTER_BUILD_GUIDES.raiden.buildCategory, 'Sub DPS');
+  assert.equal(CHARACTER_BUILD_GUIDES['escoffier'].buildCategory, 'Sub DPS');
+  assert.equal(CHARACTER_BUILD_GUIDES.tighnari.buildCategory, 'Sub DPS');
+  assert.equal(CHARACTER_BUILD_GUIDES.heizou.buildCategory, 'Sub DPS');
+  assert.equal(CHARACTER_BUILD_GUIDES.lisa.buildCategory, 'Support');
+  assert.equal(CHARACTER_BUILD_GUIDES.dehya.buildCategory, 'Support');
+  assert.equal(CHARACTER_BUILD_GUIDES.ifa.buildCategory, 'Main DPS');
+  assert.ok(CHARACTER_BUILD_GUIDES.raiden.alternateBuilds.some(build => build.id === 'on-field-burst-carry'));
 });
