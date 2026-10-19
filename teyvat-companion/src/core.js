@@ -428,7 +428,7 @@ export function mergeCharacterCatalogue(previousCharacters, freshRecords) {
  * Reject suspiciously small/invalid refresh responses instead of replacing a
  * good local catalogue with a partial upstream response.
  */
-export const MIN_PLAYABLE_CHARACTER_COUNT = 100;
+export const MIN_PLAYABLE_CHARACTER_COUNT = 120;
 
 export function validateCharacterCatalogue(records, minimum = MIN_PLAYABLE_CHARACTER_COUNT) {
   if (!Array.isArray(records)) {
