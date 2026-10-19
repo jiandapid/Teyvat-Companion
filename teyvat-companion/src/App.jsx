@@ -8,7 +8,8 @@ import {
 } from 'lucide-react';
 import { ELEMENTS, ELEMENT_META, MATERIAL_STARTER, NAV_ITEMS, STARTER_CHARACTERS, STARTER_TEAMS } from './data';
 import { CHARACTER_BUILD_ALIASES, CHARACTER_BUILD_GUIDES, CREATOR_CHANNELS, getCharacterBuildRoleOptions } from './builds';
-import { buildProgressionPlan, enkaTtlSeconds, flattenEnkaSavedBuilds, isValidGenshinUid, matchGoodCharacterKey, normalizeTrackerBackup, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, normalizeAkashaArtifacts, normalizeAkashaProfiles, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory } from './core';
+import { supabase, supabaseConfigured } from './lib/supabase.js';
+import { buildProgressionPlan, enkaTtlSeconds, flattenEnkaSavedBuilds, getCharacterUpgradeMaterialRequirements, isValidGenshinUid, matchGoodCharacterKey, normalizeTrackerBackup, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, normalizeAkashaArtifacts, normalizeAkashaProfiles, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory, validateCharacterCatalogue } from './core';
 
 const ICONS = { LayoutDashboard, Users, Swords, PackageOpen, MapPinned, ChartNoAxesCombined, PlayCircle, Settings2, Bot, BookOpen, Layers3 };
 const STORAGE_KEY = 'teyvat-companion-v1';
@@ -191,9 +192,25 @@ function findCharacterBuildGuide(character) {
 
 const AMBR_API_ROOT = 'https://gi.yatta.moe/api/v2';
 let ambrVersionPromise = null;
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = 9000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      throw new Error('The game-data source timed out. Your saved tracker data was kept; try again shortly.');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function fetchAmbrData(endpoint) {
   if (!ambrVersionPromise) {
-    ambrVersionPromise = fetch(`${AMBR_API_ROOT}/static/version`).then(async response => {
+    ambrVersionPromise = fetchWithTimeout(`${AMBR_API_ROOT}/static/version`, {}, 8000).then(async response => {
       if (!response.ok) throw new Error(`Project Amber version endpoint returned ${response.status}`);
       const payload = await response.json();
       if (!payload?.data?.vh) throw new Error('Project Amber did not return a data version.');
@@ -201,7 +218,7 @@ async function fetchAmbrData(endpoint) {
     }).catch(error => { ambrVersionPromise = null; throw error; });
   }
   const version = await ambrVersionPromise;
-  const response = await fetch(`${AMBR_API_ROOT}/en/${endpoint}?vh=${encodeURIComponent(version)}`);
+  const response = await fetchWithTimeout(`${AMBR_API_ROOT}/en/${endpoint}?vh=${encodeURIComponent(version)}`, {}, 9000);
   if (!response.ok) throw new Error(`Project Amber returned ${response.status} for ${endpoint}`);
   const payload = await response.json();
   if (!payload || payload.data == null) throw new Error(`Project Amber returned no data for ${endpoint}`);
@@ -282,6 +299,13 @@ function EmptyState({ icon: Icon = Sparkles, title, description, action }) {
 export default function App() {
   const [persisted, setPersisted] = useState(loadInitial);
   const [storageStatus, setStorageStatus] = useState('saving');
+  const [cloudUser, setCloudUser] = useState(null);
+  const [cloudEmail, setCloudEmail] = useState('');
+  const [cloudPassword, setCloudPassword] = useState('');
+  const [cloudAuthMode, setCloudAuthMode] = useState('signin');
+  const [cloudBusy, setCloudBusy] = useState(false);
+  const [cloudMessage, setCloudMessage] = useState('');
+  const [cloudLastSyncedAt, setCloudLastSyncedAt] = useState('');
   const [page, setPage] = useState('dashboard');
   const [buildCharacterId, setBuildCharacterId] = useState('');
   const [buildVariantId, setBuildVariantId] = useState('');
@@ -298,6 +322,7 @@ export default function App() {
   useEffect(() => { setBuildVariantId(''); setBuildPlaystyleId(''); }, [buildCharacterId]);
   const [activeCharacter, setActiveCharacter] = useState(null);
   const [toast, setToast] = useState('');
+  const [undoAction, setUndoAction] = useState(null);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [syncLoading, setSyncLoading] = useState(false);
   const [syncClock, setSyncClock] = useState(Date.now());
@@ -342,6 +367,7 @@ export default function App() {
   const optimizerTeamCharacters = optimizerTeamContainsCharacter ? optimizerTeam.characters.map(id => characters.find(character => character.id === id)).filter(Boolean) : [];
   const optimizerAkashaProfiles = (persisted.akashaSnapshot?.uid === persisted.account.uid ? (persisted.akashaSnapshot?.profiles || []) : []).filter(profile => profile.characterId === optimizerCharacter?.id);
   const saveState = (updater) => setPersisted(prev => typeof updater === 'function' ? updater(prev) : updater);
+  const showUndoToast = (message, undo) => { setUndoAction(() => undo); setToast(message); };
   useEffect(() => {
     try {
       const characterMap = Object.fromEntries(persisted.characters.map(c => [c.id, c]));
@@ -354,7 +380,33 @@ export default function App() {
       setStorageStatus('error');
     }
   }, [persisted]);
-  useEffect(() => { if (!toast) return; const timer = setTimeout(() => setToast(''), 2600); return () => clearTimeout(timer); }, [toast]);
+  useEffect(() => {
+    if (!supabaseConfigured || !supabase) return undefined;
+    let active = true;
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (!active) return;
+      if (error) setCloudMessage('Could not restore your cloud session: ' + error.message);
+      setCloudUser(data?.session?.user || null);
+    }).catch(error => {
+      if (active) setCloudMessage('Could not restore your cloud session: ' + (error?.message || 'Unknown error'));
+    });
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      setCloudUser(session?.user || null);
+      if (!session?.user) setCloudLastSyncedAt('');
+    });
+    return () => {
+      active = false;
+      data?.subscription?.unsubscribe();
+    };
+  }, []);
+  useEffect(() => {
+    if (!toast) return undefined;
+    const timer = setTimeout(() => {
+      setToast('');
+      setUndoAction(null);
+    }, undoAction ? 8000 : 2600);
+    return () => clearTimeout(timer);
+  }, [toast, undoAction]);
   useEffect(() => {
     try { localStorage.setItem('teyvat-companion-sidebar-collapsed', String(sidebarCollapsed)); } catch { /* storage may be unavailable */ }
   }, [sidebarCollapsed]);
@@ -400,7 +452,7 @@ export default function App() {
     try {
       let rawDetail;
       if (String(character.id || '').startsWith('traveler-') && !character.apiId) {
-        const response = await fetch('https://genshin.jmp.blue/characters/' + encodeURIComponent(character.id) + '?lang=en');
+        const response = await fetchWithTimeout('https://genshin.jmp.blue/characters/' + encodeURIComponent(character.id) + '?lang=en', {}, 9000);
         if (!response.ok) throw new Error('Traveler detail source returned ' + response.status);
         rawDetail = await response.json();
       } else if (character.apiId) {
@@ -501,7 +553,21 @@ export default function App() {
     saveState(prev => ({...prev,materials:[...prev.materials,material]})); setNewMaterial({name:'',category:'Other',required:0,owned:0}); setToast('Material added to your inventory');
   };
   const updateMaterial = (id, changes) => saveState(prev => ({...prev, materials:prev.materials.map(m => m.id===id ? {...m,...changes} : m)}));
-  const removeMaterial = id => saveState(prev => ({...prev, materials:prev.materials.filter(m => m.id!==id)}));
+  const removeMaterial = id => {
+    const index = persisted.materials.findIndex(material => material.id === id);
+    if (index < 0) return;
+    const removed = persisted.materials[index];
+    saveState(prev => ({ ...prev, materials: prev.materials.filter(material => material.id !== id) }));
+    showUndoToast(removed.name + ' removed', () => {
+      saveState(prev => {
+        if (prev.materials.some(material => material.id === removed.id)) return prev;
+        const materials = [...prev.materials];
+        materials.splice(Math.min(index, materials.length), 0, removed);
+        return { ...prev, materials };
+      });
+      setToast(removed.name + ' restored');
+    });
+  };
 
   const addGoal = (e) => {
     e.preventDefault(); if (!newGoal.title.trim()) return;
@@ -516,14 +582,124 @@ export default function App() {
     const team = {id:`team-${Date.now()}`,name:newTeam.name.trim(),characters:ids,description:'Custom team saved from your current roster.'};
     saveState(prev => ({...prev, teams:[team,...prev.teams]})); setNewTeam({name:'My team',slot1:'',slot2:'',slot3:'',slot4:''}); setToast('Team saved');
   };
-  const deleteTeam = id => saveState(prev => ({...prev, teams:prev.teams.filter(t=>t.id!==id)}));
+  const deleteTeam = id => {
+    const index = persisted.teams.findIndex(team => team.id === id);
+    if (index < 0) return;
+    const removed = persisted.teams[index];
+    saveState(prev => ({ ...prev, teams: prev.teams.filter(team => team.id !== id) }));
+    showUndoToast(removed.name + ' deleted', () => {
+      saveState(prev => {
+        if (prev.teams.some(team => team.id === removed.id)) return prev;
+        const teams = [...prev.teams];
+        teams.splice(Math.min(index, teams.length), 0, removed);
+        return { ...prev, teams };
+      });
+      setToast(removed.name + ' restored');
+    });
+  };
+  const deleteGoal = id => {
+    const index = persisted.goals.findIndex(goal => goal.id === id);
+    if (index < 0) return;
+    const removed = persisted.goals[index];
+    saveState(prev => ({ ...prev, goals: prev.goals.filter(goal => goal.id !== id) }));
+    showUndoToast('Goal deleted', () => {
+      saveState(prev => {
+        if (prev.goals.some(goal => goal.id === removed.id)) return prev;
+        const goals = [...prev.goals];
+        goals.splice(Math.min(index, goals.length), 0, removed);
+        return { ...prev, goals };
+      });
+      setToast('Goal restored');
+    });
+  };
   const addGoalForCharacter = c => { saveState(prev=>({...prev,goals:[{id:`goal-${Date.now()}`,title:`Build ${c.name}`,character:c.id,target:'Level 90',done:false},...prev.goals]})); setActiveCharacter(null); setToast(`${c.name} added to goals`); };
   const addCharacterMaterialsToPlan = c => {
-    const newRows = [
-      {id:`mat-${Date.now()}-1`,name:`${c.name} ascension materials`,category:'Character ascension',required:0,owned:0,note:'Enter your exact remaining requirement from the in-game character screen.'},
-      {id:`mat-${Date.now()}-2`,name:`${c.name} talent materials`,category:'Talent',required:0,owned:0,note:'Add the specific talent book and boss drops you still need.'},
-    ];
-    saveState(prev=>({...prev,materials:[...prev.materials,...newRows]})); setActiveCharacter(null); setPage('materials'); setToast('Material checklist created — fill in exact quantities');
+    if (!c?.gameData) {
+      setToast('Load the character’s Talents & mats tab first so the planner can use source-provided costs.');
+      if (c) openCharacter(c);
+      return;
+    }
+
+    const requirements = getCharacterUpgradeMaterialRequirements(c, gameMaterialLookupRef.current);
+    if (!requirements.length) {
+      const idPrefix = 'manual-' + c.id + '-';
+      const placeholders = [
+        { id:idPrefix + 'ascension', name:`${c.name} ascension materials`, category:'Character ascension', required:0, owned:0, note:'Exact ascension costs were not returned by the game-data source. Enter totals verified in-game.' },
+        { id:idPrefix + 'talents', name:`${c.name} talent materials`, category:'Talent', required:0, owned:0, note:'Exact talent upgrade costs were not returned by the game-data source. Enter totals verified in-game.' },
+      ];
+      saveState(prev => {
+        const materials = [...prev.materials];
+        for (const row of placeholders) {
+          if (!materials.some(item => item.id === row.id)) materials.push(row);
+        }
+        return { ...prev, materials };
+      });
+      setActiveCharacter(null);
+      setPage('materials');
+      setToast('Created a manual checklist; exact source costs were unavailable');
+      return;
+    }
+
+    let addedPieces = 0;
+    const at = new Date().toISOString();
+    saveState(prev => {
+      const materials = [...prev.materials];
+      for (const requirement of requirements) {
+        const sourceKey = String(requirement.id);
+        const normalizedName = value => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        // Reuse a manually tracked row (notably Mora and Hero's Wit) instead of
+        // creating duplicate inventory lines for the same in-game material.
+        const existingIndex = materials.findIndex(item =>
+          String(item.sourceMaterialId || '') === sourceKey
+          || (!item.sourceMaterialId && normalizedName(item.name) === normalizedName(requirement.name))
+        );
+        const category = requirement.categories.length > 1
+          ? 'Character upgrade'
+          : (requirement.categories[0] || 'Character upgrade');
+        const requirementNote = requirement.resolved
+          ? 'Source-provided total for a full Level 90 / level-10 talent plan. Verify the target before farming.'
+          : 'Source returned an unnamed material ID. Confirm its name in-game before farming.';
+        if (existingIndex === -1) {
+          materials.push({
+            id: 'game-material-' + sourceKey,
+            sourceMaterialId: sourceKey,
+            name: requirement.name,
+            category,
+            required: requirement.required,
+            owned: 0,
+            includedCharacters: [c.id],
+            note: requirementNote + ' Added for ' + c.name + '.',
+            source: 'Project Amber character upgrade data',
+            sourceUpdatedAt: at,
+          });
+          addedPieces += 1;
+          continue;
+        }
+
+        const existing = materials[existingIndex];
+        const includedCharacters = Array.isArray(existing.includedCharacters) ? existing.includedCharacters : [];
+        if (includedCharacters.includes(c.id)) continue;
+        const isFirstSourcePlan = !existing.sourceMaterialId;
+        materials[existingIndex] = {
+          ...existing,
+          sourceMaterialId: sourceKey,
+          required: isFirstSourcePlan
+            ? Math.max(0, Number(existing.required) || 0, requirement.required)
+            : Math.max(0, Number(existing.required) || 0) + requirement.required,
+          owned: Math.max(0, Number(existing.owned) || 0),
+          includedCharacters: [...includedCharacters, c.id],
+          category: existing.category === category ? category : 'Character upgrade',
+          note: [existing.note, (isFirstSourcePlan ? 'Added a source-verified upgrade target for ' : 'Added ') + c.name + ' (' + requirement.required + ' required for a full Level 90 / level-10 talent plan).'].filter(Boolean).join(' '),
+          source: existing.source || 'Project Amber character upgrade data',
+          sourceUpdatedAt: at,
+        };
+        addedPieces += 1;
+      }
+      return { ...prev, materials };
+    });
+    setActiveCharacter(null);
+    setPage('materials');
+    setToast(addedPieces ? 'Added source-provided upgrade costs for ' + c.name : 'This character’s material requirements are already in your plan');
   };
   const addMarker = e => {
     e.preventDefault(); if (!newMarker.name.trim()) return;
@@ -545,26 +721,29 @@ export default function App() {
         const items = avatarPayload?.items || avatarPayload?.data?.items || {};
         records = Object.entries(items).map(([key, item]) => ({ ...item, id: item?.id ?? key }));
         records = records.filter(item => item?.name && Number(item?.rank ?? item?.rarity ?? 0) >= 4 && (item?.weaponType || item?.weapon_type || item?.weapon));
-        if (records.length < 70) throw new Error(`The character index returned only ${records.length} usable records.`);
+        if (records.length < 120) throw new Error(`The character index returned only ${records.length} usable records; the current playable roster should be substantially larger.`);
         const itemIndex = materialPayload?.items || materialPayload?.data?.items || {};
         gameMaterialLookupRef.current = Object.fromEntries(Object.entries(itemIndex).map(([key, item]) => [
           String(item?.id ?? key),
           { name: item?.name || item?.name2 || item?.route || `Material ${key}`, icon: item?.icon || item?.iconPath || '' },
         ]));
       } catch (primaryError) {
-        const response = await fetch('https://genshin.jmp.blue/characters/all?lang=en');
+        const response = await fetchWithTimeout('https://genshin.jmp.blue/characters/all?lang=en', {}, 9000);
         if (!response.ok) throw new Error(`Primary character data unavailable (${primaryError.message}) and fallback returned ${response.status}`);
         const raw = await response.json();
         records = (Array.isArray(raw) ? raw : Object.entries(raw || {}).map(([id, value]) => ({ id, ...value })))
           .filter(item => item?.name || item?.title || item?.id);
-        source = 'genshin.dev fallback (coverage may be incomplete)';
+        if (records.length < 120) {
+          throw new Error('The fallback source returned only ' + records.length + ' character records; it does not meet the minimum catalogue coverage.');
+        }
+        source = 'genshin.dev fallback';
       }
 
       // Traveler's element variants are often modelled as separate records by Genshin data providers.
       // Supplement the Project Amber index with public variant entries when missing.
       let travelerSupplement = [];
       try {
-        const variantResponse = await fetch('https://genshin.jmp.blue/characters/all?lang=en');
+        const variantResponse = await fetchWithTimeout('https://genshin.jmp.blue/characters/all?lang=en', {}, 9000);
         if (variantResponse.ok) {
           const rawVariants = await variantResponse.json();
           travelerSupplement = (Array.isArray(rawVariants) ? rawVariants : Object.entries(rawVariants || {}).map(([id, value]) => ({ id, ...value })));
@@ -583,7 +762,7 @@ export default function App() {
       const materialSourceTypes = ['talent-book','talent-boss','common-ascension','local-specialties','boss-material'];
       await Promise.all(materialSourceTypes.map(async type => {
         try {
-          const response = await fetch('https://genshin.jmp.blue/materials/' + type + '?lang=en');
+          const response = await fetchWithTimeout('https://genshin.jmp.blue/materials/' + type + '?lang=en', {}, 8000);
           if (response.ok) materialAssociationSources[type] = await response.json();
         } catch (error) {
           console.warn('Material reference source unavailable: ' + type, error);
@@ -713,9 +892,9 @@ export default function App() {
           source: item._catalogSource || source,
         };
       });
-      const mapped = [...new Map(mappedRecords.map(record => [record.id, record])).values()];
+      const mapped = validateCharacterCatalogue([...new Map(mappedRecords.map(record => [record.id, record])).values()], 120);
       saveState(prev => ({ ...prev, characters: mergeCharacterCatalogue(prev.characters, mapped) }));
-      setDataNotice(`Loaded ${mapped.length} character records from ${source}. Detailed talent and ascension costs load when you open a character profile. Existing owned status, levels, team presets, goals, and inventory were kept.`);
+      setDataNotice(`Loaded ${mapped.length} unique character records from ${source}. Full refreshes with fewer than 100 characters are rejected so an incomplete upstream response cannot replace your roster. Character details and material costs load on demand; your tracked ownership, levels, teams, goals and inventory were kept.`);
       setToast(`Character catalogue refreshed · ${mapped.length} records`);
     } catch (error) {
       setDataNotice(`Could not refresh the full character catalogue: ${error.message}. Your local records remain available; retry from Settings when the data source is reachable.`);
@@ -1100,6 +1279,126 @@ export default function App() {
   function importFromText(e) {
     e.preventDefault(); try { importTrackerObject(JSON.parse(importText)); } catch { setToast('Could not parse JSON. Paste a valid backup file.'); }
   }
+  async function handleCloudAuth(event) {
+    event.preventDefault();
+    if (!supabaseConfigured || !supabase) {
+      setCloudMessage('Cloud accounts are not configured for this build yet.');
+      return;
+    }
+    const email = cloudEmail.trim().toLowerCase();
+    if (!email || cloudPassword.length < 8) {
+      setCloudMessage('Enter an email and a password with at least 8 characters.');
+      return;
+    }
+    setCloudBusy(true);
+    setCloudMessage('');
+    try {
+      if (cloudAuthMode === 'signup') {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password: cloudPassword,
+          options: { emailRedirectTo: window.location.origin },
+        });
+        if (error) throw error;
+        if (data?.session?.user) {
+          setCloudUser(data.session.user);
+          setCloudMessage('Account created and signed in. Save a cloud backup to enable cross-device restore.');
+          setCloudPassword('');
+        } else {
+          setCloudMessage('Account created. Check your email to confirm the address, then sign in here.');
+          setCloudAuthMode('signin');
+          setCloudPassword('');
+        }
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password: cloudPassword });
+        if (error) throw error;
+        setCloudUser(data?.user || data?.session?.user || null);
+        setCloudPassword('');
+        setCloudMessage('Signed in. Your local tracker has not been changed; choose Save to cloud or Restore from cloud.');
+      }
+    } catch (error) {
+      setCloudMessage(error?.message || 'Cloud authentication failed. Check the project settings and try again.');
+    } finally {
+      setCloudBusy(false);
+    }
+  }
+
+  async function saveCloudWorkspace() {
+    if (!supabaseConfigured || !supabase || !cloudUser?.id) {
+      setCloudMessage('Sign in to a configured cloud account first.');
+      return;
+    }
+    setCloudBusy(true);
+    setCloudMessage('');
+    try {
+      const savedAt = new Date().toISOString();
+      const stateJson = {
+        ...persisted,
+        format: 'teyvat-companion-backup-v1',
+        exportedAt: savedAt,
+      };
+      const { data, error } = await supabase
+        .from('user_workspaces')
+        .upsert({ user_id: cloudUser.id, state_json: stateJson, updated_at: savedAt }, { onConflict: 'user_id' })
+        .select('updated_at')
+        .single();
+      if (error) throw error;
+      setCloudLastSyncedAt(data?.updated_at || savedAt);
+      setCloudMessage('Cloud backup saved. This browser remains the active copy until you explicitly restore on another device.');
+    } catch (error) {
+      setCloudMessage(error?.message || 'Could not save to cloud. Your local tracker remains unchanged.');
+    } finally {
+      setCloudBusy(false);
+    }
+  }
+
+  async function restoreCloudWorkspace() {
+    if (!supabaseConfigured || !supabase || !cloudUser?.id) {
+      setCloudMessage('Sign in to a configured cloud account first.');
+      return;
+    }
+    if (!window.confirm('Restore your cloud backup over this browser’s current tracker? Export a local backup first if you need to keep both versions.')) return;
+    setCloudBusy(true);
+    setCloudMessage('');
+    try {
+      const { data, error } = await supabase
+        .from('user_workspaces')
+        .select('state_json, updated_at')
+        .eq('user_id', cloudUser.id)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) {
+        setCloudMessage('There is no cloud backup for this account yet. Save this browser’s tracker first.');
+        return;
+      }
+      const validated = normalizeTrackerBackup(data.state_json);
+      importTrackerObject(validated);
+      setCloudLastSyncedAt(data.updated_at || '');
+      setCloudMessage('Cloud backup restored. Your local tracker will now save this restored copy in the browser.');
+    } catch (error) {
+      setCloudMessage((error?.message || 'Cloud restore failed.') + ' Your local tracker was not replaced.');
+    } finally {
+      setCloudBusy(false);
+    }
+  }
+
+  async function signOutCloudAccount() {
+    if (!supabaseConfigured || !supabase) return;
+    setCloudBusy(true);
+    setCloudMessage('');
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      setCloudUser(null);
+      setCloudPassword('');
+      setCloudMessage('Signed out. Your local tracker remains available on this device.');
+    } catch (error) {
+      setCloudMessage(error?.message || 'Could not sign out of the cloud account.');
+    } finally {
+      setCloudBusy(false);
+    }
+  }
+
   async function importGoodFile(event) {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -1516,7 +1815,7 @@ export default function App() {
         <div className="inventory-research-links"><a href={persisted.account.uid ? 'https://akasha.cv/profile/' + encodeURIComponent(persisted.account.uid) : 'https://akasha.cv/profiles'} target="_blank" rel="noreferrer"><span><strong>AKASHA · profile comparison</strong><small>{persisted.account.uid ? 'Open the profile for UID ' + persisted.account.uid : 'Search for your UID to compare eligible character builds and rankings'}</small></span><ExternalLink size={14}/></a><a href="https://frzyc.github.io/genshin-optimizer/" target="_blank" rel="noreferrer"><span><strong>Genshin Optimizer</strong><small>Generate or manage optimizer inventory data</small></span><ExternalLink size={14}/></a></div>
       </section>
     </div>
-    <div className="progress-goals-layout"><div className="panel goals-panel"><div className="panel-head"><div><div className="eyebrow">YOUR OBJECTIVES</div><h3>Upgrade goals</h3></div><span className="pill muted">{persisted.goals.length} goals</span></div><form className="goal-form" onSubmit={addGoal}><label>Goal name<input value={newGoal.title} onChange={e=>setNewGoal(p=>({...p,title:e.target.value}))} placeholder="e.g. Finish Skirk talents" required/></label><label>Character (optional)<select value={newGoal.character} onChange={e=>setNewGoal(p=>({...p,character:e.target.value}))}><option value="">Select character</option>{characters.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label><div className="goal-form-row"><label>Target<select value={newGoal.target} onChange={e=>setNewGoal(p=>({...p,target:e.target.value}))}>{['Level 90','Level 80/90','Talent level 9','Triple crown','Weapon level 90','Artifact build','Custom target'].map(t=><option key={t}>{t}</option>)}</select></label><label>Due date<input type="date" value={newGoal.due} onChange={e=>setNewGoal(p=>({...p,due:e.target.value}))}/></label></div><button className="button primary full-width" type="submit"><Plus size={15}/> Add upgrade goal</button></form><div className="goal-list detailed">{persisted.goals.map(g=>{const c=characters.find(ch=>ch.id===g.character);return <div className={`goal-row ${g.done?'done':''}`} key={g.id}><button className="goal-toggle" onClick={()=>saveState(p=>({...p,goals:p.goals.map(x=>x.id===g.id?{...x,done:!x.done}:x)}))}>{g.done&&<Check size={12}/>}</button><div className="goal-info"><strong>{g.title}</strong><small>{c?`${c.name} · `:''}{g.target}{g.due?` · Due ${g.due}`:''}</small></div><button className="icon-button danger tiny" onClick={()=>saveState(p=>({...p,goals:p.goals.filter(x=>x.id!==g.id)}))}><Trash2 size={13}/></button></div>;})}</div>{persisted.goals.length===0&&<p className="empty-inline">Your goals will appear here once you add them.</p>}</div><div className="panel resources-panel"><div className="panel-head"><div><div className="eyebrow">RESOURCE TRACKING</div><h3>Wish resources</h3></div><span className="pill muted">Manual</span></div><div className="resource-display"><div className="resource-emblem primogem">✧</div><div><span>Primogems</span><strong>{formatNumber(persisted.account.primogems)}</strong></div></div><ProgressBar value={persisted.account.wishes} max={180}/><div className="resource-foot"><span>{formatNumber(persisted.account.wishes)} wishes available</span><span>Pity: {persisted.account.pity}</span></div><p className="helper-note"><Info size={13}/> These values are optional manual notes, not an automated pull tracker. Update them after wishing or spending currency.</p><button className="button secondary full-width" onClick={()=>navigate('materials')}>Review upgrade materials <ArrowRight size={15}/></button></div></div>
+    <div className="progress-goals-layout"><div className="panel goals-panel"><div className="panel-head"><div><div className="eyebrow">YOUR OBJECTIVES</div><h3>Upgrade goals</h3></div><span className="pill muted">{persisted.goals.length} goals</span></div><form className="goal-form" onSubmit={addGoal}><label>Goal name<input value={newGoal.title} onChange={e=>setNewGoal(p=>({...p,title:e.target.value}))} placeholder="e.g. Finish Skirk talents" required/></label><label>Character (optional)<select value={newGoal.character} onChange={e=>setNewGoal(p=>({...p,character:e.target.value}))}><option value="">Select character</option>{characters.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label><div className="goal-form-row"><label>Target<select value={newGoal.target} onChange={e=>setNewGoal(p=>({...p,target:e.target.value}))}>{['Level 90','Level 80/90','Talent level 9','Triple crown','Weapon level 90','Artifact build','Custom target'].map(t=><option key={t}>{t}</option>)}</select></label><label>Due date<input type="date" value={newGoal.due} onChange={e=>setNewGoal(p=>({...p,due:e.target.value}))}/></label></div><button className="button primary full-width" type="submit"><Plus size={15}/> Add upgrade goal</button></form><div className="goal-list detailed">{persisted.goals.map(g=>{const c=characters.find(ch=>ch.id===g.character);return <div className={`goal-row ${g.done?'done':''}`} key={g.id}><button className="goal-toggle" onClick={()=>saveState(p=>({...p,goals:p.goals.map(x=>x.id===g.id?{...x,done:!x.done}:x)}))}>{g.done&&<Check size={12}/>}</button><div className="goal-info"><strong>{g.title}</strong><small>{c?`${c.name} · `:''}{g.target}{g.due?` · Due ${g.due}`:''}</small></div><button className="icon-button danger tiny" onClick={()=>deleteGoal(g.id)}><Trash2 size={13}/></button></div>;})}</div>{persisted.goals.length===0&&<p className="empty-inline">Your goals will appear here once you add them.</p>}</div><div className="panel resources-panel"><div className="panel-head"><div><div className="eyebrow">RESOURCE TRACKING</div><h3>Wish resources</h3></div><span className="pill muted">Manual</span></div><div className="resource-display"><div className="resource-emblem primogem">✧</div><div><span>Primogems</span><strong>{formatNumber(persisted.account.primogems)}</strong></div></div><ProgressBar value={persisted.account.wishes} max={180}/><div className="resource-foot"><span>{formatNumber(persisted.account.wishes)} wishes available</span><span>Pity: {persisted.account.pity}</span></div><p className="helper-note"><Info size={13}/> These values are optional manual notes, not an automated pull tracker. Update them after wishing or spending currency.</p><button className="button secondary full-width" onClick={()=>navigate('materials')}>Review upgrade materials <ArrowRight size={15}/></button></div></div>
   </div>;
 
 
@@ -1629,7 +1928,41 @@ export default function App() {
 
   const settingsPage = <div className="page-content">
     <SectionHeader eyebrow="PREFERENCES & DATA SOURCES" title="Settings" subtitle="Manage your local data, public data connections, and tracker setup."/>
-    <div className="settings-grid"><div className="panel settings-card"><div className="settings-icon gold"><Database size={20}/></div><div className="eyebrow">CHARACTER CATALOGUE</div><h3>Refresh public game data</h3><p>Try loading a broader static character catalogue from the community genshin.dev API. Character data availability and image formats can vary; imported builds and materials are not treated as verified.</p>{dataNotice&&<div className={`notice compact-notice ${dataNotice.startsWith('Could not')?'warning':'success'}`}><Info size={14}/><span>{dataNotice}</span></div>}<button className="button primary" onClick={loadPublicCharacterData} disabled={isLoadingData}>{isLoadingData?<><RefreshCw className="spin" size={15}/> Loading catalogue…</>:<><RefreshCw size={15}/> Refresh characters</>}</button><a className="source-link" href="https://github.com/genshindev/api" target="_blank" rel="noreferrer">Dataset docs & license <ExternalLink size={12}/></a></div><div className="panel settings-card"><div className="settings-icon blue"><Link2 size={20}/></div><div className="eyebrow">PUBLIC ACCOUNT DATA</div><h3>Enka.Network showcase</h3><p>Use your UID to sync the public display list, detailed showcase gear when enabled, and optional saved builds from a verified public Enka profile. It remains a public-data integration, not a HoYoverse login. Respect provider refresh limits.</p><button className="button secondary" onClick={()=>navigate('account')}>Manage account connection <ArrowRight size={14}/></button><a className="source-link" href="https://github.com/EnkaNetwork/API-docs" target="_blank" rel="noreferrer">API usage rules <ExternalLink size={12}/></a></div><div className="panel settings-card"><div className="settings-icon green"><FileJson size={20}/></div><div className="eyebrow">BACKUP & PORTABILITY</div><h3>Your data belongs to you</h3><p>Export everything to a JSON backup file and import it on another browser/device. This version stores tracker data in this browser's local storage; no cloud account is configured.</p><div className="settings-button-row"><button className="button primary" onClick={exportTracker}><Download size={15}/> Export backup</button><button className="button secondary" onClick={()=>setShowImport(true)}><Upload size={15}/> Import backup</button></div></div><div className="panel settings-card"><div className="settings-icon violet"><ShieldCheck size={20}/></div><div className="eyebrow">PRIVACY & LIMITATIONS</div><h3>Safe by design</h3><p>No HoYoverse password or login token is requested. Account showcase sync is public-data only. Live material coordinates, exact upgrade calculator data, cloud sync, and authenticated accounts are not configured in this build.</p><ul className="settings-bullets"><li><Check size={14}/> Local persistent tracker</li><li><Check size={14}/> Editable quantities and goals</li><li><Check size={14}/> JSON export/import</li><li><Info size={14}/> No cloud authentication yet</li></ul></div></div>
+    <div className="settings-grid"><div className="panel settings-card"><div className="settings-icon gold"><Database size={20}/></div><div className="eyebrow">CHARACTER CATALOGUE</div><h3>Refresh public game data</h3><p>Try loading a broader static character catalogue from the community genshin.dev API. Character data availability and image formats can vary; imported builds and materials are not treated as verified.</p>{dataNotice&&<div className={`notice compact-notice ${dataNotice.startsWith('Could not')?'warning':'success'}`}><Info size={14}/><span>{dataNotice}</span></div>}<button className="button primary" onClick={loadPublicCharacterData} disabled={isLoadingData}>{isLoadingData?<><RefreshCw className="spin" size={15}/> Loading catalogue…</>:<><RefreshCw size={15}/> Refresh characters</>}</button><a className="source-link" href="https://github.com/genshindev/api" target="_blank" rel="noreferrer">Dataset docs & license <ExternalLink size={12}/></a></div><div className="panel settings-card"><div className="settings-icon blue"><Link2 size={20}/></div><div className="eyebrow">PUBLIC ACCOUNT DATA</div><h3>Enka.Network showcase</h3><p>Use your UID to sync the public display list, detailed showcase gear when enabled, and optional saved builds from a verified public Enka profile. It remains a public-data integration, not a HoYoverse login. Respect provider refresh limits.</p><button className="button secondary" onClick={()=>navigate('account')}>Manage account connection <ArrowRight size={14}/></button><a className="source-link" href="https://github.com/EnkaNetwork/API-docs" target="_blank" rel="noreferrer">API usage rules <ExternalLink size={12}/></a></div><div className="panel settings-card"><div className="settings-icon green"><FileJson size={20}/></div><div className="eyebrow">BACKUP & PORTABILITY</div><h3>Your data belongs to you</h3><p>Export everything to a JSON backup file or use the optional Cloud save panel below once Supabase has been configured. Local browser saving continues to work independently.</p><div className="settings-button-row"><button className="button primary" onClick={exportTracker}><Download size={15}/> Export backup</button><button className="button secondary" onClick={()=>setShowImport(true)}><Upload size={15}/> Import backup</button></div></div><div className="panel settings-card"><div className="settings-icon violet"><ShieldCheck size={20}/></div><div className="eyebrow">PRIVACY & LIMITATIONS</div><h3>Safe by design</h3><p>No HoYoverse password or login token is requested. Enka and AKASHA connections use public data. Optional cloud account sync is disabled until your own Supabase environment variables and owner-only RLS table are configured; live material coordinates and a full damage simulator are not included.</p><ul className="settings-bullets"><li><Check size={14}/> Local persistent tracker</li><li><Check size={14}/> Editable quantities and goals</li><li><Check size={14}/> JSON export/import</li><li><Info size={14}/> Optional private cloud backup requires Supabase setup</li></ul></div></div>
+    <section className="panel cloud-sync-panel">
+      <div className="panel-head">
+        <div><div className="eyebrow">OPTIONAL CROSS-DEVICE BACKUP</div><h3>Cloud save</h3></div>
+        <span className={`pill ${!supabaseConfigured ? 'muted' : cloudUser ? 'success' : 'warning'}`}>{!supabaseConfigured ? 'Setup required' : cloudUser ? 'Signed in' : 'Not signed in'}</span>
+      </div>
+      <p className="panel-description">Local saving continues to work without an account. Once Supabase is configured, sign in and manually save or restore a private backup. Cloud sync never silently overwrites your local tracker.</p>
+      {cloudMessage && <div className={`notice compact-notice ${/could not|failed|error|invalid|does not|not configured/i.test(cloudMessage) ? 'warning' : 'success'}`} role="status" aria-live="polite"><Info size={14}/><span>{cloudMessage}</span></div>}
+      {!supabaseConfigured ? <div className="cloud-setup-note">
+        <strong>One-time setup needed</strong>
+        <p>No Supabase project is connected to this repository yet. To activate accounts, create a Supabase project, run the SQL file below in its SQL Editor, then set these two public build variables in Vercel and redeploy.</p>
+        <ol>
+          <li>Run <code>teyvat-companion/supabase/cloud-sync.sql</code> in Supabase SQL Editor.</li>
+          <li>Set <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_PUBLISHABLE_KEY</code> in Vercel and local <code>.env.local</code>.</li>
+          <li>Use only the publishable key. Never place a service-role or secret key in frontend code.</li>
+        </ol>
+        <a className="text-action" href="https://supabase.com/dashboard" target="_blank" rel="noreferrer">Open Supabase dashboard <ExternalLink size={13}/></a>
+      </div> : !cloudUser ? <form className="cloud-auth-form" onSubmit={handleCloudAuth}>
+        <label>Email address<input type="email" value={cloudEmail} onChange={event=>setCloudEmail(event.target.value)} autoComplete="email" placeholder="you@example.com" required/></label>
+        <label>Password<input type="password" value={cloudPassword} onChange={event=>setCloudPassword(event.target.value)} autoComplete={cloudAuthMode==='signup'?'new-password':'current-password'} minLength={8} placeholder="At least 8 characters" required/></label>
+        <div className="cloud-action-row">
+          <button className="button primary" type="submit" disabled={cloudBusy}>{cloudBusy ? <><RefreshCw size={14} className="spin"/> Working…</> : cloudAuthMode === 'signup' ? 'Create account' : 'Sign in'}</button>
+          <button className="button secondary" type="button" disabled={cloudBusy} onClick={()=>{setCloudAuthMode(mode=>mode==='signin'?'signup':'signin');setCloudMessage('');}}>{cloudAuthMode==='signup'?'I already have an account':'Create an account'}</button>
+        </div>
+        <p className="helper-note"><Info size={13}/> Email confirmation may be required by your Supabase project. Passwords are sent to Supabase Auth and are not saved in the tracker.</p>
+      </form> : <div className="cloud-signed-in">
+        <div className="cloud-account-row"><span className="cloud-account-icon"><ShieldCheck size={18}/></span><div><strong>{cloudUser.email || 'Signed-in account'}</strong><small>Signed in to private workspace backup</small></div></div>
+        <div className="cloud-action-row">
+          <button className="button primary" type="button" onClick={saveCloudWorkspace} disabled={cloudBusy}>{cloudBusy ? <><RefreshCw size={14} className="spin"/> Working…</> : <><Upload size={14}/> Save local tracker to cloud</>}</button>
+          <button className="button secondary" type="button" onClick={restoreCloudWorkspace} disabled={cloudBusy}><Download size={14}/> Restore cloud backup</button>
+          <button className="button secondary" type="button" onClick={signOutCloudAccount} disabled={cloudBusy}>Sign out</button>
+        </div>
+        <p className="helper-note">{cloudLastSyncedAt ? 'Last cloud operation: ' + new Date(cloudLastSyncedAt).toLocaleString() + '. ' : 'No cloud operation has been completed in this session. '}Save and restore are manual so one device cannot silently overwrite another device’s progress.</p>
+      </div>}
+    </section>
     <div className="panel data-health-panel"><div className="panel-head"><div><div className="eyebrow">WORKSPACE STATUS</div><h3>Data health</h3></div><span className={`pill ${storageStatus === 'error' ? 'warning' : storageStatus === 'saved' ? 'success' : 'muted'}`}>{storageStatus === 'error' ? <Info size={13}/> : <span className="live-dot"/>}{storageStatus === 'error' ? 'Save failed' : storageStatus === 'saving' ? 'Saving changes…' : 'Saved locally'}</span></div><div className="data-health-grid"><div><span>Tracked characters</span><strong>{characters.length}</strong></div><div><span>Materials</span><strong>{persisted.materials.length}</strong></div><div><span>Saved teams</span><strong>{persisted.teams.length}</strong></div><div><span>Personal map markers</span><strong>{persisted.mapMarkers.length}</strong></div><div><span>Goals</span><strong>{persisted.goals.length}</strong></div><div><span>Enka snapshot</span><strong>{persisted.enkaSnapshot?'Available':'Not connected'}</strong></div></div></div>
     <div className="reset-zone"><div><strong>Reset local workspace</strong><p>Remove all custom progress and return to the starter example. Export a backup first if you want to keep your data.</p></div><button className="button danger-outline" onClick={()=>{if(window.confirm('Reset your Teyvat Companion data in this browser? Export a backup first if you want to keep it.')){localStorage.removeItem(STORAGE_KEY);setPersisted(createDefaultState());setToast('Workspace reset');}}}><Trash2 size={14}/> Reset workspace</button></div>
   </div>;
@@ -1712,7 +2045,7 @@ export default function App() {
     </div><button className="button secondary topbar-build-shortcut" onClick={()=>navigate('builds')} title="Open Character Builds"><BookOpen size={15}/><span>Builds</span></button><div className="topbar-divider"/><button className="icon-button quick-settings" title="Settings" onClick={()=>navigate('settings')}><Settings2 size={18}/></button><button className="topbar-profile" title="Account tracker" onClick={()=>navigate('account')}><span className="user-avatar">{(persisted.account.nickname || 'T').slice(0,1).toUpperCase()}</span><span className="rank-chip">AR {persisted.account.ar}</span><ChevronDown size={14}/></button></div></header><div key={page} className="page-animate">{pageContent}</div><footer className="global-footer"><span>✦ Teyvat Companion</span><span>Unofficial fan-made companion · Not affiliated with HoYoverse</span><span>Made for Travelers <span className="footer-heart">♡</span></span></footer></main>
     {activeCharacter && <CharacterModal character={characters.find(c=>c.id===activeCharacter.id)||activeCharacter} onClose={()=>setActiveCharacter(null)} onUpdate={updateCharacter} onGoal={addGoalForCharacter} onMaterials={addCharacterMaterialsToPlan} onToast={setToast} detailsLoading={characterDataLoadingId===activeCharacter.id} detailsError={characterDataError} materialLookup={gameMaterialLookupRef.current} onRetryDetails={openCharacter} onOpenBuild={openBuildPage}/>}
     {showImport && <div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&setShowImport(false)}><div className="import-modal panel"><button className="modal-close icon-button" onClick={()=>setShowImport(false)}><X size={18}/></button><div className="modal-icon"><FileJson size={21}/></div><div className="eyebrow">RESTORE WORKSPACE</div><h2>Import a backup</h2><p>Paste the contents of a Teyvat Companion JSON backup, or select a file below.</p><button className="button secondary full-width" onClick={()=>uploadRef.current?.click()}><Upload size={15}/> Choose JSON backup file</button><input ref={uploadRef} className="hidden-input" type="file" accept="application/json,.json" onChange={async e=>{const file=e.target.files?.[0];if(!file)return;try{importTrackerObject(JSON.parse(await file.text()));}catch{setToast('Could not read that JSON backup.');}e.target.value='';}}/><div className="import-divider"><span>OR PASTE JSON</span></div><form onSubmit={importFromText}><textarea value={importText} onChange={e=>setImportText(e.target.value)} rows="7" placeholder={'{\n  "format": "teyvat-companion-backup-v1", ...\n}'} required/><button className="button primary full-width" type="submit"><Upload size={15}/> Import tracker data</button></form><p className="modal-footnote"><Info size={13}/> Import replaces the current tracker state. Export your current data first if needed.</p></div></div>}
-    {toast&&<div className="toast"><CheckCircle2 size={16}/>{toast}</div>}
+    {toast&&<div className="toast" role="status" aria-live="polite"><CheckCircle2 size={16}/><span>{toast}</span>{undoAction&&<button className="toast-undo" type="button" onClick={()=>{const undo=undoAction;setUndoAction(null);undo?.();}}>Undo</button>}</div>}
   </div>;
 }
 

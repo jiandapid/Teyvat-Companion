@@ -424,6 +424,108 @@ export function mergeCharacterCatalogue(previousCharacters, freshRecords) {
 }
 
 
+/**
+ * Reject suspiciously small/invalid refresh responses instead of replacing a
+ * good local catalogue with a partial upstream response.
+ */
+export const MIN_PLAYABLE_CHARACTER_COUNT = 120;
+
+export function validateCharacterCatalogue(records, minimum = MIN_PLAYABLE_CHARACTER_COUNT) {
+  if (!Array.isArray(records)) {
+    throw new Error('The character data source returned an invalid catalogue.');
+  }
+  const byId = new Map();
+  for (const record of records) {
+    if (!record || typeof record !== 'object' || Array.isArray(record)) continue;
+    const id = String(record.id ?? '').trim();
+    const name = String(record.name ?? '').trim();
+    if (!id || !name) continue;
+    byId.set(id, { ...record, id, name });
+  }
+  const normalized = [...byId.values()];
+  const expectedMinimum = Number.isFinite(Number(minimum)) ? Math.max(1, Math.floor(Number(minimum))) : MIN_PLAYABLE_CHARACTER_COUNT;
+  if (normalized.length < expectedMinimum) {
+    throw new Error(
+      'The refresh returned only ' + normalized.length + ' unique character records; expected at least ' +
+      expectedMinimum + '. Your existing catalogue was kept. Try again when the source has recovered.'
+    );
+  }
+  return normalized;
+}
+
+
+/**
+ * Aggregate source-provided character ascension plus all listed talent upgrade
+ * material costs. Returns totals for the full Level 90 / level-10 talent plan;
+ * callers must label that target clearly and must not invent missing costs.
+ */
+export function getCharacterUpgradeMaterialRequirements(character, materialLookup = {}) {
+  const gameData = character?.gameData;
+  if (!gameData || typeof gameData !== 'object') return [];
+  const totals = new Map();
+
+  const toCostItems = value => {
+    if (Array.isArray(value)) {
+      return value.map(item => ({
+        id: String(item?.id ?? item?.itemId ?? ''),
+        count: Number(item?.count ?? item?.amount ?? item?.value ?? 0),
+      })).filter(item => item.id && Number.isFinite(item.count) && item.count > 0);
+    }
+    if (value && typeof value === 'object') {
+      return Object.entries(value).map(([id, count]) => ({
+        id: String(id),
+        count: Number(count?.count ?? count?.amount ?? count) || 0,
+      })).filter(item => item.id && Number.isFinite(item.count) && item.count > 0);
+    }
+    return [];
+  };
+
+  const addCosts = (costs, category) => {
+    for (const cost of toCostItems(costs)) {
+      const current = totals.get(cost.id) || {
+        id: cost.id,
+        name: String(materialLookup?.[cost.id]?.name || materialLookup?.[cost.id]?.name2 || ''),
+        required: 0,
+        categories: new Set(),
+      };
+      current.required += cost.count;
+      current.categories.add(category);
+      totals.set(cost.id, current);
+    }
+  };
+
+  const upgrade = gameData.upgrade || {};
+  const ascensionPhases = Array.isArray(upgrade.promotes) ? upgrade.promotes
+    : Array.isArray(upgrade.promote) ? upgrade.promote
+    : [];
+  for (const phase of ascensionPhases) {
+    addCosts(phase?.costItems ?? phase?.cost_items ?? phase?.materials, 'Character ascension');
+  }
+
+  const talents = Array.isArray(gameData.talents) ? gameData.talents : [];
+  for (const talent of talents) {
+    const upgrades = Array.isArray(talent?.upgrades) ? talent.upgrades
+      : Array.isArray(talent?.promote) ? talent.promote
+      : Array.isArray(talent?.upgrade) ? talent.upgrade
+      : [];
+    for (const level of upgrades) {
+      addCosts(level?.costItems ?? level?.cost_items ?? level?.materials, 'Talent');
+    }
+  }
+
+  return [...totals.values()]
+    .filter(item => Number.isFinite(item.required) && item.required > 0)
+    .map(item => ({
+      id: item.id,
+      name: item.name || ('Material ID ' + item.id),
+      resolved: Boolean(item.name),
+      required: Math.ceil(item.required),
+      categories: [...item.categories],
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+}
+
+
 const round2 = value => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
 
 function numberOr(value, fallback = 0) {
