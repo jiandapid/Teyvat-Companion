@@ -31,6 +31,7 @@ npm run preview
 - Public Enka.Network UID sync for the account's public display list, including visible character levels when detailed showcase data is disabled
 - Detailed Enka showcase sync for equipped weapons, artifacts, available talent values, friendship, constellation, and public profile stats when the player exposes those details
 - Optional import of publicly available Enka profile saved builds, with public visibility filtering and a visible warning that live snapshots can be stale
+- Optional AKASHA System sync for public character calculations/rankings, weapon variants, artifact set summaries, and on-demand artifact main-stat/substat/Crit Value detail
 - GOOD JSON import for inventory/export data that the public UID endpoint cannot expose, including unequipped artifacts and weapons
 - JSON export/import, browser-local persistence, and reset option
 - Responsive desktop sidebar and mobile navigation
@@ -39,7 +40,7 @@ npm run preview
 
 This is a functional MVP, not the fully populated production database described in the full specification. The bundled character records are starter/sample records and do not include the complete current playable roster. Public-data refresh is best-effort and its returned fields should be checked. Community build notes are starting points, not a claim that every build is optimal for every team/version.
 
-Material quantities intentionally start at zero rather than being invented. Enter verified costs from the in-game upgrade screen or connect a validated data pipeline before treating results as authoritative. The map panel is explicitly schematic and stores user-created markers; it does not fabricate locations or coordinates. Exact geography is linked out to HoYoLAB's interactive map. Enka sync now merges public display-list entries and uses the detailed showcase when available. The display list is not the full owned roster: it cannot reveal hidden characters or private inventory. Detailed equipped-gear fields depend on the player's in-game Character Details visibility. Public Enka saved builds are imported only when the UID owner has a verified, public Enka profile and the provider returns the saved-build endpoint; explicitly private entries are excluded, and live snapshots may be stale. GOOD JSON import remains the way to add exported unequipped inventory; imports stay local to the browser.
+Material quantities intentionally start at zero rather than being invented. Enter verified costs from the in-game upgrade screen or connect a validated data pipeline before treating results as authoritative. The map panel is explicitly schematic and stores user-created markers; it does not fabricate locations or coordinates. Exact geography is linked out to HoYoLAB's interactive map. Enka sync now merges public display-list entries and uses the detailed showcase when available. The display list is not the full owned roster: it cannot reveal hidden characters or private inventory. Detailed equipped-gear fields depend on the player's in-game Character Details visibility. Public Enka saved builds are imported only when the UID owner has a verified, public Enka profile and the provider returns the saved-build endpoint; explicitly private entries are excluded, and live snapshots may be stale. AKASHA sync reads the community site's calculation and artifact endpoints; the service warns that its API may change without notice, so the integration is best-effort and preserves older local snapshots on failure. AKASHA ranking calculations cover supported leaderboard variants, not every team or universal artifact strength. GOOD JSON import remains the way to add exported unequipped inventory; imports stay local to the browser.
 
 Data is stored in browser localStorage. There is no cloud account/authentication or cross-device syncing in this version. The app does not ask for HoYoverse passwords, verification codes, cookies, or tokens. YouTube guide actions use search queries and creator homepages rather than fabricated video IDs; live YouTube API search is not configured.
 
@@ -47,6 +48,8 @@ Data is stored in browser localStorage. There is no cloud account/authentication
 
 - [genshin.dev API repository and documentation](https://github.com/genshindev/api) — static game data; does not connect to a player's game.
 - [Enka.Network API documentation](https://github.com/EnkaNetwork/API-docs) — public Character Showcase API, with rate limits and public-data restrictions.
+- [AKASHA System](https://akasha.cv/) — public character calculation/leaderboard and artifact browser.
+- [akasha-py](https://github.com/seriaati/akasha-py) — community API wrapper used to verify the public calculation and artifact endpoint patterns; it notes that AKASHA's API can change without notice.
 - [HoYoLAB official interactive map](https://act.hoyolab.com/ys/app/interactive-map/index.html)
 - [KeqingMains guides](https://keqingmains.com/)
 

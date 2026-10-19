@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildProgressionPlan, enkaTtlSeconds, flattenEnkaSavedBuilds, isValidGenshinUid, matchGoodCharacterKey, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory } from '../src/core.js';
+import { buildProgressionPlan, enkaTtlSeconds, flattenEnkaSavedBuilds, isValidGenshinUid, matchGoodCharacterKey, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, normalizeAkashaArtifacts, normalizeAkashaProfiles, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory } from '../src/core.js';
 import { CHARACTER_BUILD_GUIDES } from '../src/builds.js';
 import { MATERIAL_STARTER, NAV_ITEMS, STARTER_CHARACTERS, STARTER_TEAMS } from '../src/data.js';
 
@@ -103,6 +103,85 @@ test('ignores invalid Enka saved-build payloads and malformed items', () => {
   assert.equal(builds.length, 1);
   assert.equal(builds[0].characterId, '');
   assert.equal(builds[0].characterName, 'Character ID 12345');
+});
+
+test('normalizes AKASHA public calculations, leaderboard ranks and character matches', () => {
+  const profiles = normalizeAkashaProfiles([
+    {
+      _id: 'calc-record-1',
+      uid: '123456789',
+      characterId: 10000046,
+      type: 'genshin',
+      name: 'Kazuha',
+      constellation: 0,
+      md5: '0123456789abcdef0123456789abcdef',
+      artifactSets: { ViridescentVenerer: { count: 4, icon: 'vv.png' } },
+      calculations: {
+        '1001': {
+          calculationId: 1001, short: 'EM', name: 'Elemental Mastery Support',
+          weapon: { name: 'Freedom-Sworn', rarity: 5, refinement: 1 },
+          result: 154321, ranking: 450, outOf: 36000, stats: { elementalMastery: 950 },
+          variant: { name: 'em', displayName: 'EM Support' },
+        },
+      },
+    },
+  ], '123456789', [
+    { id: 'kazuha', apiId: '10000046', name: 'Kaedehara Kazuha' },
+  ]);
+
+  assert.equal(profiles.length, 1);
+  assert.equal(profiles[0].characterId, 'kazuha');
+  assert.equal(profiles[0].characterName, 'Kaedehara Kazuha');
+  assert.equal(profiles[0].md5, '0123456789abcdef0123456789abcdef');
+  assert.equal(profiles[0].artifactSets[0].name, 'ViridescentVenerer');
+  assert.equal(profiles[0].calculations[0].weapon.name, 'Freedom-Sworn');
+  assert.equal(profiles[0].calculations[0].ranking, 450);
+  assert.equal(profiles[0].calculations[0].outOf, 36000);
+  assert.ok(Math.abs(profiles[0].calculations[0].topPercent - 1.25) < 0.001);
+  assert.equal(profiles[0].calculations[0].variant.displayName, 'EM Support');
+});
+
+test('normalizes AKASHA artifact pieces with slot, main stat, substats, level and crit value', () => {
+  const artifacts = normalizeAkashaArtifacts([
+    {
+      id: 'artifact-1',
+      name: 'Royal Flora',
+      setName: 'Noblesse Oblige',
+      stars: 5,
+      mainStatKey: 'FIGHT_PROP_HP',
+      mainStatValue: 4780,
+      substats: {
+        'Crit RATE': 0.101,
+        'Crit DMG': 0.14,
+        'Energy Recharge': 0.052,
+        'ATK%': 0.058,
+      },
+      equipType: 'EQUIP_BRACER',
+      level: 21,
+      critValue: 34.2,
+      icon: 'artifact.png',
+    },
+  ]);
+
+  assert.equal(artifacts.length, 1);
+  assert.equal(artifacts[0].setName, 'Noblesse Oblige');
+  assert.equal(artifacts[0].slot, 'Flower of Life');
+  assert.equal(artifacts[0].level, 20);
+  assert.equal(artifacts[0].rarity, 5);
+  assert.equal(artifacts[0].mainStat.value, 4780);
+  assert.equal(artifacts[0].substats.length, 4);
+  assert.equal(artifacts[0].critValue, 34.2);
+});
+
+test('AKASHA normalizers safely handle missing, malformed and unmatched public data', () => {
+  assert.deepEqual(normalizeAkashaProfiles(null, '123456789'), []);
+  assert.deepEqual(normalizeAkashaArtifacts({ message: 'changed API' }), []);
+  const profiles = normalizeAkashaProfiles([
+    { characterId: 999999, name: 'Unknown entry', md5: 'hash', calculations: null },
+  ], '123456789', []);
+  assert.equal(profiles[0].characterId, '');
+  assert.equal(profiles[0].characterName, 'Unknown entry');
+  assert.deepEqual(profiles[0].calculations, []);
 });
 
 test('sync imports account equipment without overwriting the planned build', () => {

@@ -101,6 +101,150 @@ export function flattenEnkaSavedBuilds(savedBuilds, characters = []) {
   );
 }
 
+const AKASHA_SLOT_LABELS = {
+  EQUIP_BRACER: 'Flower of Life',
+  EQUIP_NECKLACE: 'Plume of Death',
+  EQUIP_SHOES: 'Sands of Eon',
+  EQUIP_RING: 'Goblet of Eonothem',
+  EQUIP_DRESS: 'Circlet of Logos',
+};
+
+function safeAkashaNumber(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Normalize the public Akasha System calculation payload.
+ * Akasha is a community service whose response shapes can change; missing fields stay null.
+ */
+export function normalizeAkashaProfiles(payload, uid, characters = []) {
+  const rows = Array.isArray(payload) ? payload
+    : Array.isArray(payload?.profiles) ? payload.profiles
+    : Array.isArray(payload?.data) ? payload.data : [];
+  return rows.slice(0, 120).filter(row => row && typeof row === 'object' && !Array.isArray(row)).map((row, rowIndex) => {
+    const rawCharacterId = String(row.characterId ?? row.character_id ?? '');
+    const character = (characters || []).find(item =>
+      rawCharacterId && String(item?.apiId ?? '') === rawCharacterId
+    ) || (characters || []).find(item => rawCharacterId && String(item?.id ?? '') === rawCharacterId)
+      || (characters || []).find(item => row.name && compactName(item?.name) === compactName(row.name))
+      || null;
+    const rawCalcs = row.calculations;
+    const calcRows = Array.isArray(rawCalcs) ? rawCalcs
+      : rawCalcs && typeof rawCalcs === 'object' ? Object.entries(rawCalcs).map(([key, value]) => ({ ...value, _calcKey: key })) : [];
+    const calculations = calcRows.slice(0, 30).filter(calc => calc && typeof calc === 'object' && !Array.isArray(calc)).map((calc, calcIndex) => {
+      const ranking = safeAkashaNumber(calc.ranking ?? calc.rank);
+      const outOf = safeAkashaNumber(calc.outOf ?? calc.out_of);
+      const providedPercent = safeAkashaNumber(calc.topPercent ?? calc.top_percent);
+      const topPercent = providedPercent ?? (ranking > 0 && outOf > 0 ? (ranking / outOf) * 100 : null);
+      const weapon = calc.weapon && typeof calc.weapon === 'object' ? calc.weapon : {};
+      const result = safeAkashaNumber(calc.result ?? calc.damage);
+      const calculationId = safeAkashaNumber(calc.calculationId ?? calc.id ?? calc._calcKey);
+      return {
+        id: calculationId ?? (rowIndex + '-' + calcIndex),
+        short: String(calc.short || ''),
+        name: String(calc.name || calc.displayName || calc.short || ('Calculation ' + (calcIndex + 1))),
+        details: String(calc.details || ''),
+        weapon: {
+          name: String(weapon.name || ''),
+          icon: String(weapon.icon || ''),
+          rarity: safeAkashaNumber(weapon.rarity),
+          refinement: safeAkashaNumber(weapon.refinement),
+          substat: String(weapon.substat || ''),
+          type: String(weapon.type || ''),
+        },
+        result,
+        ranking: ranking != null && ranking > 0 ? ranking : null,
+        outOf: outOf != null && outOf > 0 ? outOf : null,
+        topPercent: topPercent != null && topPercent >= 0 ? topPercent : null,
+        stats: calc.stats && typeof calc.stats === 'object' && !Array.isArray(calc.stats) ? calc.stats : {},
+        variant: calc.variant && typeof calc.variant === 'object'
+          ? { name: String(calc.variant.name || ''), displayName: String(calc.variant.displayName || '') }
+          : null,
+      };
+    });
+    const rawSets = row.artifactSets ?? row.artifact_sets ?? {};
+    const artifactSets = Array.isArray(rawSets)
+      ? rawSets.slice(0, 10).map(item => typeof item === 'string' ? { name: item, count: null, icon: '' } : ({
+          name: String(item?.name || item?.setName || 'Unknown set'),
+          count: safeAkashaNumber(item?.count),
+          icon: String(item?.icon || ''),
+        }))
+      : rawSets && typeof rawSets === 'object'
+        ? Object.entries(rawSets).slice(0, 10).map(([name, item]) => ({
+            name,
+            count: safeAkashaNumber(item?.count ?? item),
+            icon: String(item?.icon || ''),
+          }))
+        : [];
+    return {
+      id: String(row._id ?? row.id ?? (String(uid) + '-' + rawCharacterId + '-' + rowIndex)),
+      uid: String(row.uid ?? uid ?? ''),
+      characterId: character?.id || '',
+      rawCharacterId,
+      characterName: character?.name || String(row.name || row.characterName || ('Character ID ' + rawCharacterId)),
+      type: String(row.type || ''),
+      name: String(row.name || character?.name || 'Character build'),
+      icon: String(row.icon || ''),
+      constellation: safeAkashaNumber(row.constellation),
+      md5: String(row.md5 || row.hash || ''),
+      artifactSets,
+      calculations,
+    };
+  });
+}
+
+/** Normalize detailed public artifact rows from Akasha's build-artifact endpoint. */
+export function normalizeAkashaArtifacts(payload) {
+  const rows = Array.isArray(payload) ? payload
+    : Array.isArray(payload?.artifacts) ? payload.artifacts
+    : Array.isArray(payload?.data) ? payload.data : [];
+  const percentKey = key => /%|rate|crit|damage bonus|energy recharge|bonus/i.test(String(key || ''));
+  const asPercentPoints = value => {
+    const n = safeAkashaNumber(value);
+    if (n == null) return null;
+    return Math.abs(n) <= 1 ? n * 100 : n;
+  };
+  return rows.slice(0, 10).filter(row => row && typeof row === 'object' && !Array.isArray(row)).map((row, index) => {
+    const rawMain = row.mainStat && typeof row.mainStat === 'object' ? row.mainStat : {};
+    const mainKey = String(row.mainStatKey ?? rawMain.key ?? rawMain.name ?? 'Unknown');
+    const mainValue = safeAkashaNumber(row.mainStatValue ?? rawMain.value);
+    const rawSubstats = row.substats ?? row.subStats ?? [];
+    const substats = Array.isArray(rawSubstats)
+      ? rawSubstats.slice(0, 4).map(stat => ({
+          key: String(stat?.key ?? stat?.name ?? 'Unknown'),
+          value: safeAkashaNumber(stat?.value),
+        }))
+      : rawSubstats && typeof rawSubstats === 'object'
+        ? Object.entries(rawSubstats).slice(0, 4).map(([key, value]) => ({ key: String(key), value: safeAkashaNumber(value) }))
+        : [];
+    const lookupStat = pattern => {
+      const match = substats.find(stat => pattern.test(stat.key));
+      return match ? match.value : null;
+    };
+    const explicitCv = safeAkashaNumber(row.critValue ?? row.crit_value ?? row.cv);
+    const rate = lookupStat(/crit\s*rate|critRate|criticalrate/i);
+    const damage = lookupStat(/crit\s*damage|crit\s*dmg|critDMG|criticaldamage/i);
+    const computedCv = rate != null && damage != null
+      ? asPercentPoints(rate) * 2 + asPercentPoints(damage)
+      : null;
+    const rawLevel = safeAkashaNumber(row.level);
+    return {
+      id: String(row.id ?? row.name ?? (String(row.setName || row.set_name || 'artifact') + '-' + index)),
+      name: String(row.name || 'Artifact'),
+      setName: String(row.setName ?? row.set_name ?? 'Unknown set'),
+      rarity: safeAkashaNumber(row.stars ?? row.rarity),
+      slot: AKASHA_SLOT_LABELS[String(row.equipType ?? row.equip_type ?? '')] || String(row.equipType ?? row.equip_type ?? 'Artifact slot'),
+      level: rawLevel == null ? null : Math.max(0, Math.min(20, rawLevel - 1)),
+      mainStat: { key: mainKey, value: mainValue },
+      substats,
+      critValue: explicitCv ?? computedCv,
+      icon: String(row.icon || ''),
+      isMainStatPercent: percentKey(mainKey),
+    };
+  });
+}
+
 export function mergeEnkaShowcaseCharacter(character, imported, syncedAt) {
   const current = character || {};
   const entry = imported || {};
