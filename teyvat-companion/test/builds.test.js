@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CHARACTER_BUILD_GUIDES } from '../src/builds.js';
+import { BUILD_ROLE_CATEGORIES, CHARACTER_BUILD_GUIDES, getCharacterBuildRoleOptions } from '../src/builds.js';
 
-const validCategories = new Set(['Main DPS', 'Sub DPS', 'Support']);
+const validCategories = new Set(BUILD_ROLE_CATEGORIES);
 
 function assertCompleteProfile(key, profile) {
   assert.ok(profile.role, key + ': role is required');
@@ -19,6 +19,29 @@ test('every character has a complete primary build profile', () => {
   const entries = Object.entries(CHARACTER_BUILD_GUIDES);
   assert.ok(entries.length >= 100, 'expected the full character build catalogue');
   for (const [key, profile] of entries) assertCompleteProfile(key, profile);
+});
+
+test('every character build page has all three role categories represented', () => {
+  for (const [characterKey, profile] of Object.entries(CHARACTER_BUILD_GUIDES)) {
+    const options = getCharacterBuildRoleOptions(profile);
+    for (const role of BUILD_ROLE_CATEGORIES) {
+      assert.ok(options.some(option => option.buildCategory === role), characterKey + ': missing role category ' + role);
+    }
+    const available = options.filter(option => option.status === 'available');
+    const unreviewed = options.filter(option => option.status === 'unreviewed');
+    assert.ok(available.length >= 1, characterKey + ': expected a primary build');
+    for (const option of available) assert.ok(option.profile, characterKey + ': available role must have actual profile data');
+    for (const option of unreviewed) {
+      assert.equal(option.profile, null, characterKey + ': unreviewed role must not recycle a different role profile');
+      assert.match(option.label, /not reviewed|not recommended/i);
+    }
+  }
+});
+
+test('even a missing profile displays the three explicit role gaps instead of an invented build', () => {
+  const options = getCharacterBuildRoleOptions(null);
+  assert.deepEqual(options.map(option => option.buildCategory).sort(), [...BUILD_ROLE_CATEGORIES].sort());
+  assert.ok(options.every(option => option.status === 'unreviewed' && option.profile === null));
 });
 
 test('alternate builds have distinct IDs, full build data, and a direct source note', () => {
