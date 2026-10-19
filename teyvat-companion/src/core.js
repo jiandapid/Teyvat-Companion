@@ -264,6 +264,7 @@ export function normalizeAkashaArtifacts(payload) {
     if (n == null) return null;
     return Math.abs(n) <= 1 ? n * 100 : n;
   };
+  const slotOrder = { 'Flower of Life': 0, 'Plume of Death': 1, 'Sands of Eon': 2, 'Goblet of Eonothem': 3, 'Circlet of Logos': 4 };
   return rows.slice(0, 10).filter(row => row && typeof row === 'object' && !Array.isArray(row)).map((row, index) => {
     const rawMain = row.mainStat && typeof row.mainStat === 'object' ? row.mainStat : {};
     const mainKey = String(row.mainStatKey ?? rawMain.key ?? rawMain.name ?? 'Unknown');
@@ -301,7 +302,7 @@ export function normalizeAkashaArtifacts(payload) {
       icon: String(row.icon || ''),
       isMainStatPercent: percentKey(mainKey),
     };
-  });
+  }).sort((a, b) => (slotOrder[a.slot] ?? 99) - (slotOrder[b.slot] ?? 99));
 }
 
 export function mergeEnkaShowcaseCharacter(character, imported, syncedAt) {
@@ -318,6 +319,7 @@ export function mergeEnkaShowcaseCharacter(character, imported, syncedAt) {
     level: entry.level ?? null,
     constellation: entry.constellation ?? null,
     talentLevels: Array.isArray(entry.talents) ? [...entry.talents] : [],
+    talentDetails: Array.isArray(entry.talentDetails) ? entry.talentDetails.map(item => ({ ...item })) : [],
     weapon: entry.weapon || '',
     weaponLevel: entry.weaponLevel ?? null,
     artifacts: Array.isArray(entry.artifacts) ? [...entry.artifacts] : [],
