@@ -139,3 +139,27 @@ test('more characters expose additional role-specific recommendations', () => {
   }
   assert.equal(CHARACTER_BUILD_GUIDES['traveler-anemo'].buildCategory, 'Sub DPS');
 });
+
+test('additional alternate-role profiles are complete and source-linked', () => {
+  const expected = {
+    raiden: ['off-field-electro-support'],
+    furina: ['on-field-hydro-driver'],
+    'kuki-shinobu': ['hyperbloom-sub-dps'],
+    kokomi: ['on-field-hydro-driver'],
+    yelan: ['on-field-hydro-main-dps'],
+    candace: ['on-field-hydro-dps'],
+    yanfei: ['c4-shield-support'],
+    navia: ['quickswap-burst-sub-dps'],
+    emilie: ['burning-team-support'],
+  };
+  for (const [key, ids] of Object.entries(expected)) {
+    for (const id of ids) {
+      const variant = CHARACTER_BUILD_GUIDES[key].alternateBuilds.find(build => build.id === id);
+      assert.ok(variant, key + ': expected alternate build ' + id);
+      assertCompleteProfile(key + '/' + id, variant);
+      assert.ok(variant.sourceName && variant.sourceNote, key + '/' + id + ': source details are required');
+      assert.ok(variant.sourceUrl.startsWith('https://genshin.gg/characters/'), key + '/' + id + ': use a character-specific source');
+    }
+  }
+  assert.match(CHARACTER_BUILD_GUIDES.yanfei.alternateBuilds.find(b => b.id === 'c4-shield-support').sourceNote, /Constellation 4/);
+});
