@@ -9,7 +9,7 @@ import {
 import { ELEMENTS, ELEMENT_META, MATERIAL_STARTER, NAV_ITEMS, STARTER_CHARACTERS, STARTER_TEAMS } from './data';
 import { CHARACTER_BUILD_ALIASES, CHARACTER_BUILD_GUIDES, CREATOR_CHANNELS, getCharacterBuildRoleOptions } from './builds';
 import { supabase, supabaseConfigured } from './lib/supabase.js';
-import { analyzeTeamComposition, buildProgressionPlan, enkaTtlSeconds, flattenEnkaSavedBuilds, getCharacterUpgradeMaterialRequirements, isValidGenshinUid, matchGoodCharacterKey, normalizeTrackerBackup, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, normalizeAkashaArtifacts, normalizeAkashaProfiles, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory, validateCharacterCatalogue } from './core';
+import { analyzeTeamComposition, buildProgressionPlan, enkaTtlSeconds, flattenEnkaSavedBuilds, getCharacterUpgradeMaterialRequirements, isValidGenshinUid, matchGoodCharacterKey, normalizeTrackerBackup, mergeCharacterCatalogue, mergeCharacterSourceRecords, mergeEnkaShowcaseCharacter, normalizeAkashaArtifacts, normalizeAkashaProfiles, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory, validateCharacterCatalogue } from './core';
 
 const ICONS = { LayoutDashboard, Users, Swords, PackageOpen, MapPinned, ChartNoAxesCombined, PlayCircle, Settings2, Bot, BookOpen, Layers3 };
 const STORAGE_KEY = 'teyvat-companion-v1';
@@ -469,14 +469,15 @@ export default function App() {
     setCharacterDataLoadingId(character.id);
     try {
       let rawDetail;
-      if (String(character.id || '').startsWith('traveler-') && !character.apiId) {
-        const response = await fetchWithTimeout('https://genshin.jmp.blue/characters/' + encodeURIComponent(character.id) + '?lang=en', {}, 9000);
-        if (!response.ok) throw new Error('Traveler detail source returned ' + response.status);
-        rawDetail = await response.json();
-      } else if (character.apiId) {
+      if (character.apiId) {
         rawDetail = await fetchAmbrData('avatar/' + encodeURIComponent(character.apiId));
       } else {
-        throw new Error('No detailed API record is available for this character yet.');
+        const rawSlug = String(character.apiSlug || character.id || '').trim();
+        const detailSlug = /^\d+$/.test(rawSlug) ? character.id : rawSlug;
+        if (!detailSlug) throw new Error('No stable character slug is available from the catalogue.');
+        const response = await fetchWithTimeout('https://genshin.jmp.blue/characters/' + encodeURIComponent(slugify(detailSlug)) + '?lang=en', {}, 9000);
+        if (!response.ok) throw new Error('Character detail fallback returned ' + response.status);
+        rawDetail = await response.json();
       }
       const detail = normalizeAmbrDetail(rawDetail);
       const hasAscension = Object.keys(detail?.ascension_materials || {}).length > 0 || (detail?.upgrade?.promotes || []).length > 0;
@@ -757,18 +758,26 @@ export default function App() {
         source = 'genshin.dev fallback';
       }
 
-      // Traveler's element variants are often modelled as separate records by Genshin data providers.
-      // Supplement the Project Amber index with public variant entries when missing.
-      let travelerSupplement = [];
-      try {
-        const variantResponse = await fetchWithTimeout('https://genshin.jmp.blue/characters/all?lang=en', {}, 9000);
-        if (variantResponse.ok) {
-          const rawVariants = await variantResponse.json();
-          travelerSupplement = (Array.isArray(rawVariants) ? rawVariants : Object.entries(rawVariants || {}).map(([id, value]) => ({ id, ...value })));
+      // Reconcile the primary catalogue against a second public source. The
+      // primary record wins when populated; fallback rows fill missing names,
+      // elements, weapon types, images or character slugs without creating dupes.
+      let travelerSupplement = source === 'genshin.dev fallback' ? records : [];
+      if (source !== 'genshin.dev fallback') {
+        try {
+          const supplementResponse = await fetchWithTimeout('https://genshin.jmp.blue/characters/all?lang=en', {}, 9000);
+          if (supplementResponse.ok) {
+            const rawSupplement = await supplementResponse.json();
+            travelerSupplement = (Array.isArray(rawSupplement) ? rawSupplement : Object.entries(rawSupplement || {}).map(([id, value]) => ({ id, ...value })))
+              .filter(item => item?.name || item?.title || item?.id)
+              .map(item => ({ ...item, _catalogSource: 'genshin.dev supplemental fallback' }));
+          } else {
+            console.warn('Supplemental character catalogue unavailable: HTTP ' + supplementResponse.status);
+          }
+        } catch (error) {
+          console.warn('Supplemental character catalogue unavailable', error);
         }
-      } catch (error) {
-        console.warn('Traveler variant supplement unavailable', error);
       }
+      if (travelerSupplement.length) records = mergeCharacterSourceRecords(records, travelerSupplement);
       const isTravelerRecord = record => {
         const route = slugify(record?.route || record?.id || record?.name);
         const label = String(record?.name || '').trim().toLowerCase();
@@ -910,9 +919,10 @@ export default function App() {
           source: item._catalogSource || source,
         };
       });
-      const mapped = validateCharacterCatalogue([...new Map(mappedRecords.map(record => [record.id, record])).values()], 120);
+      const sourceMerged = mergeCharacterSourceRecords(mappedRecords, []);
+      const mapped = validateCharacterCatalogue([...new Map(sourceMerged.map(record => [record.id, record])).values()], 120);
       saveState(prev => ({ ...prev, characters: mergeCharacterCatalogue(prev.characters, mapped) }));
-      setDataNotice(`Loaded ${mapped.length} unique character records from ${source}. Full refreshes with fewer than 100 characters are rejected so an incomplete upstream response cannot replace your roster. Character details and material costs load on demand; your tracked ownership, levels, teams, goals and inventory were kept.`);
+      setDataNotice(`Loaded ${mapped.length} unique character records using ${source}${source === 'Project Amber' ? ' plus a genshin.dev supplement when available' : ''}. Refreshes with fewer than 120 unique entries are rejected so a partial upstream response cannot replace your roster. Missing individual details can load from the fallback source on demand; your ownership, levels, teams, goals and inventory were kept.`);
       setToast(`Character catalogue refreshed · ${mapped.length} records`);
     } catch (error) {
       setDataNotice(`Could not refresh the full character catalogue: ${error.message}. Your local records remain available; retry from Settings when the data source is reachable.`);
