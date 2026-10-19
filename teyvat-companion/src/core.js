@@ -141,7 +141,7 @@ export function normalizeAkashaProfiles(payload, uid, characters = []) {
       const result = safeAkashaNumber(calc.result ?? calc.damage);
       const calculationId = safeAkashaNumber(calc.calculationId ?? calc.id ?? calc._calcKey);
       return {
-        id: calculationId ?? rowIndex * 100 + calcIndex,
+        id: calculationId ?? (rowIndex + '-' + calcIndex),
         short: String(calc.short || ''),
         name: String(calc.name || calc.displayName || calc.short || ('Calculation ' + (calcIndex + 1))),
         details: String(calc.details || ''),
