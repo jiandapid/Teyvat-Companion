@@ -22,7 +22,7 @@ npm run preview
 
 - Dashboard and all eight navigation sections
 - Character catalogue with search, elemental / ownership / role filters, editable owned status, levels, talents, constellations, role, weapon and artifact notes
-- Startup and manual character catalogue refresh using Project Amber with a genshin.dev fallback; refresh responses with fewer than 100 unique characters are rejected so a partial response cannot replace a larger saved roster
+- Startup and manual character catalogue refresh using Project Amber with a genshin.dev fallback; refresh responses with fewer than 120 unique characters are rejected so a partial response cannot replace a larger saved roster
 - Source-derived material requirements for full Level 90 ascension and level-10 talent upgrades when the provider returns complete costs; unresolved material IDs are visibly flagged rather than treated as verified names
 - Custom team presets saved locally
 - Material inventory with editable required / owned quantities, automatic missing totals and progress, custom material creation and deletion
