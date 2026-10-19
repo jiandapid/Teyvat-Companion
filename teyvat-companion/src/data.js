@@ -55,7 +55,7 @@ export const NAV_ITEMS = [
   { id:'teams', label:'Builds & Teams', icon:'Swords' },
   { id:'advisor', label:'Teyvat Advisor', icon:'Compass' },
   { id:'materials', label:'Materials & Farming', icon:'PackageOpen' },
-  { id:'map', label:'Interactive Map', icon:'MapPinned' },
+
   { id:'account', label:'Account Tracker', icon:'ChartNoAxesCombined' },
   { id:'guides', label:'Guides & Videos', icon:'PlayCircle' },
   { id:'settings', label:'Settings', icon:'Settings2' },
