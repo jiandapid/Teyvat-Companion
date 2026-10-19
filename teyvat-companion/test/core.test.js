@@ -231,12 +231,13 @@ test('sync does not replace saved progress with missing level or constellation v
   assert.equal(synced.enkaBuild.weapon, 'Actual weapon');
 });
 
-test('main navigation uses unique ids and exposes the important app pages', () => {
+test('main navigation uses unique ids and exposes the important pages without the removed map section', () => {
   const ids = NAV_ITEMS.map(item => item.id);
   assert.equal(new Set(ids).size, ids.length);
-  for (const page of ['dashboard', 'characters', 'builds', 'teams', 'materials', 'map', 'account', 'guides', 'settings']) {
+  for (const page of ['dashboard', 'characters', 'builds', 'teams', 'materials', 'account', 'guides', 'settings']) {
     assert.ok(ids.includes(page), 'missing nav page: ' + page);
   }
+  assert.equal(ids.includes('map'), false, 'interactive map should remain removed by design');
 });
 
 test('starter teams only reference characters that exist in the starter catalogue', () => {
