@@ -24,32 +24,120 @@ const TASK_STARTER = [
   { id:'task-domain', title:'Check today’s domain rotation', detail:'Confirm the book or weapon material schedule in-game', done:false, kind:'domain' },
 ];
 
-function loadInitial() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
-    if (saved) {
-      return {
-        characters: STARTER_CHARACTERS.map(c => ({...c, ...(saved.characters?.[c.id] || {})})).concat((saved.extraCharacters || []).filter(c => !STARTER_CHARACTERS.some(s => s.id === c.id))),
-        materials: saved.materials || MATERIAL_STARTER,
-        teams: saved.teams || STARTER_TEAMS,
-        goals: saved.goals || [],
-        mapMarkers: saved.mapMarkers || [],
-        account: { ar: saved.account?.ar ?? 58, worldLevel: saved.account?.worldLevel ?? 8, abyss: saved.account?.abyss || 'Not set', primogems: saved.account?.primogems ?? 0, wishes: saved.account?.wishes ?? 0, pity: saved.account?.pity ?? 0, uid: saved.account?.uid || '', nickname: saved.account?.nickname || '', resinAvailable: Math.max(0, Math.min(200, Number(saved.account?.resinAvailable) || 0)) },
-        tasks: saved.tasks || TASK_STARTER,
-        enkaSnapshot: saved.enkaSnapshot || null,
-        enkaNextFetchAt: Number(saved.enkaNextFetchAt || saved.enkaSnapshot?.nextFetchAt || 0),
-        goodInventory: saved.goodInventory || null,
-        akashaSnapshot: saved.akashaSnapshot || null,
-        lastUpdated: saved.lastUpdated || null,
-      };
-    }
-  } catch (e) { console.warn('Could not read local tracker data', e); }
+const isRecord = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+const clampInteger = (value, min, max, fallback) => {
+  if (value === '' || value === null || value === undefined) return fallback;
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? Math.max(min, Math.min(max, Math.floor(numeric))) : fallback;
+};
+
+function createDefaultState() {
   return {
-    characters: STARTER_CHARACTERS.map(c => ({...c})), materials: MATERIAL_STARTER.map(m => ({...m})), teams: STARTER_TEAMS.map(t => ({...t})), goals: [], mapMarkers: [],
-    account: { ar: 58, worldLevel: 8, abyss: 'Not set', primogems: 0, wishes: 0, pity: 0, uid: '', nickname: '', resinAvailable: 0 }, tasks: TASK_STARTER.map(t => ({...t})), enkaSnapshot: null, enkaNextFetchAt: 0, goodInventory: null, akashaSnapshot: null, lastUpdated: null,
+    characters: STARTER_CHARACTERS.map(c => ({ ...c })),
+    materials: MATERIAL_STARTER.map(m => ({ ...m })),
+    teams: STARTER_TEAMS.map(t => ({ ...t })),
+    goals: [],
+    mapMarkers: [],
+    account: { ar: 58, worldLevel: 8, abyss: 'Not set', primogems: 0, wishes: 0, pity: 0, uid: '', nickname: '', resinAvailable: 0 },
+    tasks: TASK_STARTER.map(t => ({ ...t })),
+    enkaSnapshot: null,
+    enkaNextFetchAt: 0,
+    goodInventory: null,
+    akashaSnapshot: null,
+    lastUpdated: null,
   };
 }
 
+function loadInitial() {
+  const defaults = createDefaultState();
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+    if (!isRecord(saved)) return defaults;
+
+    const storedCharacters = Array.isArray(saved.characters)
+      ? Object.fromEntries(saved.characters.filter(c => isRecord(c) && c.id != null).map(c => [String(c.id), c]))
+      : (isRecord(saved.characters) ? saved.characters : {});
+    const standardIds = new Set(defaults.characters.map(c => c.id));
+    const extraCharacters = (Array.isArray(saved.extraCharacters) ? saved.extraCharacters : [])
+      .filter(c => isRecord(c) && c.id != null && String(c.id).trim() && !standardIds.has(String(c.id)));
+    const characters = defaults.characters.map(c => ({
+      ...c,
+      ...(isRecord(storedCharacters[c.id]) ? storedCharacters[c.id] : {}),
+      id: c.id,
+    }));
+    const characterMap = new Map(characters.map(c => [c.id, c]));
+    for (const character of extraCharacters) characterMap.set(String(character.id), { ...character, id: String(character.id) });
+
+    const account = isRecord(saved.account) ? saved.account : {};
+    const materials = Array.isArray(saved.materials) ? saved.materials
+      .filter(m => isRecord(m) && m.id != null && typeof m.name === 'string' && m.name.trim())
+      .map(m => ({ ...m, id: String(m.id), name: m.name.trim(), category: typeof m.category === 'string' ? m.category : 'Other', required: clampInteger(m.required, 0, 1000000000, 0), owned: clampInteger(m.owned, 0, 1000000000, 0) }))
+      : defaults.materials;
+    const teams = Array.isArray(saved.teams) ? saved.teams
+      .filter(t => isRecord(t) && t.id != null && typeof t.name === 'string' && Array.isArray(t.characters))
+      .map(t => ({ ...t, id: String(t.id), name: t.name.trim() || 'Untitled team', characters: [...new Set(t.characters.filter(id => id != null).map(String))].slice(0, 4) }))
+      : defaults.teams;
+    const goals = Array.isArray(saved.goals) ? saved.goals
+      .filter(g => isRecord(g) && typeof g.title === 'string' && g.title.trim())
+      .map((g, i) => ({ ...g, id: String(g.id || 'goal-restored-' + i), title: g.title.trim(), done: Boolean(g.done) }))
+      : [];
+    const mapMarkers = Array.isArray(saved.mapMarkers) ? saved.mapMarkers
+      .filter(m => isRecord(m) && typeof m.name === 'string' && m.name.trim())
+      .map((m, i) => ({ ...m, id: String(m.id || 'marker-restored-' + i), name: m.name.trim() }))
+      : [];
+    const tasks = Array.isArray(saved.tasks) ? saved.tasks
+      .filter(t => isRecord(t) && typeof t.title === 'string' && t.title.trim())
+      .map((t, i) => ({ ...t, id: String(t.id || 'task-restored-' + i), title: t.title.trim(), done: Boolean(t.done) }))
+      : defaults.tasks;
+    const enkaSnapshot = isRecord(saved.enkaSnapshot) ? {
+      ...saved.enkaSnapshot,
+      characters: Array.isArray(saved.enkaSnapshot.characters) ? saved.enkaSnapshot.characters.filter(isRecord) : [],
+      savedBuilds: Array.isArray(saved.enkaSnapshot.savedBuilds) ? saved.enkaSnapshot.savedBuilds.filter(isRecord) : [],
+    } : null;
+    const goodInventory = isRecord(saved.goodInventory) ? {
+      ...saved.goodInventory,
+      characters: Array.isArray(saved.goodInventory.characters) ? saved.goodInventory.characters.filter(isRecord) : [],
+      weapons: Array.isArray(saved.goodInventory.weapons) ? saved.goodInventory.weapons.filter(isRecord) : [],
+      artifacts: Array.isArray(saved.goodInventory.artifacts) ? saved.goodInventory.artifacts.filter(isRecord) : [],
+      summary: isRecord(saved.goodInventory.summary) ? saved.goodInventory.summary : {},
+    } : null;
+    const akashaSnapshot = isRecord(saved.akashaSnapshot) ? {
+      ...saved.akashaSnapshot,
+      profiles: Array.isArray(saved.akashaSnapshot.profiles) ? saved.akashaSnapshot.profiles.filter(isRecord) : [],
+    } : null;
+
+    return {
+      ...defaults,
+      characters: [...characterMap.values()],
+      materials,
+      teams,
+      goals,
+      mapMarkers,
+      account: {
+        ...defaults.account,
+        ...account,
+        ar: clampInteger(account.ar, 1, 60, defaults.account.ar),
+        worldLevel: clampInteger(account.worldLevel, 0, 9, defaults.account.worldLevel),
+        abyss: typeof account.abyss === 'string' ? account.abyss : defaults.account.abyss,
+        primogems: clampInteger(account.primogems, 0, 1000000000, 0),
+        wishes: clampInteger(account.wishes, 0, 100000000, 0),
+        pity: clampInteger(account.pity, 0, 90, 0),
+        uid: typeof account.uid === 'string' ? account.uid.trim() : '',
+        nickname: typeof account.nickname === 'string' ? account.nickname : '',
+        resinAvailable: clampInteger(account.resinAvailable, 0, 200, 0),
+      },
+      tasks,
+      enkaSnapshot,
+      enkaNextFetchAt: clampInteger(saved.enkaNextFetchAt ?? enkaSnapshot?.nextFetchAt, 0, Number.MAX_SAFE_INTEGER, 0),
+      goodInventory,
+      akashaSnapshot,
+      lastUpdated: typeof saved.lastUpdated === 'string' ? saved.lastUpdated : null,
+    };
+  } catch (e) {
+    console.warn('Could not read local tracker data', e);
+  }
+  return defaults;
+}
 const formatNumber = n => Number(n || 0).toLocaleString('en-US');
 const humanizeGameKey = value => String(value || 'Unknown').replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
 const formatArtifactStat = value => {
