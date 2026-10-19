@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildProgressionPlan, enkaTtlSeconds, flattenEnkaSavedBuilds, isValidGenshinUid, matchGoodCharacterKey, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, normalizeAkashaArtifacts, normalizeAkashaProfiles, normalizeTrackerBackup, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory } from '../src/core.js';
+import { buildProgressionPlan, enkaTtlSeconds, flattenEnkaSavedBuilds, getCharacterUpgradeMaterialRequirements, isValidGenshinUid, matchGoodCharacterKey, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, MIN_PLAYABLE_CHARACTER_COUNT, normalizeAkashaArtifacts, normalizeAkashaProfiles, normalizeTrackerBackup, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory, validateCharacterCatalogue } from '../src/core.js';
 import { CHARACTER_BUILD_GUIDES } from '../src/builds.js';
 import { MATERIAL_STARTER, NAV_ITEMS, STARTER_CHARACTERS, STARTER_TEAMS } from '../src/data.js';
 
@@ -512,4 +512,66 @@ test('rejects invalid backup shapes and malformed tracker sections', () => {
   assert.throws(() => normalizeTrackerBackup({ format: 'future-format', characters: [{ id: 'skirk' }] }), /format is not supported/);
   assert.throws(() => normalizeTrackerBackup({ characters: [{ id: 'skirk' }], materials: {} }), /invalid "materials"/);
   assert.throws(() => normalizeTrackerBackup({ characters: [null, {}] }), /no valid character records/);
+});
+
+
+test('catalogue validation deduplicates IDs and rejects partial or malformed refreshes', () => {
+  const rows = [
+    { id: 'skirk', name: 'Skirk', rarity: 5 },
+    { id: 'mona', name: 'Mona', rarity: 5 },
+    { id: 'skirk', name: 'Skirk Revised', rarity: 5 },
+    null,
+    { name: 'Missing ID' },
+    { id: 'empty-name', name: ' ' },
+  ];
+  const normalized = validateCharacterCatalogue(rows, 2);
+  assert.equal(normalized.length, 2);
+  assert.equal(normalized.find(row => row.id === 'skirk').name, 'Skirk Revised');
+  assert.throws(() => validateCharacterCatalogue(rows, 3), /only 2 unique character records/);
+  assert.throws(() => validateCharacterCatalogue({ items: rows }, 2), /invalid catalogue/);
+  assert.equal(MIN_PLAYABLE_CHARACTER_COUNT, 100);
+});
+
+test('full upgrade material planning aggregates ascension and talent counts by material ID', () => {
+  const requirements = getCharacterUpgradeMaterialRequirements({
+    id: 'sample',
+    name: 'Sample Character',
+    gameData: {
+      upgrade: {
+        promotes: [
+          { promoteLevel: 1, costItems: [{ id: 'mora', count: 100 }, { id: 'shared-drop', count: 2 }] },
+          { promoteLevel: 2, costItems: [{ id: 'mora', count: 200 }, { id: 'boss-drop', count: 1 }, { id: 'shared-drop', count: 3 }] },
+        ],
+      },
+      talents: [
+        { name: 'Normal Attack', upgrades: [{ level: 2, costItems: [{ id: 'mora', count: 10 }, { id: 'talent-book', count: 2 }, { id: 'shared-drop', count: 4 }] }] },
+        { name: 'Elemental Skill', upgrades: [{ level: 2, costItems: [{ id: 'mora', count: 10 }, { id: 'talent-book', count: 2 }] }] },
+      ],
+    },
+  }, {
+    mora: { name: 'Mora' },
+    'shared-drop': { name: 'Shared enemy drop' },
+    'boss-drop': { name: 'Boss material' },
+    'talent-book': { name: 'Talent book' },
+  });
+
+  const mora = requirements.find(row => row.id === 'mora');
+  const shared = requirements.find(row => row.id === 'shared-drop');
+  const books = requirements.find(row => row.id === 'talent-book');
+  assert.equal(mora.required, 320);
+  assert.equal(shared.required, 9);
+  assert.deepEqual(shared.categories, ['Character ascension', 'Talent']);
+  assert.equal(shared.resolved, true);
+  assert.equal(books.required, 4);
+  assert.equal(requirements.find(row => row.id === 'boss-drop').required, 1);
+});
+
+test('upgrade material planning safely returns no invented costs for missing game data', () => {
+  assert.deepEqual(getCharacterUpgradeMaterialRequirements({ id: 'skirk' }, {}), []);
+  const unresolved = getCharacterUpgradeMaterialRequirements({
+    gameData: { upgrade: { promotes: [{ costItems: [{ id: 'unknown-id', count: 3 }] }], }, talents: [] },
+  }, {});
+  assert.equal(unresolved[0].name, 'Material ID unknown-id');
+  assert.equal(unresolved[0].resolved, false);
+  assert.equal(unresolved[0].required, 3);
 });
