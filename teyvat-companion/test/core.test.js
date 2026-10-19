@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildProgressionPlan, enkaTtlSeconds, isValidGenshinUid, matchGoodCharacterKey, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, optimizeArtifactLoadout, parseGoodInventory } from '../src/core.js';
+import { buildProgressionPlan, enkaTtlSeconds, isValidGenshinUid, matchGoodCharacterKey, mergeCharacterCatalogue, mergeEnkaShowcaseCharacter, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory } from '../src/core.js';
 import { CHARACTER_BUILD_GUIDES } from '../src/builds.js';
 import { MATERIAL_STARTER, NAV_ITEMS, STARTER_CHARACTERS, STARTER_TEAMS } from '../src/data.js';
 
@@ -22,6 +22,53 @@ test('uses a positive integer Enka cache TTL and a safe fallback', () => {
   assert.equal(enkaTtlSeconds(0), 60);
   assert.equal(enkaTtlSeconds(-5), 60);
   assert.equal(enkaTtlSeconds(undefined), 60);
+});
+
+test('caps the Enka retry delay so malformed TTL data cannot lock sync for too long', () => {
+  assert.equal(enkaTtlSeconds(9999999), 86400);
+});
+
+test('imports the public Enka display list even when detailed showcase data is disabled', () => {
+  const roster = parseEnkaPublicRoster({
+    showAvatarInfoList: [
+      { avatarId: 10000046, level: 90 },
+      { avatarId: 10000025, level: 80, costumeId: 200001 },
+    ],
+  }, [], [
+    { id: 'kazuha', name: 'Kaedehara Kazuha', apiId: '10000046' },
+    { id: 'raiden', name: 'Raiden Shogun', apiId: '10000025' },
+  ]);
+
+  assert.equal(roster.length, 2);
+  assert.deepEqual(roster.map(item => item.characterId), ['kazuha', 'raiden']);
+  assert.deepEqual(roster.map(item => item.level), [90, 80]);
+  assert.equal(roster[1].costumeId, 200001);
+  assert.ok(roster.every(item => item.detailsAvailable === false));
+});
+
+test('detailed Enka records enrich public display-list entries without duplicating them', () => {
+  const roster = parseEnkaPublicRoster(
+    { showAvatarInfoList: [{ avatarId: '10000046', level: 80 }] },
+    [{ avatarId: '10000046', propMap: { '4001': { val: '90' } }, equipList: [] }],
+    [{ id: 'kazuha', name: 'Kaedehara Kazuha', apiId: '10000046' }],
+  );
+
+  assert.equal(roster.length, 1);
+  assert.equal(roster[0].name, 'Kaedehara Kazuha');
+  assert.equal(roster[0].level, 90);
+  assert.equal(roster[0].detailsAvailable, true);
+});
+
+test('detailed Enka records still work if the basic public display list is absent', () => {
+  const roster = parseEnkaPublicRoster(
+    {},
+    [{ avatarId: 10000046, propMap: { '4001': { ival: 90 } } }],
+    [{ id: 'kazuha', name: 'Kaedehara Kazuha', apiId: '10000046' }],
+  );
+  assert.equal(roster.length, 1);
+  assert.equal(roster[0].characterId, 'kazuha');
+  assert.equal(roster[0].level, 90);
+  assert.equal(roster[0].detailsAvailable, true);
 });
 
 test('sync imports account equipment without overwriting the planned build', () => {
