@@ -200,7 +200,7 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 9000) {
     return await fetch(url, { ...options, signal: controller.signal });
   } catch (error) {
     if (error?.name === 'AbortError') {
-      throw new Error('The game-data source timed out. Your saved tracker data was kept; try again shortly.');
+      throw new Error('The request timed out. Your saved tracker data was kept; try again shortly.');
     }
     throw error;
   } finally {
@@ -970,7 +970,7 @@ export default function App() {
     }
     setSyncLoading(true); setSyncError('');
     try {
-      const response = await fetch('/api/enka?uid=' + encodeURIComponent(uid) + '&includeBuilds=1', { headers: { Accept: 'application/json' } });
+      const response = await fetchWithTimeout('/api/enka?uid=' + encodeURIComponent(uid) + '&includeBuilds=1', { headers: { Accept: 'application/json' } }, 15000);
       let data;
       try { data = await response.json(); }
       catch { throw new Error('The sync endpoint returned a non-JSON response. Confirm the latest Vercel deployment includes the /api/enka function.'); }
@@ -1134,9 +1134,9 @@ export default function App() {
     setAkashaSyncLoading(true);
     setAkashaSyncError('');
     try {
-      const response = await fetch('/api/akasha?uid=' + encodeURIComponent(uid), {
+      const response = await fetchWithTimeout('/api/akasha?uid=' + encodeURIComponent(uid), {
         headers: { Accept: 'application/json' },
-      });
+      }, 12000);
       let data;
       try { data = await response.json(); }
       catch { throw new Error('AKASHA returned a non-JSON response. Check that the latest deployment includes /api/akasha.'); }
@@ -1178,9 +1178,9 @@ export default function App() {
     setAkashaArtifactLoadingId(md5);
     setAkashaSyncError('');
     try {
-      const response = await fetch('/api/akasha?uid=' + encodeURIComponent(uid) + '&md5=' + encodeURIComponent(md5), {
+      const response = await fetchWithTimeout('/api/akasha?uid=' + encodeURIComponent(uid) + '&md5=' + encodeURIComponent(md5), {
         headers: { Accept: 'application/json' },
-      });
+      }, 12000);
       let data;
       try { data = await response.json(); }
       catch { throw new Error('AKASHA returned a non-JSON artifact response.'); }
