@@ -721,7 +721,7 @@ export default function App() {
         const items = avatarPayload?.items || avatarPayload?.data?.items || {};
         records = Object.entries(items).map(([key, item]) => ({ ...item, id: item?.id ?? key }));
         records = records.filter(item => item?.name && Number(item?.rank ?? item?.rarity ?? 0) >= 4 && (item?.weaponType || item?.weapon_type || item?.weapon));
-        if (records.length < 100) throw new Error(`The character index returned only ${records.length} usable records; the current playable roster should be substantially larger.`);
+        if (records.length < 120) throw new Error(`The character index returned only ${records.length} usable records; the current playable roster should be substantially larger.`);
         const itemIndex = materialPayload?.items || materialPayload?.data?.items || {};
         gameMaterialLookupRef.current = Object.fromEntries(Object.entries(itemIndex).map(([key, item]) => [
           String(item?.id ?? key),
@@ -733,7 +733,7 @@ export default function App() {
         const raw = await response.json();
         records = (Array.isArray(raw) ? raw : Object.entries(raw || {}).map(([id, value]) => ({ id, ...value })))
           .filter(item => item?.name || item?.title || item?.id);
-        if (records.length < 100) {
+        if (records.length < 120) {
           throw new Error('The fallback source returned only ' + records.length + ' character records; it does not meet the minimum catalogue coverage.');
         }
         source = 'genshin.dev fallback';
@@ -892,7 +892,7 @@ export default function App() {
           source: item._catalogSource || source,
         };
       });
-      const mapped = validateCharacterCatalogue([...new Map(mappedRecords.map(record => [record.id, record])).values()], 100);
+      const mapped = validateCharacterCatalogue([...new Map(mappedRecords.map(record => [record.id, record])).values()], 120);
       saveState(prev => ({ ...prev, characters: mergeCharacterCatalogue(prev.characters, mapped) }));
       setDataNotice(`Loaded ${mapped.length} unique character records from ${source}. Full refreshes with fewer than 100 characters are rejected so an incomplete upstream response cannot replace your roster. Character details and material costs load on demand; your tracked ownership, levels, teams, goals and inventory were kept.`);
       setToast(`Character catalogue refreshed · ${mapped.length} records`);
