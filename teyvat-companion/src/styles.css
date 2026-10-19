@@ -410,6 +410,54 @@
   border-radius:10px;
   background:rgba(255,255,255,.018);
 }
+.build-role-picker-heading{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:5px 12px;
+  color:var(--text);
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.04em;
+}
+.build-role-picker-heading small{
+  color:var(--subtle);
+  font-size:10px;
+  font-weight:500;
+  letter-spacing:0;
+}
+.build-role-tabs{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+}
+.build-role-tab{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:center;
+  gap:5px;
+  min-height:64px;
+  padding:10px 11px;
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:rgba(255,255,255,.025);
+  color:var(--text);
+  text-align:left;
+  cursor:pointer;
+  transition:border-color .16s ease,background .16s ease,transform .16s ease;
+}
+.build-role-tab:hover{border-color:var(--accent);transform:translateY(-1px)}
+.build-role-tab.active{
+  border-color:var(--accent);
+  background:color-mix(in srgb,var(--accent) 12%,transparent);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 25%,transparent);
+}
+.build-role-tab strong{font-size:12px;line-height:1.2}
+.build-role-tab small{font-size:9px;line-height:1.3;color:var(--subtle);font-weight:600}
+.role-adaptation-warning{align-items:flex-start}
+.role-adaptation-warning strong{color:var(--text)}
 .build-role-picker label{
   display:grid;
   gap:7px;
@@ -437,6 +485,10 @@
 @media(max-width:560px){
   .build-role-picker{padding:10px}
   .build-role-picker select{font-size:10px}
+  .build-role-tabs{gap:5px}
+  .build-role-tab{padding:9px 7px;min-height:58px}
+  .build-role-tab strong{font-size:10px}
+  .build-role-tab small{font-size:8px}
 }
 
 /* Missing alternate-role profiles are shown as explicit research gaps, not fake builds. */

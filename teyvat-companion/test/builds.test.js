@@ -24,27 +24,36 @@ test('every character has a complete primary build profile', () => {
   }
 });
 
-test('every character build page has all three role categories represented', () => {
+test('every character has exactly three selectable role sections with complete build data', () => {
   for (const [characterKey, profile] of Object.entries(CHARACTER_BUILD_GUIDES)) {
     const options = getCharacterBuildRoleOptions(profile);
-    for (const role of BUILD_ROLE_CATEGORIES) {
-      assert.ok(options.some(option => option.buildCategory === role), characterKey + ': missing role category ' + role);
-    }
-    const available = options.filter(option => option.status === 'available');
-    const unreviewed = options.filter(option => option.status === 'unreviewed');
-    assert.ok(available.length >= 1, characterKey + ': expected a primary build');
-    for (const option of available) assert.ok(option.profile, characterKey + ': available role must have actual profile data');
-    for (const option of unreviewed) {
-      assert.equal(option.profile, null, characterKey + ': unreviewed role must not recycle a different role profile');
-      assert.match(option.label, /not reviewed|not recommended|no separate sourced build/i);
+    assert.equal(options.length, 3, characterKey + ': exactly three role sections must be shown');
+    assert.deepEqual(options.map(option => option.buildCategory), BUILD_ROLE_CATEGORIES, characterKey + ': role sections must be Main DPS, Sub DPS, Support');
+    for (const option of options) {
+      assert.ok(option.id && option.profile, characterKey + ': every role must have a selectable build profile');
+      assert.ok(['curated', 'adapted'].includes(option.status), characterKey + ': role needs a known coverage status');
+      assert.equal(option.profile.buildCategory, option.buildCategory, characterKey + ': selected profile must match its role');
+      assertCompleteProfile(characterKey + '/' + option.buildCategory, option.profile);
+      assert.ok(Array.isArray(option.playstyles) && option.playstyles.length > 0, characterKey + ': each role must expose at least one playstyle');
+      assert.ok(option.playstyles.every(style => style.profile?.buildCategory === option.buildCategory), characterKey + ': playstyles must stay within the selected role');
+      if (option.status === 'adapted') {
+        assert.match(option.profile.sourceNote, /role sections|starting template/i);
+        assert.match(option.profile.playstyle, /experimental|role-adapted/i);
+      }
     }
   }
 });
 
-test('even a missing profile displays the three explicit role gaps instead of an invented build', () => {
-  const options = getCharacterBuildRoleOptions(null);
-  assert.deepEqual(options.map(option => option.buildCategory).sort(), [...BUILD_ROLE_CATEGORIES].sort());
-  assert.ok(options.every(option => option.status === 'unreviewed' && option.profile === null));
+test('even an unknown character gets all three complete role-adapted templates', () => {
+  const options = getCharacterBuildRoleOptions(null, { id: 'future-character', name: 'Future Character', element: 'Hydro', weapon: 'Sword' });
+  assert.equal(options.length, 3);
+  assert.deepEqual(options.map(option => option.buildCategory), BUILD_ROLE_CATEGORIES);
+  for (const option of options) {
+    assert.equal(option.status, 'adapted');
+    assertCompleteProfile('unknown/' + option.buildCategory, option.profile);
+    assert.equal(option.profile.stats.goblet.includes('Hydro DMG Bonus') || option.buildCategory === 'Support', true);
+    assert.match(option.profile.sourceNote, /not a claim that this role is optimal/i);
+  }
 });
 
 test('alternate builds have distinct IDs, full build data, and a direct source note', () => {

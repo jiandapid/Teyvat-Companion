@@ -1914,9 +1914,8 @@ export const CREATOR_CHANNELS = [
   { name: 'Zy0x', handle: 'Zy0x', url: 'https://www.youtube.com/@Zy0x', description: 'Character builds, rotations, artifact stats and team guides.' },
 ];
 
-// Every character build page exposes all three target role categories. A role is only
-// marked available when a real profile exists; missing profiles remain explicit rather
-// than copying a different role's stats into an unsupported slot.
+// Every character always gets exactly three role sections. Existing role-specific
+// profiles are preferred; missing roles receive a clearly labeled role-adapted template.
 export const BUILD_ROLE_CATEGORIES = ['Main DPS', 'Sub DPS', 'Support'];
 
 const BUILD_ROLE_IDS = {
@@ -1925,54 +1924,169 @@ const BUILD_ROLE_IDS = {
   'Support': 'support',
 };
 
-export function getCharacterBuildRoleOptions(profile) {
-  const options = [];
-  const coveredRoles = new Set();
+const ELEMENT_DAMAGE_STAT = {
+  Pyro: 'Pyro DMG Bonus',
+  Hydro: 'Hydro DMG Bonus',
+  Electro: 'Electro DMG Bonus',
+  Cryo: 'Cryo DMG Bonus',
+  Anemo: 'Anemo DMG Bonus',
+  Geo: 'Geo DMG Bonus',
+  Dendro: 'Dendro DMG Bonus',
+};
 
-  if (profile) {
-    const primaryRole = BUILD_ROLE_CATEGORIES.includes(profile.buildCategory) ? profile.buildCategory : null;
-    if (primaryRole) {
-      coveredRoles.add(primaryRole);
-      options.push({
-        id: '',
-        buildCategory: primaryRole,
-        role: profile.role || primaryRole,
-        label: `Recommended — ${primaryRole}: ${profile.role || primaryRole}`,
-        status: 'available',
-        profile,
-      });
-    }
+function inferredScalingStat(profile) {
+  const raw = [profile?.stats?.sands, profile?.stats?.goblet, profile?.stats?.circlet]
+    .filter(Boolean).join(' / ');
+  for (const stat of ['HP%', 'DEF%', 'Elemental Mastery', 'ATK%']) {
+    if (raw.includes(stat)) return stat;
+  }
+  return 'ATK%';
+}
 
-    for (const variant of profile.alternateBuilds || []) {
-      if (!BUILD_ROLE_CATEGORIES.includes(variant.buildCategory)) continue;
-      coveredRoles.add(variant.buildCategory);
-      options.push({
-        ...variant,
-        label: `${variant.buildCategory} — ${variant.role || variant.buildCategory}`,
-        status: 'available',
-        profile: variant,
-      });
+function roleAdaptedProfile(profile, character, characterKey, role) {
+  const name = character?.name || characterKey || 'this character';
+  const element = character?.element || '';
+  const elementDamage = ELEMENT_DAMAGE_STAT[element] || 'matching Elemental DMG Bonus';
+  const scaling = inferredScalingStat(profile);
+  const weaponType = character?.weapon || '';
+  const baseArtifacts = Array.isArray(profile?.artifacts) ? profile.artifacts : [];
+  const baseWeapons = Array.isArray(profile?.weapons) ? profile.weapons : [];
+  const baseUrl = profile?.sourceUrl || 'https://genshin.gg/builds/';
+  const existingArtifacts = baseArtifacts.slice(0, 2).map(item => ({
+    name: item.name,
+    note: 'Character-specific baseline to compare only if its effect supports this ' + role + ' playstyle: ' + (item.note || 'check the set effect and team rotation.'),
+  }));
+
+  let artifacts;
+  let stats;
+  let substats;
+  let talentOrder;
+  let teamFocus;
+  let playstyle;
+
+  if (role === 'Main DPS') {
+    artifacts = [
+      { name: '2-piece matching Elemental DMG Bonus + 2-piece ATK%', note: 'Flexible starter combination when both bonuses improve this character’s actual damage scaling.' },
+      { name: 'Marechaussee Hunter', note: 'Use only if the character reliably gains/loses HP to activate its CRIT Rate effect.' },
+      ...existingArtifacts,
+    ];
+    stats = {
+      sands: scaling + ' (use ER% instead only when the rotation needs it)',
+      goblet: elementDamage + ' (use the character’s HP/DEF/EM scaling stat if that is better for their kit)',
+      circlet: 'CRIT Rate / CRIT DMG (balance the ratio)',
+    };
+    substats = ['CRIT Rate / CRIT DMG', scaling, 'Energy Recharge until the intended rotation works', 'Elemental Mastery in reaction teams'];
+    talentOrder = ['Normal Attack', 'Elemental Skill', 'Elemental Burst'];
+    teamFocus = 'Give this character most field time. Pair them with supports that buff their real scaling stat, protect them, and enable their strongest reactions.';
+    playstyle = 'Role-adapted Main DPS starter. It is experimental if this character normally supports the team or deals most damage off field; check how their kit scales before farming.';
+  } else if (role === 'Sub DPS') {
+    artifacts = [
+      { name: 'Emblem of Severed Fate', note: 'Burst-focused option when a large share of personal damage comes from Elemental Burst and Energy Recharge is useful.' },
+      { name: 'Golden Troupe', note: 'Skill-focused option only when most damage is dealt off field.' },
+      ...existingArtifacts,
+    ];
+    stats = {
+      sands: 'Energy Recharge until Burst/rotation is reliable, then ' + scaling,
+      goblet: elementDamage + ' / the character’s native damage-scaling stat',
+      circlet: 'CRIT Rate / CRIT DMG (or the kit’s reaction-scaling stat)',
+    };
+    substats = ['Energy Recharge to meet the team’s rotation', 'CRIT Rate / CRIT DMG', scaling, 'Elemental Mastery if this character triggers reactions'];
+    talentOrder = ['Elemental Burst', 'Elemental Skill', 'Normal Attack'];
+    teamFocus = 'Deal damage or apply the element while another character stays on field. Match the artifact set to whether the damage comes mainly from Skill, Burst, or reactions.';
+    playstyle = 'Role-adapted Sub DPS starter. It is experimental if this character needs field time or their kit does not deal meaningful off-field damage.';
+  } else {
+    const supportArtifacts = [
+      { name: 'Noblesse Oblige', note: 'Team ATK buff when the character can use their Burst reliably and another teammate is not already providing the 4-piece effect.' },
+      { name: 'Instructor', note: 'Low-rarity Elemental Mastery support option for reaction teams; use only when the team benefits from the EM buff.' },
+    ];
+    if (element === 'Anemo') supportArtifacts.push({ name: 'Viridescent Venerer', note: 'Anemo Swirl support set for reducing the resistance of elements Swirled.' });
+    if (element === 'Dendro') supportArtifacts.push({ name: 'Deepwood Memories', note: 'Dendro RES reduction when no teammate can maintain the effect more reliably.' });
+    if (['Pyro', 'Hydro', 'Electro', 'Cryo', 'Dendro', 'Geo'].includes(element)) {
+      supportArtifacts.push({ name: 'Scroll of the Hero of Cinder City', note: 'Use only if this character and team can reliably trigger the set’s required elemental-reaction conditions.' });
     }
+    artifacts = [...supportArtifacts, ...existingArtifacts].slice(0, 5);
+    stats = {
+      sands: 'Energy Recharge / ' + scaling + ' (ensure the support ability is available on time)',
+      goblet: 'The character’s buff/healing/shield scaling stat (' + scaling + ', HP%, DEF%, ATK%, or Elemental Mastery)',
+      circlet: 'Healing Bonus / HP% / DEF% / CRIT Rate, depending on the support kit and weapon passive',
+    };
+    substats = ['Energy Recharge for team rotation', scaling, 'HP% / DEF% if they heal or shield', 'CRIT Rate if using Favonius weapons'];
+    talentOrder = ['Elemental Skill', 'Elemental Burst', 'Normal Attack'];
+    teamFocus = 'Support the carry with the character’s actual buffs, healing, shielding, resistance reduction, energy, or elemental application. Do not assume every character can provide all these functions.';
+    playstyle = 'Role-adapted Support starter. It is experimental if the character has no meaningful team utility; choose sets and stats that match what their kit really does.';
   }
 
-  for (const role of BUILD_ROLE_CATEGORIES) {
-    if (coveredRoles.has(role)) continue;
-    const sourceRole = profile?.buildCategory || 'not yet reviewed';
-    const gapReason = role === 'Main DPS'
-      ? `A separate on-field carry build has not been source-verified in this app. The current primary profile is ${sourceRole}; its stats and talent priorities may not fit sustained on-field damage.`
-      : role === 'Sub DPS'
-        ? `A distinct off-field damage/application build has not been source-verified in this app. The primary profile is ${sourceRole}; do not assume its stats and rotation fit an off-field role.`
-        : `A separate team-support build has not been source-verified in this app. The primary profile is ${sourceRole}; it may not cover the buffs, healing, shielding, or utility this team needs.`;
-    options.push({
-      id: `unreviewed-${BUILD_ROLE_IDS[role]}`,
+  const weapons = baseWeapons.length
+    ? baseWeapons.slice(0, 4).map(item => ({
+        name: item.name,
+        note: (item.note || 'Character-compatible weapon option.') + ' For this ' + role + ' setup, compare its passive and substat with the role’s needs; it is not automatically the best-in-slot choice.',
+      }))
+    : [{
+        name: weaponType ? 'A suitable ' + weaponType + ' for ' + role : 'A weapon compatible with ' + name,
+        note: 'Placeholder guidance only: choose a real weapon compatible with the character and the role’s stat/energy needs.',
+      }];
+
+  return {
+    id: 'adapted-' + BUILD_ROLE_IDS[role],
+    role: 'Experimental ' + role + ' role adaptation',
+    buildCategory: role,
+    sourceUrl: baseUrl,
+    sourceName: 'Teyvat Companion — role-adapted template',
+    sourceNote: 'This ' + role + ' profile is supplied so every character has all three role sections. It is a starting template based on ' + name + '’s current in-app profile, not a claim that this role is optimal or that these options are individually source-ranked for this playstyle. Verify the character’s kit and the linked guide before spending resources.',
+    artifacts,
+    stats,
+    substats,
+    weapons,
+    talentOrder,
+    teamFocus,
+    playstyle,
+    teamRecommendation: 'Build a team around the specific ability that makes this role viable; this role template does not imply the character is equally effective in all roles.',
+    confidence: 'Role-adapted template — verify before farming',
+    featuredVideo: profile?.featuredVideo,
+  };
+}
+
+export function getCharacterBuildRoleOptions(profile, character = null) {
+  const characterKey = Object.entries(CHARACTER_BUILD_GUIDES)
+    .find(([, candidate]) => candidate === profile)?.[0]
+    || character?.id
+    || character?.apiSlug
+    || character?.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+    || 'unknown-character';
+  const alternateBuilds = Array.isArray(profile?.alternateBuilds) ? profile.alternateBuilds : [];
+
+  return BUILD_ROLE_CATEGORIES.map(role => {
+    const candidates = [];
+    if (profile?.buildCategory === role) candidates.push(profile);
+    for (const variant of alternateBuilds) {
+      if (variant?.buildCategory === role && !candidates.includes(variant)) candidates.push(variant);
+    }
+
+    const options = candidates.length
+      ? candidates.map(candidate => ({
+          id: candidate.id || 'primary-' + BUILD_ROLE_IDS[role],
+          label: candidate.id ? (candidate.role || role) : 'Recommended ' + role + ' build',
+          profile: candidate,
+          status: 'curated',
+        }))
+      : [{
+          id: 'adapted-' + BUILD_ROLE_IDS[role],
+          label: 'Experimental ' + role + ' template',
+          profile: roleAdaptedProfile(profile, character, characterKey, role),
+          status: 'adapted',
+        }];
+
+    const defaultOption = options[0];
+    const isPrimary = profile?.buildCategory === role;
+    return {
+      id: 'role-' + BUILD_ROLE_IDS[role],
       buildCategory: role,
-      role: `No separate sourced ${role} build curated yet`,
-      label: `${role} — no separate sourced build yet`,
-      status: 'unreviewed',
-      note: `${gapReason} This is an evidence gap, not proof the playstyle is impossible. The app leaves this role unfilled rather than copying stats from a different role.`,
-      profile: null,
-    });
-  }
-
-  return options;
+      role: defaultOption.profile?.role || role,
+      label: isPrimary ? role + ' — recommended' : role + ' — ' + (defaultOption.status === 'adapted' ? 'role-adapted template' : 'alternative build'),
+      status: defaultOption.status,
+      note: defaultOption.profile?.sourceNote || '',
+      profile: defaultOption.profile,
+      playstyles: options,
+    };
+  });
 }
