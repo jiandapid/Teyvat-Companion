@@ -398,3 +398,43 @@
 .optimizer-saved-set-notes span{padding:6px 8px;border:1px solid rgba(234,201,126,.18);border-radius:7px;background:rgba(234,201,126,.04);color:var(--gold);font-size:9px;font-weight:700}
 @media(max-width:1250px){.optimizer-saved-piece-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:560px){.optimizer-saved-piece-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.optimizer-saved-piece{padding:8px}}
+
+/* Role/playstyle switcher for genuinely different sourced build variants */
+.build-role-picker{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:7px;
+  margin:0 0 16px;
+  padding:12px 13px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:rgba(255,255,255,.018);
+}
+.build-role-picker label{
+  display:grid;
+  gap:7px;
+  color:var(--subtle);
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.08em;
+}
+.build-role-picker select{
+  width:100%;
+  min-width:0;
+  padding:10px 11px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:rgba(0,0,0,.16);
+  color:var(--text);
+  font:600 11px/1.4 'DM Sans',sans-serif;
+}
+.build-role-picker p{
+  margin:0;
+  color:var(--subtle);
+  font-size:10px;
+  line-height:1.65;
+}
+@media(max-width:560px){
+  .build-role-picker{padding:10px}
+  .build-role-picker select{font-size:10px}
+}
