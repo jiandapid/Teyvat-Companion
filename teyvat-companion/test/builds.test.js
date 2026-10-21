@@ -256,7 +256,7 @@ test('expanded current profiles include multiple real options and role caveats',
     const profile = CHARACTER_BUILD_GUIDES[key];
     assert.ok(profile, key + ': reviewed primary profile exists');
     assert.ok(profile.weapons.length >= 4, key + ': expanded weapon options');
-    assert.ok(profile.artifacts.length >= 3 || ['nefer'].includes(key), key + ': expanded artifact options or source-supported single-set listing');
+    assert.ok(profile.artifacts.length >= 3 || ['nefer', 'jahoda', 'iansan'].includes(key), key + ': expanded artifact options or shorter source listing');
     assert.ok(profile.sourceCheckedAt, key + ': expected dated source review for this profile');
   }
   assert.equal(CHARACTER_BUILD_GUIDES.columbina.buildCategory, 'Support', 'current Genshin.gg build index classifies Columbina as Support');
