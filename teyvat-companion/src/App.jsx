@@ -2064,7 +2064,7 @@ export default function App() {
             {buildCharacter ? <div className="build-role-picker">
               <div className="build-role-picker-heading">
                 <span>CHOOSE HOW TO PLAY {buildCharacter.name.toUpperCase()}</span>
-                <small>All three roles are available for every character</small>
+                <small>Three distinct roles · off-meta builds clearly labelled</small>
               </div>
               <div className="build-role-tabs" role="group" aria-label={buildCharacter.name + ' build role'}>
                 {buildRoleOptions.map(option => <button
