@@ -2050,7 +2050,7 @@ export default function App() {
           <div className="eyebrow">CHARACTER BUILD SHEET</div>
           <div className="build-character-tags"><span className="element-label"><ElementGlyph element={buildCharacter.element}/>{buildCharacter.element || 'Element unknown'}</span><span>{buildCharacter.weapon || 'Weapon unknown'}</span><span>{[4,5].includes(Number(buildCharacter.rarity)) ? '★'.repeat(Number(buildCharacter.rarity)) : 'Rarity N/A'}</span></div>
           <h1>{buildCharacter.name}</h1>
-          <p><strong>{activeBuildProfile?.buildCategory || 'Role not reviewed'}</strong>{selectedUnreviewedRole ? ' · experimental role-adapted template' : (activeBuildProfile?.role && activeBuildProfile.role !== activeBuildProfile.buildCategory ? ' · ' + activeBuildProfile.role : '')} · {buildCharacter.region || 'Region not set'}</p>
+          <p><strong>{activeBuildProfile?.buildCategory || 'Role not reviewed'}</strong>{selectedUnreviewedRole ? ' · independent off-meta build' : (activeBuildProfile?.role && activeBuildProfile.role !== activeBuildProfile.buildCategory ? ' · ' + activeBuildProfile.role : '')} · {buildCharacter.region || 'Region not set'}</p>
           <div className="build-hero-status"><span className={activeBuildProfile ? 'build-status-pill' : 'build-status-pill needs-review'}>{activeBuildProfile ? 'Quick reference available' : 'Needs a reviewed build profile'}</span><span>{buildCharacter.owned ? 'Owned · Lv. ' + (buildCharacter.level || 1) : 'Not marked as owned'}</span></div>
           <div className="build-hero-actions"><button className="button primary" onClick={() => {setOptimizerCharacterId(buildCharacter.id);setOptimizerTeamId('');setOptimizerResult(null);setOptimizerError('');navigate('optimizer');}}><Layers3 size={15}/> Optimize artifacts</button><button className="button secondary" onClick={() => addGoalForCharacter(buildCharacter)}><Target size={15}/> Add build goal</button><button className="button secondary" onClick={() => openCharacter(buildCharacter)}><Pencil size={15}/> Edit tracker data</button></div>
         </div>
@@ -2058,13 +2058,13 @@ export default function App() {
 
       <div className="build-detail-layout">
         <main className="build-detail-main">
-          {selectedUnreviewedRole ? <div className="notice warning build-profile-warning role-adaptation-warning"><Info size={16}/><span><strong>This is a role-adapted template.</strong> It fills the {selectedUnreviewedRole.buildCategory} section so no character is missing a role. The set/stat/talent suggestions are a starting point, not a verified best-in-slot ranking; check the character’s kit and source guide before spending resources.</span></div> : null}
+          {selectedUnreviewedRole ? <div className="notice warning build-profile-warning role-adaptation-warning"><Info size={16}/><span><strong>This is an experimental independent {selectedUnreviewedRole.buildCategory} build.</strong> It is built separately for {buildCharacter.name} using their element, scaling clues, weapon class and role-specific artifact conditions. It is not source-ranked best-in-slot, and it may be much weaker than their normal role. Check the character’s actual kit, set conditions, weapon passive and rotation before spending resources.</span></div> : null}
           <section className="panel build-section-panel">
             <div className="build-panel-heading"><div><div className="eyebrow">START HERE</div><h2>{activeBuildProfile?.buildCategory ? activeBuildProfile.buildCategory + ' build' : 'Recommended build'}</h2><p>Recommended role and stats for this character; adjust for your weapon, team and rotation.</p></div><span className="pill muted">Quick reference</span></div>
             {buildCharacter ? <div className="build-role-picker">
               <div className="build-role-picker-heading">
                 <span>CHOOSE HOW TO PLAY {buildCharacter.name.toUpperCase()}</span>
-                <small>All three roles are available for every character</small>
+                <small>Three distinct roles · off-meta builds clearly labelled</small>
               </div>
               <div className="build-role-tabs" role="group" aria-label={buildCharacter.name + ' build role'}>
                 {buildRoleOptions.map(option => <button
@@ -2075,7 +2075,7 @@ export default function App() {
                   onClick={() => { setBuildVariantId(option.id); setBuildPlaystyleId(option.playstyles?.[0]?.id || ''); }}
                 >
                   <strong>{option.buildCategory}</strong>
-                  <small>{option.status === 'adapted' ? 'Experimental template' : option.buildCategory === activeBuildBaseProfile?.buildCategory ? 'Recommended role' : 'Alternate build'}</small>
+                  <small>{option.status === 'adapted' ? 'Independent off-meta build' : option.buildCategory === activeBuildBaseProfile?.buildCategory ? 'Recommended role' : 'Alternate build'}</small>
                 </button>)}
               </div>
               {selectedBuildRoleOption?.playstyles?.length > 1 ? <label htmlFor="build-playstyle-select">BUILD VARIANT / PLAYSTYLE
@@ -2176,8 +2176,8 @@ export default function App() {
             <p className="build-video-note"><Info size={13}/> Some linked videos are older references. Check the upload date and current patch, then compare weapons, team rotations and Energy Recharge needs before spending resources.</p>
           </section>
           <section className="panel build-source-panel">
-            <div className="eyebrow">DATA CONFIDENCE</div><h3>{selectedUnreviewedRole ? 'Role-adapted starting template' : 'Character-specific build profile'}</h3>
-            <p>{selectedUnreviewedRole ? 'This section ensures every character has Main DPS, Sub DPS and Support options. The template is labeled experimental because this role is not individually curated for this character; verify its scaling, artifact effects, weapon passive and talent order before farming.' : 'This is a character-specific quick-reference profile, not a universal best-in-slot ranking. Compare it against current Zy0x / IWTL content and the linked character guide before spending resources.'}</p>
+            <div className="eyebrow">DATA CONFIDENCE</div><h3>{selectedUnreviewedRole ? 'Independent off-meta role build' : 'Character-specific build profile'}</h3>
+            <p>{selectedUnreviewedRole ? 'This build is independently assembled for this character and role using character-specific element, scaling clues, compatible weapon class and role-conditioned artifact candidates. The source does not rank this off-meta role as best-in-slot; use it to experiment, and verify native kit utility, weapon passives, team rotations and artifact triggers before farming.' : 'This is a character-specific quick-reference profile, not a universal best-in-slot ranking. Compare it against current Zy0x / IWTL content and the linked character guide before spending resources.'}</p>
             <div className="build-source-mini"><span><Database size={13}/> Game catalogue</span><span><BookOpen size={13}/> Build reference</span><span><PlayCircle size={13}/> Creator video/search</span><a href={activeBuildProfile?.sourceUrl || activeBuildBaseProfile?.sourceUrl || 'https://genshin.gg/builds/'} target="_blank" rel="noreferrer"><ExternalLink size={13}/> {activeBuildProfile?.sourceName || 'Genshin.gg / source reference'}</a></div>
           </section>
         </aside>

@@ -2064,6 +2064,7 @@ const BUILD_ROLE_IDS = {
   'Support': 'support',
 };
 
+
 const ELEMENT_DAMAGE_STAT = {
   Pyro: 'Pyro DMG Bonus',
   Hydro: 'Hydro DMG Bonus',
@@ -2072,6 +2073,79 @@ const ELEMENT_DAMAGE_STAT = {
   Anemo: 'Anemo DMG Bonus',
   Geo: 'Geo DMG Bonus',
   Dendro: 'Dendro DMG Bonus',
+};
+
+const ELEMENT_ROLE_ARTIFACTS = {
+  Pyro: { main: ['Crimson Witch of Flames 4-piece', 'Marechaussee Hunter 4-piece'], note: 'Use Crimson Witch when the team reliably triggers reactions; use Marechaussee only when this character reliably gains/loses HP.' },
+  Hydro: { main: ['Heart of Depth 4-piece', 'Nymph’s Dream 4-piece'], note: 'Choose based on whether Normal/Charged Attack Hydro damage or the set’s Hydro stacks fit the actual rotation.' },
+  Cryo: { main: ['Blizzard Strayer 4-piece', 'Marechaussee Hunter 4-piece'], note: 'Blizzard Strayer depends on Freeze/affected-enemy uptime; Marechaussee needs consistent HP changes.' },
+  Electro: { main: ['Thundering Fury 4-piece', 'Gilded Dreams 4-piece'], note: 'Thundering Fury is reaction/Skill-rotation dependent; Gilded Dreams is more relevant for EM/reaction teams.' },
+  Dendro: { main: ['Gilded Dreams 4-piece', 'Deepwood Memories 4-piece'], note: 'Deepwood is a team-role choice when nobody else maintains Dendro RES reduction; Gilded Dreams is reaction/stat oriented.' },
+  Anemo: { main: ['Desert Pavilion Chronicle 4-piece', 'Viridescent Venerer 4-piece'], note: 'Desert Pavilion is for suitable on-field Anemo attack patterns; Viridescent Venerer is a Swirl/support trade-off, not a universal carry set.' },
+  Geo: { main: ['Husk of Opulent Dreams 4-piece', 'Golden Troupe 4-piece'], note: 'Husk suits DEF/Geo damage patterns; Golden Troupe is only for characters whose Skill damage is substantially off-field.' },
+};
+
+const ROLE_WEAPON_OPTIONS = {
+  Sword: {
+    'Main DPS': ['Amenoma Kageuchi', 'Finale of the Deep', 'Harbinger of Dawn R5', 'Blackcliff Longsword'],
+    'Sub DPS': ['Favonius Sword', 'Sacrificial Sword', 'Fleuve Cendre Ferryman', 'Harbinger of Dawn R5'],
+    Support: ['Favonius Sword', 'Sacrificial Sword', 'Skyrider Sword', 'Amenoma Kageuchi'],
+  },
+  Claymore: {
+    'Main DPS': ['Prototype Archaic', 'Tidal Shadow', 'Serpent Spine', 'Blackcliff Slasher'],
+    'Sub DPS': ['Favonius Greatsword', 'Sacrificial Greatsword', 'Katsuragikiri Nagamasa', 'Tidal Shadow'],
+    Support: ['Favonius Greatsword', 'Sacrificial Greatsword', 'Katsuragikiri Nagamasa', 'Forest Regalia'],
+  },
+  Polearm: {
+    'Main DPS': ['Deathmatch', 'Blackcliff Pole', 'Missive Windspear', 'White Tassel'],
+    'Sub DPS': ['Favonius Lance', 'The Catch', 'Kitain Cross Spear', 'Prototype Starglitter'],
+    Support: ['Favonius Lance', 'Kitain Cross Spear', 'Prototype Starglitter', 'Black Tassel'],
+  },
+  Catalyst: {
+    'Main DPS': ['The Widsith', 'Mappa Mare', 'Flowing Purity', 'Dodoco Tales'],
+    'Sub DPS': ['Favonius Codex', 'The Widsith', 'Hakushin Ring', 'Sacrificial Fragments'],
+    Support: ['Prototype Amber', 'Thrilling Tales of Dragon Slayers', 'Favonius Codex', 'Hakushin Ring'],
+  },
+  Bow: {
+    'Main DPS': ['The Stringless', 'Song of Stillness', 'Prototype Crescent', 'Slingshot'],
+    'Sub DPS': ['Favonius Warbow', 'The Stringless', 'Sacrificial Bow', 'Fading Twilight'],
+    Support: ['Favonius Warbow', 'Sacrificial Bow', 'Elegy for the End', 'End of the Line'],
+  },
+};
+
+const CHARACTER_WEAPON_TYPE_BY_KEY = {
+  'skirk': 'Sword', 'escoffier': 'Polearm', 'xingqiu': 'Sword', 'mona': 'Catalyst',
+  'furina': 'Sword', 'nahida': 'Catalyst', 'raiden': 'Polearm', 'bennett': 'Sword',
+  'kazuha': 'Sword', 'zhongli': 'Polearm', 'neuvillette': 'Catalyst', 'xiangling': 'Polearm',
+  'yelan': 'Bow', 'qiqi': 'Sword', 'wanderer': 'Catalyst', 'layla': 'Sword',
+  'gaming': 'Claymore', 'fischl': 'Bow', 'sucrose': 'Catalyst', 'albedo': 'Sword',
+  'alhaitham': 'Sword', 'ayaka': 'Sword', 'ayato': 'Sword', 'childe': 'Bow',
+  'cyno': 'Polearm', 'diluc': 'Claymore', 'eula': 'Claymore', 'ganyu': 'Bow',
+  'hu-tao': 'Polearm', 'itto': 'Claymore', 'jean': 'Sword', 'keqing': 'Sword',
+  'klee': 'Catalyst', 'kokomi': 'Catalyst', 'nilou': 'Sword', 'shenhe': 'Polearm',
+  'tighnari': 'Bow', 'venti': 'Bow', 'xiao': 'Polearm', 'yae-miko': 'Catalyst',
+  'yoimiya': 'Bow', 'barbara': 'Catalyst', 'beidou': 'Claymore', 'collei': 'Bow',
+  'diona': 'Bow', 'faruzan': 'Bow', 'gorou': 'Bow', 'heizou': 'Catalyst',
+  'kaeya': 'Sword', 'kuki-shinobu': 'Sword', 'lisa': 'Catalyst', 'ningguang': 'Catalyst',
+  'noelle': 'Claymore', 'razor': 'Claymore', 'rosaria': 'Polearm', 'sara': 'Bow',
+  'sayu': 'Claymore', 'thoma': 'Polearm', 'yanfei': 'Catalyst', 'yaoyao': 'Polearm',
+  'yun-jin': 'Polearm', 'dehya': 'Claymore', 'baizhu': 'Catalyst', 'kaveh': 'Claymore',
+  'kirara': 'Sword', 'lyney': 'Bow', 'wriothesley': 'Catalyst', 'navia': 'Claymore',
+  'xianyun': 'Catalyst', 'arlecchino': 'Polearm', 'clorinde': 'Sword', 'sethos': 'Bow',
+  'emilie': 'Polearm', 'mualani': 'Catalyst', 'kinich': 'Claymore', 'xilonen': 'Sword',
+  'chasca': 'Bow', 'ororon': 'Bow', 'mavuika': 'Claymore', 'citlali': 'Catalyst',
+  'lan-yan': 'Catalyst', 'varesa': 'Catalyst', 'ifa': 'Catalyst', 'lauma': 'Catalyst',
+  'aino': 'Claymore', 'flins': 'Polearm', 'nefer': 'Catalyst', 'columbina': 'Catalyst',
+  'zibai': 'Sword', 'varka': 'Claymore', 'durin': 'Sword', 'illuga': 'Polearm',
+  'linnea': 'Bow', 'aloy': 'Bow', 'amber': 'Bow', 'candace': 'Polearm',
+  'chongyun': 'Claymore', 'chevreuse': 'Polearm', 'charlotte': 'Catalyst', 'dori': 'Claymore',
+  'freminet': 'Claymore', 'kachina': 'Polearm', 'lynette': 'Sword', 'mika': 'Polearm',
+  'sigewinne': 'Bow', 'traveler-anemo': 'Sword', 'traveler-cryo': 'Sword',
+  'traveler-dendro': 'Sword', 'traveler-electro': 'Sword', 'traveler-geo': 'Sword',
+  'traveler-hydro': 'Sword', 'traveler-pyro': 'Sword', 'dahlia': 'Sword',
+  'jahoda': 'Bow', 'nicole': 'Catalyst', 'prune': 'Catalyst', 'lohen': 'Claymore',
+  'sandrone': 'Polearm', 'odette': 'Sword', 'alyosha': 'Polearm', 'iansan': 'Polearm',
+  'yumemizuki-mizuki': 'Catalyst',
 };
 
 function inferredScalingStat(profile) {
@@ -2083,106 +2157,187 @@ function inferredScalingStat(profile) {
   return 'ATK%';
 }
 
-function roleAdaptedProfile(profile, character, characterKey, role) {
-  const name = character?.name || characterKey || 'this character';
-  const element = character?.element || '';
-  const elementDamage = ELEMENT_DAMAGE_STAT[element] || 'matching Elemental DMG Bonus';
-  const scaling = inferredScalingStat(profile);
-  const weaponType = character?.weapon || '';
-  const baseArtifacts = Array.isArray(profile?.artifacts) ? profile.artifacts : [];
-  const baseWeapons = Array.isArray(profile?.weapons) ? profile.weapons : [];
-  const baseUrl = profile?.sourceUrl || 'https://genshin.gg/builds/';
-  const existingArtifacts = baseArtifacts.slice(0, 2).map(item => ({
-    name: item.name,
-    note: 'Character-specific baseline to compare only if its effect supports this ' + role + ' playstyle: ' + (item.note || 'check the set effect and team rotation.'),
-  }));
+function resolveBuildElement(profile, character) {
+  const candidate = character?.element;
+  if (candidate && ELEMENT_DAMAGE_STAT[candidate]) return candidate;
+  const raw = [profile?.stats?.goblet, profile?.stats?.sands, profile?.teamFocus, profile?.playstyle]
+    .filter(Boolean).join(' ');
+  for (const [element, damageLabel] of Object.entries(ELEMENT_DAMAGE_STAT)) {
+    if (raw.includes(damageLabel)) return element;
+  }
+  return null;
+}
 
-  let artifacts;
-  let stats;
-  let substats;
-  let talentOrder;
-  let teamFocus;
-  let playstyle;
+function uniqueBuildItems(items) {
+  const seen = new Set();
+  return items.filter(item => {
+    const name = String(item?.name || '').trim();
+    const key = name.toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function independentRoleArtifacts(profile, element, role, scaling) {
+  const sourceArtifacts = Array.isArray(profile?.artifacts) ? profile.artifacts : [];
+  const sourceSet = sourceArtifacts[0]?.name;
+  let candidates = [];
 
   if (role === 'Main DPS') {
-    artifacts = [
-      { name: '2-piece matching Elemental DMG Bonus + 2-piece ATK%', note: 'Flexible starter combination when both bonuses improve this character’s actual damage scaling.' },
-      { name: 'Marechaussee Hunter', note: 'Use only if the character reliably gains/loses HP to activate its CRIT Rate effect.' },
-      ...existingArtifacts,
+    const elemental = ELEMENT_ROLE_ARTIFACTS[element]?.main || [];
+    candidates = [
+      ...elemental.map(name => ({ name, note: ELEMENT_ROLE_ARTIFACTS[element]?.note || 'Compare this damage set against the character’s actual kit and field-time pattern; it is not ranked for this off-meta build.' })),
+      { name: '2-piece matching Elemental DMG Bonus + 2-piece ' + (scaling === 'DEF%' ? 'DEF%' : scaling === 'HP%' ? 'HP%' : 'ATK%'), note: 'Flexible mixed-set starting point when the character scales with this stat; compare real set bonuses before farming.' },
+      { name: 'Marechaussee Hunter 4-piece', note: 'Conditional CRIT Rate option only when the character reliably gains/loses HP; it is not a universal set.' },
+      ...sourceArtifacts.slice(0, 2).map(item => ({ name: item.name, note: 'The character’s source-listed baseline set; keep it for this on-field role only if its actual effect improves the damage source and rotation.' })),
     ];
-    stats = {
-      sands: scaling + ' (use ER% instead only when the rotation needs it)',
-      goblet: elementDamage + ' (use the character’s HP/DEF/EM scaling stat if that is better for their kit)',
-      circlet: 'CRIT Rate / CRIT DMG (balance the ratio)',
-    };
-    substats = ['CRIT Rate / CRIT DMG', scaling, 'Energy Recharge until the intended rotation works', 'Elemental Mastery in reaction teams'];
-    talentOrder = ['Normal Attack', 'Elemental Skill', 'Elemental Burst'];
-    teamFocus = 'Give this character most field time. Pair them with supports that buff their real scaling stat, protect them, and enable their strongest reactions.';
-    playstyle = 'Role-adapted Main DPS starter. It is experimental if this character normally supports the team or deals most damage off field; check how their kit scales before farming.';
-  } else if (role === 'Sub DPS') {
-    artifacts = [
-      { name: 'Emblem of Severed Fate', note: 'Burst-focused option when a large share of personal damage comes from Elemental Burst and Energy Recharge is useful.' },
-      { name: 'Golden Troupe', note: 'Skill-focused option only when most damage is dealt off field.' },
-      ...existingArtifacts,
-    ];
-    stats = {
-      sands: 'Energy Recharge until Burst/rotation is reliable, then ' + scaling,
-      goblet: elementDamage + ' / the character’s native damage-scaling stat',
-      circlet: 'CRIT Rate / CRIT DMG (or the kit’s reaction-scaling stat)',
-    };
-    substats = ['Energy Recharge to meet the team’s rotation', 'CRIT Rate / CRIT DMG', scaling, 'Elemental Mastery if this character triggers reactions'];
-    talentOrder = ['Elemental Burst', 'Elemental Skill', 'Normal Attack'];
-    teamFocus = 'Deal damage or apply the element while another character stays on field. Match the artifact set to whether the damage comes mainly from Skill, Burst, or reactions.';
-    playstyle = 'Role-adapted Sub DPS starter. It is experimental if this character needs field time or their kit does not deal meaningful off-field damage.';
-  } else {
-    const supportArtifacts = [
-      { name: 'Noblesse Oblige', note: 'Team ATK buff when the character can use their Burst reliably and another teammate is not already providing the 4-piece effect.' },
-      { name: 'Instructor', note: 'Low-rarity Elemental Mastery support option for reaction teams; use only when the team benefits from the EM buff.' },
-    ];
-    if (element === 'Anemo') supportArtifacts.push({ name: 'Viridescent Venerer', note: 'Anemo Swirl support set for reducing the resistance of elements Swirled.' });
-    if (element === 'Dendro') supportArtifacts.push({ name: 'Deepwood Memories', note: 'Dendro RES reduction when no teammate can maintain the effect more reliably.' });
-    if (['Pyro', 'Hydro', 'Electro', 'Cryo', 'Dendro', 'Geo'].includes(element)) {
-      supportArtifacts.push({ name: 'Scroll of the Hero of Cinder City', note: 'Use only if this character and team can reliably trigger the set’s required elemental-reaction conditions.' });
+    if (element === 'Anemo' && scaling === 'Elemental Mastery') {
+      candidates.unshift({ name: 'Viridescent Venerer 4-piece (full EM)', note: 'Reaction-driver variant: EM/EM/EM and Swirl can matter more than personal Anemo CRIT. Check whether the team needs resistance reduction.' });
     }
-    artifacts = [...supportArtifacts, ...existingArtifacts].slice(0, 5);
-    stats = {
-      sands: 'Energy Recharge / ' + scaling + ' (ensure the support ability is available on time)',
-      goblet: 'The character’s buff/healing/shield scaling stat (' + scaling + ', HP%, DEF%, ATK%, or Elemental Mastery)',
-      circlet: 'Healing Bonus / HP% / DEF% / CRIT Rate, depending on the support kit and weapon passive',
-    };
-    substats = ['Energy Recharge for team rotation', scaling, 'HP% / DEF% if they heal or shield', 'CRIT Rate if using Favonius weapons'];
-    talentOrder = ['Elemental Skill', 'Elemental Burst', 'Normal Attack'];
-    teamFocus = 'Support the carry with the character’s actual buffs, healing, shielding, resistance reduction, energy, or elemental application. Do not assume every character can provide all these functions.';
-    playstyle = 'Role-adapted Support starter. It is experimental if the character has no meaningful team utility; choose sets and stats that match what their kit really does.';
+  } else if (role === 'Sub DPS') {
+    candidates = [
+      { name: 'Emblem of Severed Fate 4-piece', note: 'Burst-damage option when a large share of this build’s damage comes from the Elemental Burst and ER is useful.' },
+      { name: 'Golden Troupe 4-piece', note: 'Skill-damage option only if the character’s relevant Skill damage is substantially dealt off-field.' },
+      { name: '2-piece matching Elemental DMG Bonus + 2-piece ' + (scaling === 'DEF%' ? 'DEF%' : scaling === 'HP%' ? 'HP%' : scaling === 'Elemental Mastery' ? 'Elemental Mastery' : 'ATK%'), note: 'Interim mixed set; use only when both bonuses improve the specific damage source.' },
+      { name: sourceSet || 'Noblesse Oblige 4-piece', note: 'The source-listed set is a character-specific comparison candidate; keep it only if its effect supports this quick-swap role.' },
+    ];
+  } else {
+    const support = [
+      { name: 'Noblesse Oblige 4-piece', note: 'Team ATK buff when the character can use Burst reliably and no other teammate already carries the same effect.' },
+      { name: 'Instructor 4-piece', note: 'Low-rarity Elemental Mastery buff for reaction teams; use only when the team gains value from EM.' },
+    ];
+    if (element === 'Anemo') support.unshift({ name: 'Viridescent Venerer 4-piece', note: 'Swirl support set for reducing enemy resistance to the element Swirled; it does not buff every damage type.' });
+    if (element === 'Dendro') support.unshift({ name: 'Deepwood Memories 4-piece', note: 'Dendro RES reduction if no teammate can maintain the effect more reliably.' });
+    if (element && ['Pyro', 'Hydro', 'Electro', 'Cryo', 'Dendro', 'Geo'].includes(element)) {
+      support.push({ name: 'Scroll of the Hero of Cinder City 4-piece', note: 'Only use if the character can trigger the set’s reaction conditions and the team benefits from its elemental damage bonus.' });
+    }
+    support.push({ name: 'Tenacity of the Millelith 4-piece', note: 'Team buff only if the character’s Skill can maintain off-field hits often enough; otherwise choose another set.' });
+    if (scaling === 'DEF%' || scaling === 'HP%') {
+      support.push({ name: '2-piece ' + scaling + ' + 2-piece Energy Recharge', note: 'Utility build alternative when the character’s shield/healing/buff scales with this stat and Burst uptime is needed.' });
+    }
+    candidates = support;
   }
 
-  const weapons = baseWeapons.length
-    ? baseWeapons.slice(0, 4).map(item => ({
-        name: item.name,
-        note: (item.note || 'Character-compatible weapon option.') + ' For this ' + role + ' setup, compare its passive and substat with the role’s needs; it is not automatically the best-in-slot choice.',
-      }))
-    : [{
-        name: weaponType ? 'A suitable ' + weaponType + ' for ' + role : 'A weapon compatible with ' + name,
-        note: 'Placeholder guidance only: choose a real weapon compatible with the character and the role’s stat/energy needs.',
-      }];
+  return uniqueBuildItems(candidates).slice(0, 5).map(item => ({
+    ...item,
+    note: item.note + ' These are role-specific candidates, not a source-ranked best-in-slot list for this character.',
+  }));
+}
+
+function compatibleRoleWeapons(profile, character, characterKey, role) {
+  const weaponType = character?.weapon || CHARACTER_WEAPON_TYPE_BY_KEY[characterKey] || '';
+  const sourceWeapons = Array.isArray(profile?.weapons) ? profile.weapons : [];
+  const sourceFirst = sourceWeapons.filter(item => item?.name);
+  const fallback = ROLE_WEAPON_OPTIONS[weaponType]?.[role] || [];
+  const ordered = role === 'Main DPS'
+    ? [...sourceFirst.slice(0, 2), ...fallback, ...sourceFirst.slice(2)]
+    : role === 'Sub DPS'
+      ? [...fallback.slice(0, 2), ...sourceFirst, ...fallback.slice(2)]
+      : [...fallback.slice(0, 2), ...sourceFirst, ...fallback.slice(2)];
+  return uniqueBuildItems(ordered.map(item => typeof item === 'string'
+    ? ({ name: item, note: 'Compatible weapon-class option for comparing this off-meta role; not ranked for this character. Check its passive, refinement, availability and team needs.' })
+    : ({ name: item.name, note: (item.note || 'Character-specific weapon candidate.') + ' For this ' + role + ' build, check whether its passive and secondary stat serve this role before investing; this list is not a best-in-slot ranking.' })
+  )).slice(0, 5);
+}
+
+function roleBuildStats(profile, element, role, scaling) {
+  const base = [profile?.stats?.sands, profile?.stats?.goblet, profile?.stats?.circlet].filter(Boolean).join(' / ');
+  const elementDamage = ELEMENT_DAMAGE_STAT[element] || 'matching Elemental DMG Bonus';
+  const physical = base.includes('Physical DMG Bonus');
+  const damageType = physical ? 'Physical DMG Bonus' : elementDamage;
+  if (role === 'Main DPS') {
+    if (scaling === 'Elemental Mastery' && element === 'Anemo') {
+      return { sands: 'Elemental Mastery', goblet: 'Elemental Mastery', circlet: 'Elemental Mastery' };
+    }
+    return {
+      sands: scaling + ' (Energy Recharge only if the rotation needs it)',
+      goblet: damageType + ' / ' + scaling,
+      circlet: 'CRIT Rate / CRIT DMG (balance the ratio; use EM when reaction triggers dominate)',
+    };
+  }
+  if (role === 'Sub DPS') {
+    const subScaling = scaling === 'ATK%' ? 'ATK%' : scaling;
+    if (scaling === 'Elemental Mastery' && (element === 'Anemo' || element === 'Dendro' || element === 'Electro')) {
+      return { sands: 'Elemental Mastery / Energy Recharge', goblet: elementDamage + ' / Elemental Mastery', circlet: 'CRIT Rate / CRIT DMG / Elemental Mastery' };
+    }
+    return {
+      sands: 'Energy Recharge until rotation works, then ' + subScaling,
+      goblet: damageType + ' / native scaling stat',
+      circlet: 'CRIT Rate / CRIT DMG (or the reaction trigger’s scaling stat)',
+    };
+  }
+  if (scaling === 'Elemental Mastery' && element === 'Anemo') {
+    return { sands: 'Elemental Mastery', goblet: 'Elemental Mastery', circlet: 'Elemental Mastery' };
+  }
+  if (scaling === 'HP%' || scaling === 'DEF%') {
+    return {
+      sands: 'Energy Recharge / ' + scaling,
+      goblet: scaling + ' (or Elemental Mastery for a reaction role)',
+      circlet: 'Healing Bonus / ' + scaling + ' / CRIT Rate if using Favonius',
+    };
+  }
+  return {
+    sands: 'Energy Recharge / ' + scaling,
+    goblet: (element === 'Anemo' ? 'Elemental Mastery' : scaling + ' / ' + damageType),
+    circlet: (element === 'Anemo' ? 'Elemental Mastery' : 'CRIT Rate / Healing Bonus / ' + scaling),
+  };
+}
+
+function roleBuildViabilityNote(profile, role, name) {
+  const primaryRole = profile?.buildCategory || 'unknown';
+  if (primaryRole === role) return 'This build uses the character’s source-listed primary role.';
+  if (role === 'Main DPS') {
+    return 'Off-meta on-field option for ' + name + ': it intentionally gives this character field time. If their kit has limited on-field multipliers or no sustained damage window, this will normally underperform a dedicated carry.';
+  }
+  if (role === 'Sub DPS') {
+    return 'Off-meta quick-swap option for ' + name + ': it tries to use short Skill/Burst windows while another character remains on field. If this character has little off-field damage or poor application uptime, expect much lower value than a purpose-built Sub DPS.';
+  }
+  return 'Off-meta Support option for ' + name + ': the plan is to contribute through real kit utility, elemental application, energy, healing/shielding where available, or a suitable artifact/weapon passive. A character without native team utility cannot become an equivalent dedicated support through artifacts alone.';
+}
+
+function roleAdaptedProfile(profile, character, characterKey, role) {
+  const name = character?.name || profile?.name || characterKey || 'this character';
+  const element = resolveBuildElement(profile, character);
+  const elementDamage = ELEMENT_DAMAGE_STAT[element] || 'matching Elemental DMG Bonus';
+  const scaling = inferredScalingStat(profile);
+  const weaponType = character?.weapon || CHARACTER_WEAPON_TYPE_BY_KEY[characterKey] || '';
+  const sourceUrl = profile?.sourceUrl || 'https://genshin.gg/builds/';
+  const roleName = role === 'Main DPS' ? 'on-field damage dealer' : role === 'Sub DPS' ? 'quick-swap damage dealer' : 'team support';
+  const sourceNote = 'This independent ' + role + ' build fills one of the three role sections for ' + name + '. It is assembled separately using the character’s listed element, native scaling clues, weapon class, source-linked baseline and role-specific set/weapon conditions. The source does not rank this exact off-meta role as best-in-slot, and this is not a claim that this role is optimal. Check the character’s actual kit, team rotation, set conditions and weapon passive before spending resources.';
+  const playstyle = 'Experimental independent ' + role + ' build: ' + roleBuildViabilityNote(profile, role, name) + ' Compare it against the normal ' + (profile?.buildCategory || 'source-listed') + ' build before investing.';
+  const teamFocus = role === 'Main DPS'
+    ? 'Give this character the main field-time window. Use teammates that enable the relevant element/reaction, supply defensive comfort and buff the stat this character actually scales with.'
+    : role === 'Sub DPS'
+      ? 'Use Skill/Burst during a short swap window, then return to the main carry. Choose the artifact option that matches the actual damage source (Burst, off-field Skill or reaction), and meet ER needs first.'
+      : 'Preserve the carry’s field time. Use only support effects the kit or artifact/weapon passive can actually trigger; do not assume this character supplies healing, shielding, buffs or resistance shred unless the ability does so.';
+  const talentOrder = role === 'Main DPS'
+    ? ['Normal Attack', 'Elemental Skill', 'Elemental Burst']
+    : role === 'Sub DPS'
+      ? ['Elemental Burst', 'Elemental Skill', 'Normal Attack']
+      : ['Elemental Skill', 'Elemental Burst', 'Normal Attack'];
 
   return {
-    id: 'adapted-' + BUILD_ROLE_IDS[role],
-    role: 'Experimental ' + role + ' role adaptation',
+    id: 'independent-' + BUILD_ROLE_IDS[role],
+    role: 'Independent ' + role + ' build (off-meta)',
     buildCategory: role,
-    sourceUrl: baseUrl,
-    sourceName: 'Teyvat Companion — role-adapted template',
-    sourceNote: 'This ' + role + ' profile is supplied so every character has all three role sections. It is a starting template based on ' + name + '’s current in-app profile, not a claim that this role is optimal or that these options are individually source-ranked for this playstyle. Verify the character’s kit and the linked guide before spending resources.',
-    artifacts,
-    stats,
-    substats,
-    weapons,
+    sourceUrl,
+    sourceName: 'Teyvat Companion — independent ' + role + ' build for ' + name,
+    sourceNote,
+    sourceCheckedAt: null,
+    artifacts: independentRoleArtifacts(profile, element, role, scaling),
+    stats: roleBuildStats(profile, element, role, scaling),
+    substats: role === 'Main DPS'
+      ? ['CRIT Rate / CRIT DMG', scaling, 'Energy Recharge if needed for rotation', 'Elemental Mastery in reaction teams']
+      : role === 'Sub DPS'
+        ? ['Energy Recharge until Burst/rotation is reliable', 'CRIT Rate / CRIT DMG', scaling, 'Elemental Mastery when this character triggers reactions']
+        : ['Energy Recharge for the team rotation', scaling, 'HP% / DEF% if the kit heals or shields', 'CRIT Rate if using Favonius weapons'],
+    weapons: compatibleRoleWeapons(profile, character, characterKey, role),
     talentOrder,
     teamFocus,
     playstyle,
-    teamRecommendation: 'Build a team around the specific ability that makes this role viable; this role template does not imply the character is equally effective in all roles.',
-    confidence: 'Role-adapted template — verify before farming',
-    featuredVideo: profile?.featuredVideo,
+    teamRecommendation: 'This is an off-meta ' + roleName + ' plan. Build the rest of the party around the specific damage or utility this character really provides.',
+    confidence: 'experimental-role-build',
   };
 }
 
@@ -2211,7 +2366,7 @@ export function getCharacterBuildRoleOptions(profile, character = null) {
         }))
       : [{
           id: 'adapted-' + BUILD_ROLE_IDS[role],
-          label: 'Experimental ' + role + ' template',
+          label: 'Independent ' + role + ' build (off-meta)',
           profile: roleAdaptedProfile(profile, character, characterKey, role),
           status: 'adapted',
         }];
@@ -2222,7 +2377,7 @@ export function getCharacterBuildRoleOptions(profile, character = null) {
       id: 'role-' + BUILD_ROLE_IDS[role],
       buildCategory: role,
       role: defaultOption.profile?.role || role,
-      label: isPrimary ? role + ' — recommended' : role + ' — ' + (defaultOption.status === 'adapted' ? 'role-adapted template' : 'alternative build'),
+      label: isPrimary ? role + ' — recommended' : role + ' — ' + (defaultOption.status === 'adapted' ? 'independent off-meta build' : 'alternative build'),
       status: defaultOption.status,
       note: defaultOption.profile?.sourceNote || '',
       profile: defaultOption.profile,

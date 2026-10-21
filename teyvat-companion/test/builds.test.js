@@ -280,3 +280,42 @@ test('Vesna and Vodyanitsa have complete, clearly provisional source-linked prof
     assert.ok(options.some(option => option.status === 'adapted'), key + ': less-supported role tabs must remain marked experimental');
   }
 });
+
+
+test('every listed character has three independent selectable role builds and flags off-meta roles', () => {
+  const entries = Object.entries(CHARACTER_BUILD_GUIDES);
+  assert.ok(entries.length >= 125, 'current build roster should include all listed character profiles');
+  let independentCount = 0;
+  for (const [key, profile] of entries) {
+    const options = getCharacterBuildRoleOptions(profile);
+    assert.equal(options.length, 3, key + ': exactly three role builds');
+    assert.deepEqual(options.map(option => option.buildCategory), ['Main DPS', 'Sub DPS', 'Support']);
+    for (const option of options) {
+      assertCompleteProfile(key + '/' + option.buildCategory, option.profile);
+      if (option.status === 'adapted') {
+        independentCount += 1;
+        assert.match(option.profile.id, /^independent-/i, key + '/' + option.buildCategory + ': must be its own role build, not a generic shared template');
+        assert.match(option.profile.role, /Independent/i);
+        assert.match(option.profile.sourceNote, /not a claim that this role is optimal/i);
+        assert.match(option.profile.playstyle, /Experimental independent/i);
+        assert.ok(option.profile.artifacts.length >= 3, key + '/' + option.buildCategory + ': needs distinct artifact candidates');
+        assert.ok(option.profile.weapons.length >= 3, key + '/' + option.buildCategory + ': needs role-specific weapon candidates');
+        assert.notDeepEqual(option.profile.stats, profile.stats, key + '/' + option.buildCategory + ': role stats must be independently specified');
+      }
+    }
+  }
+  assert.ok(independentCount > 100, 'expected independent role builds for the many characters without a native source-ranked build in that role');
+});
+
+test('off-meta role builds explain when shared sets and weapon options are conditional', () => {
+  for (const [key, profile] of Object.entries(CHARACTER_BUILD_GUIDES)) {
+    for (const option of getCharacterBuildRoleOptions(profile)) {
+      if (option.status !== 'adapted') continue;
+      assert.ok(option.profile.sourceUrl.startsWith('https://'), key + '/' + option.buildCategory + ': should retain a character-specific reference');
+      assert.match(option.profile.sourceNote, /not source-ranked|source does not rank/i);
+      assert.match(option.profile.teamFocus, /only|if|actual/i);
+      assert.ok(option.profile.weapons.every(weapon => /not ranked|not a best-in-slot|before investing|passive/i.test(weapon.note)), key + '/' + option.buildCategory + ': weapon trade-offs should be stated');
+      assert.ok(option.profile.artifacts.every(artifact => /role-specific candidates|not ranked|only|when|if|conditional|depends/i.test(artifact.note)), key + '/' + option.buildCategory + ': artifact conditions should be stated');
+    }
+  }
+});
