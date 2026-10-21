@@ -2190,6 +2190,7 @@ function independentRoleArtifacts(profile, element, role, scaling) {
       ...elemental.map(name => ({ name, note: ELEMENT_ROLE_ARTIFACTS[element]?.note || 'Compare this damage set against the character’s actual kit and field-time pattern; it is not ranked for this off-meta build.' })),
       { name: '2-piece matching Elemental DMG Bonus + 2-piece ' + (scaling === 'DEF%' ? 'DEF%' : scaling === 'HP%' ? 'HP%' : 'ATK%'), note: 'Flexible mixed-set starting point when the character scales with this stat; compare real set bonuses before farming.' },
       { name: 'Marechaussee Hunter 4-piece', note: 'Conditional CRIT Rate option only when the character reliably gains/loses HP; it is not a universal set.' },
+      ...sourceArtifacts.slice(0, 2).map(item => ({ name: item.name, note: 'The character’s source-listed baseline set; keep it for this on-field role only if its actual effect improves the damage source and rotation.' })),
     ];
     if (element === 'Anemo' && scaling === 'Elemental Mastery') {
       candidates.unshift({ name: 'Viridescent Venerer 4-piece (full EM)', note: 'Reaction-driver variant: EM/EM/EM and Swirl can matter more than personal Anemo CRIT. Check whether the team needs resistance reduction.' });
