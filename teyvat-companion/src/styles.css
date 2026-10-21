@@ -2645,3 +2645,30 @@ h1, h2, h3, h4, .stat-value, .material-hero-total strong {
 @media(max-width:1100px){.manual-inventory-form{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:760px){.manual-inventory-form{grid-template-columns:repeat(2,minmax(0,1fr))}.manual-inventory-form .manual-inventory-wide{grid-column:span 2}.manual-inventory-footer{align-items:stretch;flex-direction:column}.manual-inventory-footer .button{width:100%}}
 @media(max-width:480px){.manual-inventory-form{grid-template-columns:1fr}.manual-inventory-form .manual-inventory-wide{grid-column:span 1}.manual-inventory-tabs .button{flex:1 1 100%}}
+
+
+/* Stability polish: keep the existing navy/gold language, but avoid animating layout properties. */
+.nav-item,.button,.icon-button,.character-card,.stat-card,.team-card,.material-stat{
+  transition-property:color,background-color,border-color,box-shadow,opacity,transform,filter;
+  transition-duration:.16s;
+  transition-timing-function:ease;
+}
+.main-area,.page-content,.panel,.section-heading,.manual-inventory-form,.manual-inventory-row{min-width:0}
+.global-search-wrap{min-width:0}
+.global-search{min-width:0}
+.global-search input{min-width:0}
+.modal-backdrop{overscroll-behavior:contain}
+.character-modal,.import-modal{max-height:calc(100dvh - 32px);overflow:auto;overscroll-behavior:contain}
+.app-error-shell{min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 50% 0,rgba(42,71,105,.18),transparent 44%),var(--bg);color:var(--text)}
+.app-error-panel{width:min(100%,520px);padding:32px;border:1px solid rgba(234,201,126,.2);border-radius:16px;background:linear-gradient(145deg,rgba(24,37,54,.98),rgba(17,27,41,.98));box-shadow:var(--shadow)}
+.app-error-mark{display:grid;place-items:center;width:42px;height:42px;margin-bottom:22px;border-radius:12px;background:linear-gradient(140deg,#f1d99b,#b99752);color:#1c2531;font-size:23px}
+.app-error-panel .eyebrow{margin:0 0 8px;color:var(--gold)}
+.app-error-panel h1{margin:0 0 12px;font:800 clamp(22px,4vw,29px)/1.15 Manrope,sans-serif;letter-spacing:-.04em}
+.app-error-panel>p:not(.eyebrow){margin:0 0 20px;color:var(--subtle);font-size:13px;line-height:1.7}
+@media(max-width:760px){
+  .app-error-panel{padding:24px}
+  .character-modal,.import-modal{max-height:calc(100dvh - 18px)}
+}
+@media (prefers-reduced-motion: reduce){
+  .nav-item,.button,.icon-button,.character-card,.stat-card,.team-card,.material-stat{transition:none}
+}
