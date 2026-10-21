@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Activity, ArrowLeft, ArrowRight, ArrowUpRight, BookOpen, Check, CheckCircle2, ChevronDown,
+  Activity, AlertCircle, AlertTriangle, ArrowLeft, ArrowRight, ArrowUpRight, BookOpen, Check, CheckCircle2, ChevronDown,
   ChevronRight, Compass, Download, ExternalLink, FileJson, Filter, Flame, Gem, Globe2, Info,
   Layers3, Link2, MapPinned, Menu, MoreHorizontal, PackageOpen, Pencil, PlayCircle, Plus,
   RefreshCw, Search, Settings2, ShieldCheck, Sparkles, Swords, Target, Trash2, Upload, Users, Clock,
@@ -400,6 +400,8 @@ export default function App() {
   const persistedRef = useRef(persisted);
   persistedRef.current = persisted;
   const [storageStatus, setStorageStatus] = useState('saving');
+  const [storageError, setStorageError] = useState('');
+  const [lastLocalSaveAt, setLastLocalSaveAt] = useState(() => persisted.lastUpdated || '');
   const [cloudUser, setCloudUser] = useState(null);
   const [cloudEmail, setCloudEmail] = useState('');
   const [cloudPassword, setCloudPassword] = useState('');
@@ -423,7 +425,23 @@ export default function App() {
   const globalSearchRef = useRef(null);
   useEffect(() => { setBuildVariantId(''); setBuildPlaystyleId(''); }, [buildCharacterId]);
   const [activeCharacter, setActiveCharacter] = useState(null);
-  const [toast, setToast] = useState('');
+  const [toast, setToastMessage] = useState('');
+  const [toastTone, setToastTone] = useState('success');
+  const setToast = React.useCallback((message, explicitTone) => {
+    const text = String(message || '');
+    const inferredTone = explicitTone || (
+      /\\b(could not|couldn't|failed|failure|error|invalid|unable to|cannot|can't|enter a valid|did not return|not a valid|unrecognized)\\b/i.test(text)
+        || /\\b(add|choose|enter|select|provide)\\s+(?:a|an|at least|your|valid|different|one|the)\\b/i.test(text)
+        ? 'error'
+        : /\\b(already|wait until|not changed|kept|remain|still available|not synced|not returned|partial|try again|retry|unchanged|skipped|no new)\\b/i.test(text)
+          ? 'warning'
+          : /\\b(saved|added|restored|created|deleted|removed|synced|complete|refreshed|imported|exported|updated|copied|replaced|loaded|cleared)\\b/i.test(text)
+            ? 'success'
+            : 'info'
+    );
+    setToastTone(inferredTone);
+    setToastMessage(message);
+  }, []);
   const [undoAction, setUndoAction] = useState(null);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [syncLoading, setSyncLoading] = useState(false);
@@ -503,17 +521,25 @@ export default function App() {
   const draftTeamCharacters = useMemo(() => [newTeam.slot1, newTeam.slot2, newTeam.slot3, newTeam.slot4].filter(Boolean).map(id => characters.find(character => character.id === id)).filter(Boolean), [newTeam, characters]);
   const draftTeamAnalysis = useMemo(() => analyzeTeamComposition(draftTeamCharacters), [draftTeamCharacters]);
   const saveState = (updater) => setPersisted(prev => typeof updater === 'function' ? updater(prev) : updater);
+  const localSavedAtLabel = lastLocalSaveAt ? new Date(lastLocalSaveAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
   const showUndoToast = (message, undo) => { setUndoAction(() => undo); setToast(message); };
   useEffect(() => {
     let cancelled = false;
     setStorageStatus('saving');
+    setStorageError('');
     const timer = window.setTimeout(() => {
       try {
         writeStoredState(persisted);
-        if (!cancelled) setStorageStatus('saved');
+        if (!cancelled) {
+          setStorageStatus('saved');
+          setLastLocalSaveAt(new Date().toISOString());
+        }
       } catch (error) {
         console.warn('Local save failed', error);
-        if (!cancelled) setStorageStatus('error');
+        if (!cancelled) {
+          setStorageStatus('error');
+          setStorageError(error?.message || 'The browser did not allow the tracker to be saved locally.');
+        }
       }
     }, 180);
     return () => {
@@ -1933,7 +1959,7 @@ export default function App() {
     </nav>
     <div className="sidebar-spacer"/>
     <div className="side-quest-card"><div className="quest-top"><span className="quest-gem"><Gem size={16}/></span><span className="eyebrow">ADVENTURE OBJECTIVE</span></div><strong>{persisted.goals.find(goal=>!goal.done)?.title || (persisted.goals.length ? 'All recorded goals complete' : 'Choose your next goal')}</strong><p>{persisted.goals.length ? `${persisted.goals.filter(g=>g.done).length} of ${persisted.goals.length} goals complete` : 'Track a character, plan materials, and work through one goal at a time.'}</p><button className="text-action" onClick={()=>navigate('account')}>Open journal <ArrowRight size={14}/></button></div>
-    <div className="sidebar-bottom"><div className="local-badge" role="status" aria-live="polite">{storageStatus === 'error' ? <Info size={12}/> : <span className="live-dot"/>}<span>{storageStatus === 'error' ? 'Save failed — export a backup' : storageStatus === 'saving' ? 'Saving locally…' : 'Saved on this device'}</span></div><button className="user-mini" onClick={()=>navigate('settings')} title="Open settings"><div className="user-avatar">{(persisted.account.nickname || 'T').slice(0,1).toUpperCase()}</div><div><strong>{persisted.account.nickname || 'Traveler'}</strong><small>Local adventure record</small></div><MoreHorizontal size={18}/></button></div>
+    <div className="sidebar-bottom"><div className="local-badge" role={storageStatus === 'error' ? 'alert' : 'status'} aria-live={storageStatus === 'error' ? 'assertive' : 'polite'} title={storageStatus === 'error' ? (storageError || 'Local save failed. Export a backup before closing this tab.') : undefined}>{storageStatus === 'error' ? <Info size={12}/> : storageStatus === 'saving' ? <RefreshCw className="spin" size={12}/> : <CheckCircle2 size={12}/>}<span>{storageStatus === 'error' ? 'Save failed — export a backup' : storageStatus === 'saving' ? 'Saving locally…' : 'Saved locally' + (localSavedAtLabel ? ' · ' + localSavedAtLabel : '')}</span></div><button className="user-mini" onClick={()=>navigate('settings')} title="Open settings"><div className="user-avatar">{(persisted.account.nickname || 'T').slice(0,1).toUpperCase()}</div><div><strong>{persisted.account.nickname || 'Traveler'}</strong><small>Local adventure record</small></div><MoreHorizontal size={18}/></button></div>
   </>;
 
   const dashboardPage = () => <div className="page-content">
@@ -2448,7 +2474,7 @@ export default function App() {
         <p className="helper-note">{cloudLastSyncedAt ? 'Last cloud operation: ' + new Date(cloudLastSyncedAt).toLocaleString() + '. ' : 'No cloud operation has been completed in this session. '}Save and restore are manual so one device cannot silently overwrite another device’s progress.</p>
       </div>}
     </section>
-    <div className="panel data-health-panel"><div className="panel-head"><div><div className="eyebrow">WORKSPACE STATUS</div><h3>Data health</h3></div><span className={`pill ${storageStatus === 'error' ? 'warning' : storageStatus === 'saved' ? 'success' : 'muted'}`}>{storageStatus === 'error' ? <Info size={13}/> : <span className="live-dot"/>}{storageStatus === 'error' ? 'Save failed' : storageStatus === 'saving' ? 'Saving changes…' : 'Saved locally'}</span></div><div className="data-health-grid"><div><span>Tracked characters</span><strong>{characters.length}</strong></div><div><span>Materials</span><strong>{persisted.materials.length}</strong></div><div><span>Saved teams</span><strong>{persisted.teams.length}</strong></div><div><span>Personal map markers</span><strong>{persisted.mapMarkers.length}</strong></div><div><span>Goals</span><strong>{persisted.goals.length}</strong></div><div><span>Enka snapshot</span><strong>{persisted.enkaSnapshot?'Available':'Not connected'}</strong></div><div><span>Metadata warnings</span><strong>{catalogueHealth.metadataWarnings}</strong></div><div><span>Build references found</span><strong>{catalogueHealth.buildReferences} / {catalogueHealth.total}</strong></div><div><span>Detailed records cached</span><strong>{catalogueHealth.detailedRecords} / {catalogueHealth.total}</strong></div><div><span>Image references set</span><strong>{catalogueHealth.imageReferences} / {catalogueHealth.total}</strong></div><div><span>Supplemental-source records</span><strong>{catalogueHealth.supplementalRecords}</strong></div></div><p className="helper-note"><Info size={13}/> These are metadata coverage checks. A recorded image URL or build reference is not proof that the external asset is still reachable or every recommendation is current.</p></div>
+    <div className="panel data-health-panel"><div className="panel-head"><div><div className="eyebrow">WORKSPACE STATUS</div><h3>Data health</h3></div><span className={`pill ${storageStatus === 'error' ? 'warning' : storageStatus === 'saved' ? 'success' : 'muted'}`} title={storageStatus === 'error' ? (storageError || 'Local save failed. Export a backup before reloading.') : undefined}>{storageStatus === 'error' ? <Info size={13}/> : storageStatus === 'saving' ? <RefreshCw className="spin" size={13}/> : <CheckCircle2 size={13}/ >}{storageStatus === 'error' ? 'Save failed' : storageStatus === 'saving' ? 'Saving changes…' : 'Saved locally' + (localSavedAtLabel ? ' · ' + localSavedAtLabel : '')}</span></div><div className="data-health-grid"><div><span>Tracked characters</span><strong>{characters.length}</strong></div><div><span>Materials</span><strong>{persisted.materials.length}</strong></div><div><span>Saved teams</span><strong>{persisted.teams.length}</strong></div><div><span>Personal map markers</span><strong>{persisted.mapMarkers.length}</strong></div><div><span>Goals</span><strong>{persisted.goals.length}</strong></div><div><span>Enka snapshot</span><strong>{persisted.enkaSnapshot?'Available':'Not connected'}</strong></div><div><span>Metadata warnings</span><strong>{catalogueHealth.metadataWarnings}</strong></div><div><span>Build references found</span><strong>{catalogueHealth.buildReferences} / {catalogueHealth.total}</strong></div><div><span>Detailed records cached</span><strong>{catalogueHealth.detailedRecords} / {catalogueHealth.total}</strong></div><div><span>Image references set</span><strong>{catalogueHealth.imageReferences} / {catalogueHealth.total}</strong></div><div><span>Supplemental-source records</span><strong>{catalogueHealth.supplementalRecords}</strong></div></div><p className="helper-note"><Info size={13}/> These are metadata coverage checks. A recorded image URL or build reference is not proof that the external asset is still reachable or every recommendation is current.</p></div>
     <div className="reset-zone"><div><strong>Reset local workspace</strong><p>Remove all custom progress and return to the starter example. Export a backup first if you want to keep your data.</p></div><button className="button danger-outline" onClick={()=>{if(window.confirm('Reset your Teyvat Companion data in this browser? Export a backup first if you want to keep it.')){localStorage.removeItem(STORAGE_KEY);setPersisted(createDefaultState());setToast('Workspace reset');}}}><Trash2 size={14}/> Reset workspace</button></div>
   </div>;
 
@@ -2536,7 +2562,7 @@ export default function App() {
     </div><button className="button secondary topbar-build-shortcut" onClick={()=>navigate('builds')} title="Open Character Builds"><BookOpen size={15}/><span>Builds</span></button><div className="topbar-divider"/><button className="icon-button quick-settings" title="Settings" onClick={()=>navigate('settings')}><Settings2 size={18}/></button><button className="topbar-profile" title="Account tracker" onClick={()=>navigate('account')}><span className="user-avatar">{(persisted.account.nickname || 'T').slice(0,1).toUpperCase()}</span><span className="rank-chip">AR {persisted.account.ar}</span><ChevronDown size={14}/></button></div></header><div key={page} className="page-animate">{pageContent}</div><footer className="global-footer"><span>✦ Teyvat Companion</span><span>Unofficial fan-made companion · Not affiliated with HoYoverse</span><span>Made for Travelers <span className="footer-heart">♡</span></span></footer></main>
     {activeCharacter && <CharacterModal key={activeCharacter.id} character={characters.find(c=>c.id===activeCharacter.id)||activeCharacter} onClose={()=>setActiveCharacter(null)} onUpdate={updateCharacter} onGoal={addGoalForCharacter} onMaterials={addCharacterMaterialsToPlan} onToast={setToast} detailsLoading={characterDataLoadingId===activeCharacter.id} detailsError={characterDataError} materialLookup={gameMaterialLookupRef.current} onRetryDetails={openCharacter} onOpenBuild={openBuildPage}/>}
     {showImport && <div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&setShowImport(false)}><div className="import-modal panel"><button className="modal-close icon-button" onClick={()=>setShowImport(false)}><X size={18}/></button><div className="modal-icon"><FileJson size={21}/></div><div className="eyebrow">RESTORE WORKSPACE</div><h2>Import a backup</h2><p>Paste the contents of a Teyvat Companion JSON backup, or select a file below.</p><button className="button secondary full-width" onClick={()=>uploadRef.current?.click()}><Upload size={15}/> Choose JSON backup file</button><input ref={uploadRef} className="hidden-input" type="file" accept="application/json,.json" onChange={async e=>{const file=e.target.files?.[0];if(!file)return;try{importTrackerObject(JSON.parse(await file.text()));}catch{setToast('Could not read that JSON backup.');}e.target.value='';}}/><div className="import-divider"><span>OR PASTE JSON</span></div><form onSubmit={importFromText}><textarea value={importText} onChange={e=>setImportText(e.target.value)} rows="7" placeholder={'{\n  "format": "teyvat-companion-backup-v1", ...\n}'} required/><button className="button primary full-width" type="submit"><Upload size={15}/> Import tracker data</button></form><p className="modal-footnote"><Info size={13}/> Import replaces the current tracker state. Export your current data first if needed.</p></div></div>}
-    {toast&&<div className="toast" role="status" aria-live="polite"><CheckCircle2 size={16}/><span>{toast}</span>{undoAction&&<button className="toast-undo" type="button" onClick={()=>{const undo=undoAction;setUndoAction(null);undo?.();}}>Undo</button>}</div>}
+    {toast&&<div className={`toast toast-${toastTone}`} role={toastTone === 'error' ? 'alert' : 'status'} aria-live={toastTone === 'error' ? 'assertive' : 'polite'}>{toastTone === 'success' ? <CheckCircle2 size={16}/> : toastTone === 'warning' ? <AlertTriangle size={16}/> : toastTone === 'error' ? <AlertCircle size={16}/> : <Info size={16}/>}<span>{toast}</span>{undoAction&&<button className="toast-undo" type="button" onClick={()=>{const undo=undoAction;setUndoAction(null);undo?.();}}>Undo</button>}</div>}
   </div>;
 }
 
