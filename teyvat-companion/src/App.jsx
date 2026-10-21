@@ -430,12 +430,12 @@ export default function App() {
   const setToast = React.useCallback((message, explicitTone) => {
     const text = String(message || '');
     const inferredTone = explicitTone || (
-      /\b(could not|couldn't|failed|failure|error|invalid|unable to|cannot|can't|enter a valid|did not return|not a valid|unrecognized)\\b/i.test(text)
-        || /\b(add|choose|enter|select|provide)\\s+(?:a|an|at least|your|valid|different|one|the)\\b/i.test(text)
+      /\b(could not|couldn't|failed|failure|error|invalid|unable to|cannot|can't|enter a valid|did not return|not a valid|unrecognized)\b/i.test(text)
+        || /\b(add|choose|enter|select|provide)\s+(?:a|an|at least|your|valid|different|one|the)\b/i.test(text)
         ? 'error'
-        : /\b(already|wait until|not changed|kept|remain|still available|not synced|not returned|partial|try again|retry|unchanged|skipped|no new)\\b/i.test(text)
+        : /\b(already|wait until|not changed|kept|remain|still available|not synced|not returned|partial|try again|retry|unchanged|skipped|no new)\b/i.test(text)
           ? 'warning'
-          : /\b(saved|added|restored|created|deleted|removed|synced|complete|refreshed|imported|exported|updated|copied|replaced|loaded|cleared)\\b/i.test(text)
+          : /\b(saved|added|restored|created|deleted|removed|synced|complete|refreshed|imported|exported|updated|copied|replaced|loaded|cleared)\b/i.test(text)
             ? 'success'
             : 'info'
     );
