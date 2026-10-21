@@ -2716,3 +2716,18 @@ h1, h2, h3, h4, .stat-value, .material-hero-total strong {
   .character-modal-footer{align-items:stretch;flex-direction:column}
   .character-modal-footer>.button{width:100%}
 }
+
+
+/* Consistent toast severity: neutral palette accents for errors and warnings. */
+.toast.toast-success { border-color: rgba(114,213,172,.28); }
+.toast.toast-success svg { color: var(--green); }
+.toast.toast-error { color: #f4dada; background: #302128; border-color: rgba(242,139,138,.4); }
+.toast.toast-error svg { color: var(--red); }
+.toast.toast-warning { color: #f0e0b8; background: #302a1f; border-color: rgba(234,201,126,.4); }
+.toast.toast-warning svg { color: var(--gold); }
+.toast.toast-info { color: #dce8f7; background: #1b2a3a; border-color: rgba(115,183,248,.3); }
+.toast.toast-info svg { color: var(--blue); }
+.local-badge svg { flex-shrink: 0; }
+
+.storage-save-error { margin: 12px 0; }
+.storage-save-error strong { color: #f0d08b; }
