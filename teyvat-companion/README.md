@@ -36,7 +36,7 @@ npm run preview
 - Public Enka.Network UID sync for the account's public display list, including visible character levels when detailed showcase data is disabled
 - Detailed Enka showcase sync for equipped weapons, artifacts, available talent values, friendship, constellation, and public profile stats when the player exposes those details
 - Optional import of publicly available Enka profile saved builds, with public visibility filtering and a visible warning that live snapshots can be stale
-- Optional AKASHA System sync for public character calculations/rankings, weapon variants, artifact set summaries, and on-demand artifact main-stat/substat/Crit Value detail
+- Optional AKASHA System sync for public character calculations/rankings, weapon variants, artifact set summaries, and on-demand artifact main-stat/substat/Crit Value detail; the one-click UID sync reports the provider's actual failure reason when AKASHA is unavailable
 - Inventory Kamera `.GOOD` file import for full inventory data that UID showcase sync cannot expose, including unequipped artifacts and weapons
 - JSON export/import, browser-local persistence, and reset option
 - Responsive desktop sidebar and mobile navigation
