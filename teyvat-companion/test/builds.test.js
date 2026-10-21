@@ -234,3 +234,49 @@ test('remaining role coverage batch has complete source-noted variants', () => {
     }
   }
 });
+
+
+test('current build-source attribution distinguishes reviewed rankings from provisional kits', () => {
+  for (const [key, profile] of Object.entries(CHARACTER_BUILD_GUIDES)) {
+    assert.ok(profile.sourceName, key + ': primary build must identify its source');
+    assert.ok(profile.sourceNote, key + ': primary build must explain evidence scope');
+    assert.ok(profile.sourceUrl.startsWith('https://'), key + ': primary build source must be secure');
+    if (profile.sourceCheckedAt) {
+      assert.match(profile.sourceNote, /Checked 21 Oct 2026/i, key + ': dated review needs an explicit source note');
+    }
+    for (const alternate of profile.alternateBuilds || []) {
+      assert.ok(alternate.sourceName, key + '/' + alternate.id + ': alternate must identify its source');
+      assert.ok(alternate.sourceNote, key + '/' + alternate.id + ': alternate must explain evidence scope');
+    }
+  }
+});
+
+test('expanded current profiles include multiple real options and role caveats', () => {
+  for (const key of ['skirk', 'xingqiu', 'furina', 'nahida', 'raiden', 'bennett', 'kazuha', 'ayaka', 'ayato', 'childe', 'diluc', 'eula', 'hu-tao', 'itto', 'jean', 'keqing', 'klee', 'kokomi', 'nilou', 'shenhe', 'nefer', 'zibai', 'varka', 'durin', 'linnea', 'jahoda', 'aino', 'iansan', 'yumemizuki-mizuki']) {
+    const profile = CHARACTER_BUILD_GUIDES[key];
+    assert.ok(profile, key + ': reviewed primary profile exists');
+    assert.ok(profile.weapons.length >= 4, key + ': expanded weapon options');
+    assert.ok(profile.artifacts.length >= 3 || ['nefer', 'jahoda', 'iansan'].includes(key), key + ': expanded artifact options or shorter source listing');
+    assert.ok(profile.sourceCheckedAt, key + ': expected dated source review for this profile');
+  }
+  assert.equal(CHARACTER_BUILD_GUIDES.columbina.buildCategory, 'Support', 'current Genshin.gg build index classifies Columbina as Support');
+  assert.match(CHARACTER_BUILD_GUIDES.columbina.role, /Support/i);
+});
+
+test('Vesna and Vodyanitsa have complete, clearly provisional source-linked profiles', () => {
+  const vesna = CHARACTER_BUILD_GUIDES.vesna;
+  const vodyanitsa = CHARACTER_BUILD_GUIDES.vodyanitsa;
+  assertCompleteProfile('vesna', vesna);
+  assertCompleteProfile('vodyanitsa', vodyanitsa);
+  assert.equal(vesna.buildCategory, 'Main DPS');
+  assert.equal(vodyanitsa.buildCategory, 'Support');
+  assert.equal(vesna.sourceCheckedAt, null);
+  assert.equal(vodyanitsa.sourceCheckedAt, null);
+  assert.match(vesna.sourceNote, /does not publish a ranked weapon\/artifact list/i);
+  assert.match(vodyanitsa.sourceNote, /does not publish a ranked weapon\/artifact list/i);
+  for (const key of ['vesna', 'vodyanitsa']) {
+    const options = getCharacterBuildRoleOptions(CHARACTER_BUILD_GUIDES[key]);
+    assert.equal(options.length, 3);
+    assert.ok(options.some(option => option.status === 'adapted'), key + ': less-supported role tabs must remain marked experimental');
+  }
+});
