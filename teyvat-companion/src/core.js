@@ -52,6 +52,17 @@ export function normalizeTrackerBackup(input) {
   if (input.account != null && !isBackupRecord(input.account)) {
     throw new Error('The backup has an invalid account section. Your current data was not changed.');
   }
+  if (input.manualInventory != null) {
+    if (!isBackupRecord(input.manualInventory)) {
+      throw new Error('The backup has an invalid "manualInventory" section. Your current data was not changed.');
+    }
+    for (const key of ['characters', 'weapons', 'artifacts']) {
+      if (input.manualInventory[key] !== undefined && !Array.isArray(input.manualInventory[key])) {
+        throw new Error('The backup has an invalid "manualInventory.' + key + '" section. Your current data was not changed.');
+      }
+    }
+  }
+
   for (const key of ['enkaSnapshot', 'goodInventory', 'akashaSnapshot']) {
     if (input[key] != null && !isBackupRecord(input[key])) {
       throw new Error('The backup has an invalid "' + key + '" section. Your current data was not changed.');

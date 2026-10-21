@@ -14,6 +14,37 @@ import { analyzeTeamComposition, buildProgressionPlan, enkaTtlSeconds, flattenEn
 const ICONS = { LayoutDashboard, Users, Swords, PackageOpen, MapPinned, ChartNoAxesCombined, PlayCircle, Settings2, Bot, BookOpen, Layers3 };
 const STORAGE_KEY = 'teyvat-companion-v1';
 const REGIONS = ['Mondstadt', 'Liyue', 'Inazuma', 'Sumeru', 'Fontaine', 'Natlan', 'Nod-Krai', 'Other'];
+const MANUAL_ARTIFACT_SETS = [
+  { value: 'GladiatorsFinale', label: "Gladiator's Finale" },
+  { value: 'ShimenawasReminiscence', label: "Shimenawa's Reminiscence" },
+  { value: 'EmblemOfSeveredFate', label: 'Emblem of Severed Fate' },
+  { value: 'GoldenTroupe', label: 'Golden Troupe' },
+  { value: 'DeepwoodMemories', label: 'Deepwood Memories' },
+  { value: 'GildedDreams', label: 'Gilded Dreams' },
+  { value: 'ViridescentVenerer', label: 'Viridescent Venerer' },
+  { value: 'NoblesseOblige', label: 'Noblesse Oblige' },
+  { value: 'TenacityOfTheMillelith', label: 'Tenacity of the Millelith' },
+  { value: 'VourukashasGlow', label: "Vourukasha's Glow" },
+  { value: 'MarechausseeHunter', label: 'Marechaussee Hunter' },
+  { value: 'FinaleOfTheDeepGalleries', label: 'Finale of the Deep Galleries' },
+  { value: 'DesertPavilionChronicle', label: 'Desert Pavilion Chronicle' },
+  { value: 'OceanHuedClam', label: 'Ocean-Hued Clam' },
+  { value: 'ArchaicPetra', label: 'Archaic Petra' },
+  { value: 'CrimsonWitchOfFlames', label: 'Crimson Witch of Flames' },
+  { value: 'FlowerOfParadiseLost', label: 'Flower of Paradise Lost' },
+  { value: 'HuskOfOpulentDreams', label: 'Husk of Opulent Dreams' },
+  { value: 'HeartOfDepth', label: 'Heart of Depth' },
+  { value: 'BlizzardStrayer', label: 'Blizzard Strayer' },
+  { value: 'Lavawalker', label: 'Lavawalker' },
+  { value: 'Other', label: 'Other / unknown set' },
+];
+const MANUAL_ARTIFACT_MAIN_STATS = [
+  'HP', 'HP%', 'ATK', 'ATK%', 'DEF', 'DEF%', 'Elemental Mastery',
+  'Energy Recharge', 'CRIT Rate', 'CRIT DMG', 'Physical DMG Bonus',
+  'Pyro DMG Bonus', 'Hydro DMG Bonus', 'Cryo DMG Bonus',
+  'Dendro DMG Bonus', 'Electro DMG Bonus', 'Anemo DMG Bonus',
+  'Geo DMG Bonus', 'Healing Bonus',
+];
 const NAV_GROUPS = [
   { label: 'Explore Teyvat', ids: ['dashboard', 'characters', 'teams', 'guides'] },
   { label: 'Build & Prepare', ids: ['builds', 'optimizer', 'materials', 'advisor'] },
@@ -44,6 +75,7 @@ function createDefaultState() {
     enkaSnapshot: null,
     enkaNextFetchAt: 0,
     goodInventory: null,
+    manualInventory: { characters: [], weapons: [], artifacts: [] },
     akashaSnapshot: null,
     lastUpdated: null,
   };
@@ -102,6 +134,11 @@ function loadInitial() {
       artifacts: Array.isArray(saved.goodInventory.artifacts) ? saved.goodInventory.artifacts.filter(isRecord) : [],
       summary: isRecord(saved.goodInventory.summary) ? saved.goodInventory.summary : {},
     } : null;
+    const manualInventory = isRecord(saved.manualInventory) ? {
+      characters: Array.isArray(saved.manualInventory.characters) ? saved.manualInventory.characters.filter(isRecord).slice(0, 300) : [],
+      weapons: Array.isArray(saved.manualInventory.weapons) ? saved.manualInventory.weapons.filter(isRecord).slice(0, 3000) : [],
+      artifacts: Array.isArray(saved.manualInventory.artifacts) ? saved.manualInventory.artifacts.filter(isRecord).slice(0, 5000) : [],
+    } : defaults.manualInventory;
     const akashaSnapshot = isRecord(saved.akashaSnapshot) ? {
       ...saved.akashaSnapshot,
       profiles: Array.isArray(saved.akashaSnapshot.profiles) ? saved.akashaSnapshot.profiles.filter(isRecord) : [],
@@ -131,6 +168,7 @@ function loadInitial() {
       enkaSnapshot,
       enkaNextFetchAt: clampInteger(saved.enkaNextFetchAt ?? enkaSnapshot?.nextFetchAt, 0, Number.MAX_SAFE_INTEGER, 0),
       goodInventory,
+      manualInventory,
       akashaSnapshot,
       lastUpdated: typeof saved.lastUpdated === 'string' ? saved.lastUpdated : null,
     };
@@ -147,6 +185,35 @@ const formatArtifactStat = value => {
   return labels[key] || humanizeGameKey(value);
 };
 const slugify = value => String(value || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const normalizeManualArtifactStat = raw => {
+  const original = String(raw || '').trim();
+  const token = original.toLowerCase().replace(/[^a-z0-9%]/g, '');
+  if (token.includes('critrate') || token.includes('criticalrate') || token === 'crit') return 'CRIT Rate';
+  if (token.includes('critdmg') || token.includes('criticaldamage') || token.includes('criticaldmg')) return 'CRIT DMG';
+  if (token.includes('energyrecharge') || token.includes('enerrech') || token === 'er') return 'Energy Recharge';
+  if (token.includes('elementalmastery') || token === 'elemas' || token === 'em') return 'Elemental Mastery';
+  for (const element of ['pyro', 'hydro', 'cryo', 'dendro', 'electro', 'anemo', 'geo']) {
+    if (token.includes(element) && (token.includes('dmg') || token.includes('damage'))) return element[0].toUpperCase() + element.slice(1) + ' DMG Bonus';
+  }
+  if (token.includes('physical') && (token.includes('dmg') || token.includes('damage'))) return 'Physical DMG Bonus';
+  if (token.includes('healing')) return 'Healing Bonus';
+  const isPercent = original.includes('%') || token.includes('percent') || token.endsWith('pct');
+  if (token.includes('hp') || token === 'health') return isPercent ? 'HP%' : 'HP';
+  if (token.includes('atk') || token === 'attack') return isPercent ? 'ATK%' : 'ATK';
+  if (token.includes('def') || token === 'defense') return isPercent ? 'DEF%' : 'DEF';
+  return original || 'Unknown';
+};
+const parseManualArtifactSubstats = raw => String(raw || '').split(/[,;\n]+/)
+  .map(part => part.trim())
+  .map(part => {
+    const match = part.match(/^(.+?)\s*[:=]\s*(-?\d+(?:\.\d+)?)\s*%?$/);
+    if (!match) return null;
+    const value = Number(match[2]);
+    if (!Number.isFinite(value)) return null;
+    return { key: normalizeManualArtifactStat(match[1]), value };
+  })
+  .filter(Boolean)
+  .slice(0, 4);
 const normalizeElement = raw => {
   const value = String(raw ?? '').toLowerCase();
   const aliases = { anemo:'Anemo', wind:'Anemo', geo:'Geo', rock:'Geo', electro:'Electro', electric:'Electro', pyro:'Pyro', fire:'Pyro', hydro:'Hydro', water:'Hydro', cryo:'Cryo', ice:'Cryo', dendro:'Dendro', grass:'Dendro' };
@@ -357,6 +424,11 @@ export default function App() {
   const [characterFilter, setCharacterFilter] = useState({ search:'', element:'All elements', status:'All characters', role:'All roles' });
   const [materialFilter, setMaterialFilter] = useState('All materials');
   const [newMaterial, setNewMaterial] = useState({ name:'', category:'Other', required:0, owned:0 });
+  const [manualInventoryTab, setManualInventoryTab] = useState('characters');
+  const [manualInventoryMessage, setManualInventoryMessage] = useState('');
+  const [manualCharacterForm, setManualCharacterForm] = useState({ characterId:'', level:1, constellation:0, auto:1, skill:1, burst:1 });
+  const [manualWeaponForm, setManualWeaponForm] = useState({ name:'', type:'Sword', rarity:4, level:1, refinement:1, characterId:'', locked:false });
+  const [manualArtifactForm, setManualArtifactForm] = useState({ setKey:'GladiatorsFinale', slotKey:'flower', level:0, rarity:5, mainStatKey:'HP', characterId:'', lock:false, substats:'' });
   const [newGoal, setNewGoal] = useState({ title:'', character:'', target:'Level 90', due:'' });
   const [newTeam, setNewTeam] = useState({ name:'My team', slot1:'', slot2:'', slot3:'', slot4:'' });
   const [newMarker, setNewMarker] = useState({ name:'', region:'Mondstadt', type:'Local specialty', note:'' });
@@ -402,7 +474,8 @@ export default function App() {
   const syncNextFetchAt = Number(persisted.enkaNextFetchAt || persisted.enkaSnapshot?.nextFetchAt || 0);
   const syncWaitMs = Math.max(0, syncNextFetchAt - syncClock);
   const progressionPlan = useMemo(() => buildProgressionPlan({ characters, goals: persisted.goals, materials: persisted.materials, goodInventory: persisted.goodInventory }), [characters, persisted.goals, persisted.materials, persisted.goodInventory]);
-  const topImportedArtifacts = useMemo(() => [...(persisted.goodInventory?.artifacts || [])].filter(item => Number(item.rarity) === 5).sort((a,b) => Number(b.critValue || 0) - Number(a.critValue || 0)).slice(0,6), [persisted.goodInventory]);
+  const inventoryArtifacts = [...(persisted.goodInventory?.artifacts || []), ...(persisted.manualInventory?.artifacts || [])];
+  const topImportedArtifacts = useMemo(() => [...(persisted.goodInventory?.artifacts || []), ...(persisted.manualInventory?.artifacts || [])].filter(item => Number(item.rarity) === 5).sort((a,b) => Number(b.critValue || 0) - Number(a.critValue || 0)).slice(0,6), [persisted.goodInventory, persisted.manualInventory]);
   const optimizerCharacter = characters.find(character => character.id === optimizerCharacterId) || ownedCharacters[0] || characters[0] || null;
   const optimizerTeam = persisted.teams.find(team => team.id === optimizerTeamId) || null;
   const optimizerTeamContainsCharacter = Boolean(optimizerTeam?.characters?.includes(optimizerCharacter?.id));
@@ -613,6 +686,128 @@ export default function App() {
       });
       setToast(removed.name + ' restored');
     });
+  };
+
+  const addManualCharacter = event => {
+    event.preventDefault();
+    const character = characters.find(item => item.id === manualCharacterForm.characterId);
+    if (!character) { setManualInventoryMessage('Choose a character from the catalogue first.'); return; }
+    const entry = {
+      id: 'manual-character-' + character.id,
+      characterId: character.id,
+      name: character.name,
+      level: clampInteger(manualCharacterForm.level, 1, 90, 1),
+      constellation: clampInteger(manualCharacterForm.constellation, 0, 6, 0),
+      talents: [manualCharacterForm.auto, manualCharacterForm.skill, manualCharacterForm.burst].map(value => clampInteger(value, 1, 15, 1)),
+      addedAt: new Date().toISOString(),
+    };
+    saveState(prev => ({
+      ...prev,
+      manualInventory: {
+        ...(prev.manualInventory || { characters: [], weapons: [], artifacts: [] }),
+        characters: [...(prev.manualInventory?.characters || []).filter(item => item.characterId !== character.id), entry],
+      },
+      characters: prev.characters.map(item => item.id === character.id
+        ? { ...item, owned: true, level: entry.level, constellation: entry.constellation, talents: [...entry.talents] }
+        : item),
+    }));
+    setManualInventoryMessage('Saved ' + character.name + ' to your manual roster. Your character build notes were kept.');
+    setToast('Manual character saved');
+  };
+
+  const addManualWeapon = event => {
+    event.preventDefault();
+    const name = String(manualWeaponForm.name || '').trim();
+    if (!name) { setManualInventoryMessage('Enter a weapon name first.'); return; }
+    const assigned = characters.find(item => item.id === manualWeaponForm.characterId);
+    const entry = {
+      id: 'manual-weapon-' + Date.now(),
+      name,
+      type: manualWeaponForm.type,
+      rarity: clampInteger(manualWeaponForm.rarity, 1, 5, 4),
+      level: clampInteger(manualWeaponForm.level, 1, 90, 1),
+      refinement: clampInteger(manualWeaponForm.refinement, 1, 5, 1),
+      equippedTo: assigned?.id || '',
+      equippedToName: assigned?.name || '',
+      lock: Boolean(manualWeaponForm.locked),
+      source: 'manual',
+      addedAt: new Date().toISOString(),
+    };
+    saveState(prev => ({
+      ...prev,
+      manualInventory: {
+        ...(prev.manualInventory || { characters: [], weapons: [], artifacts: [] }),
+        weapons: [...(prev.manualInventory?.weapons || []), entry],
+      },
+    }));
+    setManualWeaponForm({ name:'', type:'Sword', rarity:4, level:1, refinement:1, characterId:'', locked:false });
+    setManualInventoryMessage('Saved ' + name + ' to your manual weapon inventory.');
+    setToast('Manual weapon added');
+  };
+
+  const addManualArtifact = event => {
+    event.preventDefault();
+    const assigned = characters.find(item => item.id === manualArtifactForm.characterId);
+    const id = 'manual-artifact-' + Date.now();
+    const substats = parseManualArtifactSubstats(manualArtifactForm.substats);
+    const critRate = substats.find(stat => stat.key === 'CRIT Rate')?.value || 0;
+    const critDamage = substats.find(stat => stat.key === 'CRIT DMG')?.value || 0;
+    const entry = {
+      id,
+      optimizerId: id,
+      setKey: manualArtifactForm.setKey || 'Other',
+      slotKey: manualArtifactForm.slotKey,
+      level: clampInteger(manualArtifactForm.level, 0, 20, 0),
+      rarity: clampInteger(manualArtifactForm.rarity, 1, 5, 5),
+      mainStatKey: manualArtifactForm.mainStatKey,
+      location: assigned?.name || '',
+      characterId: assigned?.id || '',
+      lock: Boolean(manualArtifactForm.lock),
+      substats,
+      critValue: Math.round((critRate * 2 + critDamage) * 100) / 100,
+      source: 'manual',
+      addedAt: new Date().toISOString(),
+    };
+    saveState(prev => ({
+      ...prev,
+      manualInventory: {
+        ...(prev.manualInventory || { characters: [], weapons: [], artifacts: [] }),
+        artifacts: [...(prev.manualInventory?.artifacts || []), entry],
+      },
+    }));
+    setManualArtifactForm(prev => ({ ...prev, level:0, characterId:'', lock:false, substats:'' }));
+    setManualInventoryMessage('Saved ' + (MANUAL_ARTIFACT_SETS.find(set => set.value === entry.setKey)?.label || entry.setKey) + ' ' + entry.slotKey + ' to your manual artifacts. These pieces are available to the artifact optimizer.');
+    setToast('Manual artifact added');
+  };
+
+  const removeManualInventoryItem = (type, id) => {
+    const keys = ['characters', 'weapons', 'artifacts'];
+    if (!keys.includes(type)) return;
+    const currentList = persisted.manualInventory?.[type] || [];
+    const item = currentList.find(row => row.id === id);
+    if (!item) return;
+    const label = type === 'characters' ? (characters.find(character => character.id === item.characterId)?.name || item.name || 'character')
+      : type === 'weapons' ? (item.name || 'weapon')
+      : ((MANUAL_ARTIFACT_SETS.find(set => set.value === item.setKey)?.label || item.setKey || 'artifact') + ' ' + (item.slotKey || ''));
+    if (!window.confirm('Remove ' + label + ' from the manual inventory?')) return;
+    saveState(prev => {
+      const nextManual = {
+        ...(prev.manualInventory || { characters: [], weapons: [], artifacts: [] }),
+        [type]: (prev.manualInventory?.[type] || []).filter(row => row.id !== id),
+      };
+      let nextCharacters = prev.characters;
+      if (type === 'characters') {
+        const characterId = item.characterId;
+        const appearsInGood = (prev.goodInventory?.characters || []).some(row => row.characterId === characterId);
+        const appearsInEnka = [...(prev.enkaSnapshot?.characters || []), ...(prev.enkaSnapshot?.rosterEntries || [])]
+          .some(row => row.characterId === characterId);
+        if (characterId && !appearsInGood && !appearsInEnka) {
+          nextCharacters = prev.characters.map(character => character.id === characterId ? { ...character, owned: false } : character);
+        }
+      }
+      return { ...prev, manualInventory: nextManual, characters: nextCharacters };
+    });
+    setManualInventoryMessage('Removed ' + label + ' from your manual inventory.');
   };
 
   const addGoal = (e) => {
@@ -1254,69 +1449,39 @@ export default function App() {
       setUidSyncMessage('Enter your 9–10 digit in-game UID first.');
       return;
     }
-
     setUidSyncLoading(true);
-    setUidSyncMessage('Connecting to Enka.Network and AKASHA System…');
+    setUidSyncMessage('Syncing the public Enka.Network showcase…');
     setSyncError('');
     setAkashaSyncError('');
     try {
-      const [enkaSnapshot, akashaResult] = await Promise.all([
-        syncPublicShowcase(uid, { quiet: true }),
-        syncAkashaProfile(uid, { quiet: true }),
-      ]);
-      const akashaProfilesResult = akashaResult?.ok ? akashaResult.profiles : null;
-      const akashaProfiles = Array.isArray(akashaProfilesResult) ? akashaProfilesResult : [];
-      const availableHashes = [...new Map(akashaProfiles
-        .filter(profile => /^[a-fA-F0-9]{32}$/.test(String(profile?.md5 || '').trim()))
-        .map(profile => [String(profile.md5).toLowerCase(), profile])).values()];
-      const maxAutomaticArtifactBuilds = 18;
-      const profilesToLoad = availableHashes.slice(0, maxAutomaticArtifactBuilds);
-      let loaded = 0;
-      let failed = 0;
-
-      for (let start = 0; start < profilesToLoad.length; start += 3) {
-        const group = profilesToLoad.slice(start, start + 3);
-        setUidSyncMessage('Public profiles received. Sorting artifact details ' + Math.min(start + group.length, profilesToLoad.length) + ' of ' + profilesToLoad.length + '…');
-        const results = await Promise.all(group.map(async profile => {
-          try {
-            const bundle = await fetchAkashaArtifactDetails(profile, uid);
-            saveState(prev => {
-              if (String(prev.account.uid || '').trim() !== uid || prev.akashaSnapshot?.uid !== uid) return prev;
-              return {
-                ...prev,
-                akashaSnapshot: {
-                  ...prev.akashaSnapshot,
-                  artifactsByBuild: {
-                    ...(prev.akashaSnapshot.artifactsByBuild || {}),
-                    [bundle.md5]: { fetchedAt: bundle.fetchedAt, artifacts: bundle.artifacts },
-                  },
-                },
-              };
-            });
-            return true;
-          } catch {
-            return false;
-          }
-        }));
-        loaded += results.filter(Boolean).length;
-        failed += results.filter(value => !value).length;
+      const snapshot = await syncPublicShowcase(uid, { quiet: true });
+      if (snapshot) {
+        setUidSyncMessage('Enka sync complete: ' + (snapshot.rosterEntries?.length || 0) + ' public showcase characters. AKASHA was not queried; use its separate optional sync only if you need leaderboard data. Add the rest of your owned inventory manually or import a GOOD file.');
+        setToast('Enka UID sync complete');
+      } else {
+        setUidSyncMessage('Enka did not return a public showcase snapshot. Your saved data was kept. Manual inventory and GOOD import work independently of Enka and AKASHA.');
+        setToast('Manual inventory is still available');
       }
-
-      const enkaLabel = enkaSnapshot ? 'Enka: ' + (enkaSnapshot.rosterEntries?.length || 0) + ' public display characters' : 'Enka: unavailable or on cooldown';
-      const akashaLabel = Array.isArray(akashaProfilesResult)
-        ? 'AKASHA: ' + akashaProfiles.length + ' calculation profiles'
-        : 'AKASHA: ' + (akashaResult?.error || 'profile data unavailable');
-      const capped = Math.max(0, availableHashes.length - profilesToLoad.length);
-      const summary = enkaLabel + ' · ' + akashaLabel + ' · artifact builds loaded ' + loaded + '/' + profilesToLoad.length
-        + (failed ? ' (' + failed + ' unavailable)' : '')
-        + (capped ? ' · ' + capped + ' more builds available to load manually' : '');
-      setUidSyncMessage('Import finished. ' + summary + '.');
-      setToast('UID sync complete · ' + (enkaSnapshot ? 'Enka roster updated' : 'Enka unavailable') + ' · ' + loaded + ' artifact builds imported');
-      if (failed) setAkashaSyncError(failed + ' AKASHA artifact lookup(s) failed; successfully loaded data was kept. You can retry those builds from Account Tracker.');
     } catch (error) {
-      setUidSyncMessage((error?.message || 'The UID import failed.') + ' Any data already synced was kept.');
+      setUidSyncMessage((error?.message || 'The UID sync failed.') + ' Your saved data was kept; manual inventory and GOOD import are still available.');
     } finally {
       setUidSyncLoading(false);
+    }
+  }
+
+  async function syncOptionalAkasha() {
+    const uid = String(persisted.account.uid || '').trim();
+    if (!isValidGenshinUid(uid)) {
+      setAkashaSyncError('Enter a valid 9–10 digit UID before requesting optional AKASHA leaderboard data.');
+      return;
+    }
+    setAkashaSyncError('');
+    const result = await syncAkashaProfile(uid, { quiet: true });
+    if (result?.ok) {
+      setUidSyncMessage('Optional AKASHA sync finished: ' + (result.profiles?.length || 0) + ' calculation profiles. This is leaderboard/build metadata, not a full owned inventory. Your manual inventory and GOOD import remain the complete-inventory options.');
+      setToast('Optional AKASHA profile synced');
+    } else {
+      setUidSyncMessage('AKASHA is unavailable for this request. No manual inventory or Enka data was removed; continue with Enka, manual entry, or a GOOD import.');
     }
   }
 
@@ -1417,6 +1582,11 @@ export default function App() {
       artifacts: Array.isArray(backup.goodInventory.artifacts) ? backup.goodInventory.artifacts.filter(isRecord) : [],
       summary: isRecord(backup.goodInventory.summary) ? backup.goodInventory.summary : {},
     } : null;
+    const manualInventory = isRecord(backup.manualInventory) ? {
+      characters: Array.isArray(backup.manualInventory.characters) ? backup.manualInventory.characters.filter(isRecord) : [],
+      weapons: Array.isArray(backup.manualInventory.weapons) ? backup.manualInventory.weapons.filter(isRecord) : [],
+      artifacts: Array.isArray(backup.manualInventory.artifacts) ? backup.manualInventory.artifacts.filter(isRecord) : [],
+    } : base.manualInventory;
     const akashaSnapshot = isRecord(backup.akashaSnapshot) ? {
       ...backup.akashaSnapshot,
       profiles: Array.isArray(backup.akashaSnapshot.profiles) ? backup.akashaSnapshot.profiles.filter(isRecord) : [],
@@ -1434,6 +1604,7 @@ export default function App() {
       enkaSnapshot,
       enkaNextFetchAt: clampInteger(backup.enkaNextFetchAt ?? enkaSnapshot?.nextFetchAt, 0, Number.MAX_SAFE_INTEGER, 0),
       goodInventory,
+      manualInventory,
       akashaSnapshot,
       lastUpdated: typeof backup.lastUpdated === 'string' ? backup.lastUpdated : null,
     });
@@ -1626,8 +1797,8 @@ export default function App() {
     setOptimizerError('');
     setOptimizerResult(null);
     if (!optimizerCharacter) { setOptimizerError('Choose a character first.'); return; }
-    const inventory = persisted.goodInventory;
-    if (!inventory?.artifacts?.length) { setOptimizerError('Import a GOOD inventory with artifacts before optimizing.'); return; }
+    const artifacts = [...(persisted.goodInventory?.artifacts || []), ...(persisted.manualInventory?.artifacts || [])];
+    if (!artifacts.length) { setOptimizerError('Import a GOOD inventory or manually add artifacts in Account Tracker before optimizing.'); return; }
     if (optimizerTeamId && !optimizerTeamContainsCharacter) {
       setOptimizerError('That saved team does not contain ' + optimizerCharacter.name + '. Choose a team containing this character, or choose No team context.');
       return;
@@ -1635,7 +1806,7 @@ export default function App() {
     const result = optimizeArtifactLoadout({
       character: optimizerCharacter,
       profile: findCharacterBuildGuide(optimizerCharacter),
-      artifacts: inventory.artifacts,
+      artifacts,
       teamCharacters: optimizerTeamCharacters,
       allCharacters: characters,
       topN: 3,
@@ -1712,7 +1883,7 @@ export default function App() {
       <div className="uid-import-copy">
         <div className="eyebrow"><Database size={13}/> AUTOMATIC ACCOUNT IMPORT</div>
         <h2>Bring your Teyvat roster into sync</h2>
-        <p>Enter your in-game UID to import visible character levels, showcase weapons, talent values, equipped artifacts and available AKASHA build rankings in one go.</p>
+        <p>Sync your public Enka showcase for visible character levels, showcase weapons, talent values and equipped artifacts. AKASHA leaderboard data is optional; it is not required for your manual inventory or GOOD imports.</p>
       </div>
       <form className="uid-import-form" onSubmit={syncUidAccount}>
         <label htmlFor="home-genshin-uid">Genshin Impact UID</label>
@@ -1723,8 +1894,8 @@ export default function App() {
         <small id="home-uid-help">Public data only. Never enter your password, verification code or cookies.</small>
         {uidSyncMessage && <div className="uid-import-status" role="status" aria-live="polite"><Info size={14}/><span>{uidSyncMessage}</span></div>}
         {syncError && <div className="uid-import-error" role="alert"><Info size={14}/><span>{syncError}</span></div>}
-        {akashaSyncError && <div className="uid-import-error" role="alert"><Info size={14}/><span>{akashaSyncError}</span></div>}
-        <div className="uid-import-links"><span>{persisted.enkaSnapshot?.uid===persisted.account.uid?'Enka snapshot saved':'Enka not synced'} · {persisted.akashaSnapshot?.uid===persisted.account.uid?'AKASHA snapshot saved':'AKASHA not synced'}</span><button className="text-action" type="button" onClick={()=>navigate('account')}>Detailed sync view <ArrowRight size={13}/></button></div>
+        {akashaSyncError && <div className="uid-import-error" role="alert"><Info size={14}/><span>{akashaSyncError} Enka sync, the manual inventory editor, and GOOD import do not depend on AKASHA.</span></div>}
+        <div className="uid-import-links"><span>{persisted.enkaSnapshot?.uid===persisted.account.uid?'Enka snapshot saved':'Enka not synced'} · {persisted.akashaSnapshot?.uid===persisted.account.uid?'AKASHA snapshot saved':'AKASHA optional / not synced'}</span><button className="text-action" type="button" onClick={syncOptionalAkasha} disabled={akashaSyncLoading}>{akashaSyncLoading?'AKASHA syncing…':'Sync AKASHA (optional)'} <ArrowRight size={13}/></button><button className="text-action" type="button" onClick={()=>navigate('account')}>Detailed sync view <ArrowRight size={13}/></button></div>
       </form>
     </section>
     <div className="hero-banner">
@@ -1993,7 +2164,7 @@ export default function App() {
         {goodImportMessage&&<div className={'notice '+(goodImportMessage.startsWith('Import failed')?'warning':'success')}><Info size={15}/><span>{goodImportMessage}</span></div>}
         {persisted.goodInventory&&<><div className="good-inventory-stats"><div><span>Characters</span><strong>{persisted.goodInventory.summary?.characters ?? persisted.goodInventory.characters?.length ?? 0}</strong></div><div><span>Weapons</span><strong>{persisted.goodInventory.summary?.weapons ?? persisted.goodInventory.weapons?.length ?? 0}</strong></div><div><span>Artifacts</span><strong>{persisted.goodInventory.summary?.artifacts ?? persisted.goodInventory.artifacts?.length ?? 0}</strong></div><div><span>Locked artifacts</span><strong>{persisted.goodInventory.summary?.lockedArtifacts ?? 0}</strong></div></div>
         <div className="good-import-meta"><span>GOOD v{persisted.goodInventory.version} · {persisted.goodInventory.source || 'Inventory import'}</span><span>Imported {new Date(persisted.goodInventory.importedAt).toLocaleString()}</span></div>
-        {topImportedArtifacts.length>0&&<div className="good-artifact-preview"><div className="eyebrow">TOP GENERIC CRIT VALUE · NOT A FULL OPTIMIZER</div>{topImportedArtifacts.map((artifact,index)=><div className="good-artifact-row" key={artifact.setKey+'-'+artifact.slotKey+'-'+index}><div className="good-artifact-rank">{index+1}</div><div className="good-artifact-copy"><strong>{humanizeGameKey(artifact.setKey)} · {humanizeGameKey(artifact.slotKey)}</strong><small>{humanizeGameKey(artifact.mainStatKey)} main stat · +{artifact.level} · {artifact.location?('Equipped: '+humanizeGameKey(artifact.location)):'Unequipped'}</small><small>{artifact.substats.map(stat=>humanizeGameKey(stat.key)+': '+stat.value).join(' · ')}</small></div><span className="good-artifact-cv">{Number(artifact.critValue||0).toFixed(1)} CV</span></div>)}</div>}</>}
+        {topImportedArtifacts.length>0&&<div className="good-artifact-preview"><div className="eyebrow">TOP TRACKED ARTIFACTS BY GENERIC CRIT VALUE</div>{topImportedArtifacts.map((artifact,index)=><div className="good-artifact-row" key={artifact.setKey+'-'+artifact.slotKey+'-'+index}><div className="good-artifact-rank">{index+1}</div><div className="good-artifact-copy"><strong>{humanizeGameKey(artifact.setKey)} · {humanizeGameKey(artifact.slotKey)}</strong><small>{humanizeGameKey(artifact.mainStatKey)} main stat · +{artifact.level} · {artifact.location?('Equipped: '+humanizeGameKey(artifact.location)):'Unequipped'}</small><small>{artifact.substats.map(stat=>humanizeGameKey(stat.key)+': '+stat.value).join(' · ')}</small></div><span className="good-artifact-cv">{Number(artifact.critValue||0).toFixed(1)} CV</span></div>)}</div>}</>}
         <p className="helper-note"><Info size={13}/> Inventory Kamera is a Windows desktop scanner; its exported .GOOD file can be imported here from any device. Its official project does not provide a native macOS scanner. Inventory uploads stay in this browser's local storage. CRIT Value is a quick sorting metric, not a full character-specific build score.</p>
       </section>
       <section className="panel progression-planner-panel">
@@ -2005,6 +2176,71 @@ export default function App() {
         <div className="inventory-research-links"><a href={persisted.account.uid ? 'https://akasha.cv/profile/' + encodeURIComponent(persisted.account.uid) : 'https://akasha.cv/profiles'} target="_blank" rel="noreferrer"><span><strong>AKASHA · profile comparison</strong><small>{persisted.account.uid ? 'Open the profile for UID ' + persisted.account.uid : 'Search for your UID to compare eligible character builds and rankings'}</small></span><ExternalLink size={14}/></a><a href="https://frzyc.github.io/genshin-optimizer/" target="_blank" rel="noreferrer"><span><strong>Genshin Optimizer</strong><small>Generate or manage optimizer inventory data</small></span><ExternalLink size={14}/></a></div>
       </section>
     </div>
+    <section className="panel manual-inventory-panel">
+      <div className="panel-head">
+        <div><div className="eyebrow">MANUAL INVENTORY · AKASHA-INDEPENDENT</div><h3>Add anything you own</h3></div>
+        <span className="pill muted">Saved locally</span>
+      </div>
+      <p className="panel-description">Record your owned characters, weapons and artifacts even when AKASHA is blocked. These entries are saved in this browser, included in backup exports, and remain separate from future GOOD imports. Materials and upgrade costs are tracked in Materials &amp; Farming; primogems, wishes, resin and account details are editable above.</p>
+      <div className="manual-inventory-tabs" role="tablist" aria-label="Manual inventory type">
+        <button type="button" role="tab" aria-selected={manualInventoryTab==='characters'} className={manualInventoryTab==='characters'?'button primary':'button secondary'} onClick={()=>{setManualInventoryTab('characters');setManualInventoryMessage('');}}>Characters ({persisted.manualInventory.characters.length})</button>
+        <button type="button" role="tab" aria-selected={manualInventoryTab==='weapons'} className={manualInventoryTab==='weapons'?'button primary':'button secondary'} onClick={()=>{setManualInventoryTab('weapons');setManualInventoryMessage('');}}>Weapons ({persisted.manualInventory.weapons.length})</button>
+        <button type="button" role="tab" aria-selected={manualInventoryTab==='artifacts'} className={manualInventoryTab==='artifacts'?'button primary':'button secondary'} onClick={()=>{setManualInventoryTab('artifacts');setManualInventoryMessage('');}}>Artifacts ({persisted.manualInventory.artifacts.length})</button>
+      </div>
+
+      {manualInventoryTab==='characters' && <>
+        <form className="manual-inventory-form" onSubmit={addManualCharacter}>
+          <label>Character<select value={manualCharacterForm.characterId} onChange={event=>setManualCharacterForm(prev=>({...prev,characterId:event.target.value}))} required><option value="">Choose a character</option>{characters.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(character=><option key={character.id} value={character.id}>{character.name} · {character.element}</option>)}</select></label>
+          <label>Level<input type="number" min="1" max="90" value={manualCharacterForm.level} onChange={event=>setManualCharacterForm(prev=>({...prev,level:event.target.value}))} required/></label>
+          <label>Constellation<input type="number" min="0" max="6" value={manualCharacterForm.constellation} onChange={event=>setManualCharacterForm(prev=>({...prev,constellation:event.target.value}))} required/></label>
+          <label>Normal talent<input type="number" min="1" max="15" value={manualCharacterForm.auto} onChange={event=>setManualCharacterForm(prev=>({...prev,auto:event.target.value}))} required/></label>
+          <label>Skill talent<input type="number" min="1" max="15" value={manualCharacterForm.skill} onChange={event=>setManualCharacterForm(prev=>({...prev,skill:event.target.value}))} required/></label>
+          <label>Burst talent<input type="number" min="1" max="15" value={manualCharacterForm.burst} onChange={event=>setManualCharacterForm(prev=>({...prev,burst:event.target.value}))} required/></label>
+          <button className="button primary" type="submit"><Plus size={15}/> Add / update character</button>
+        </form>
+      </>}
+
+      {manualInventoryTab==='weapons' && <>
+        <form className="manual-inventory-form" onSubmit={addManualWeapon}>
+          <label>Weapon name<input value={manualWeaponForm.name} onChange={event=>setManualWeaponForm(prev=>({...prev,name:event.target.value}))} placeholder="e.g. Primordial Jade Cutter" required maxLength={100}/></label>
+          <label>Weapon type<select value={manualWeaponForm.type} onChange={event=>setManualWeaponForm(prev=>({...prev,type:event.target.value}))}>{['Sword','Claymore','Polearm','Bow','Catalyst'].map(type=><option key={type}>{type}</option>)}</select></label>
+          <label>Rarity<select value={manualWeaponForm.rarity} onChange={event=>setManualWeaponForm(prev=>({...prev,rarity:Number(event.target.value)}))}>{[1,2,3,4,5].map(value=><option key={value} value={value}>{value} star</option>)}</select></label>
+          <label>Level<input type="number" min="1" max="90" value={manualWeaponForm.level} onChange={event=>setManualWeaponForm(prev=>({...prev,level:event.target.value}))} required/></label>
+          <label>Refinement<input type="number" min="1" max="5" value={manualWeaponForm.refinement} onChange={event=>setManualWeaponForm(prev=>({...prev,refinement:event.target.value}))} required/></label>
+          <label>Equipped to (optional)<select value={manualWeaponForm.characterId} onChange={event=>setManualWeaponForm(prev=>({...prev,characterId:event.target.value}))}><option value="">Not assigned</option>{characters.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(character=><option key={character.id} value={character.id}>{character.name}</option>)}</select></label>
+          <label className="manual-inventory-checkbox"><input type="checkbox" checked={manualWeaponForm.locked} onChange={event=>setManualWeaponForm(prev=>({...prev,locked:event.target.checked}))}/> Locked</label>
+          <button className="button primary" type="submit"><Plus size={15}/> Add weapon</button>
+        </form>
+      </>}
+
+      {manualInventoryTab==='artifacts' && <>
+        <form className="manual-inventory-form" onSubmit={addManualArtifact}>
+          <label>Artifact set<select value={manualArtifactForm.setKey} onChange={event=>setManualArtifactForm(prev=>({...prev,setKey:event.target.value}))} required>{MANUAL_ARTIFACT_SETS.map(set=><option key={set.value} value={set.value}>{set.label}</option>)}</select></label>
+          <label>Slot<select value={manualArtifactForm.slotKey} onChange={event=>setManualArtifactForm(prev=>({...prev,slotKey:event.target.value}))}>{['flower','plume','sands','goblet','circlet'].map(slot=><option key={slot} value={slot}>{slot[0].toUpperCase()+slot.slice(1)}</option>)}</select></label>
+          <label>Main stat<select value={manualArtifactForm.mainStatKey} onChange={event=>setManualArtifactForm(prev=>({...prev,mainStatKey:event.target.value}))}>{MANUAL_ARTIFACT_MAIN_STATS.map(stat=><option key={stat}>{stat}</option>)}</select></label>
+          <label>Rarity<select value={manualArtifactForm.rarity} onChange={event=>setManualArtifactForm(prev=>({...prev,rarity:Number(event.target.value)}))}>{[1,2,3,4,5].map(value=><option key={value} value={value}>{value} star</option>)}</select></label>
+          <label>Enhancement level<input type="number" min="0" max="20" value={manualArtifactForm.level} onChange={event=>setManualArtifactForm(prev=>({...prev,level:event.target.value}))} required/></label>
+          <label>Equipped to (optional)<select value={manualArtifactForm.characterId} onChange={event=>setManualArtifactForm(prev=>({...prev,characterId:event.target.value}))}><option value="">Unequipped</option>{characters.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(character=><option key={character.id} value={character.id}>{character.name}</option>)}</select></label>
+          <label className="manual-inventory-wide">Substats <input value={manualArtifactForm.substats} onChange={event=>setManualArtifactForm(prev=>({...prev,substats:event.target.value}))} placeholder="CRIT Rate: 10.1, CRIT DMG: 20.2, ATK%: 5.8"/></label>
+          <label className="manual-inventory-checkbox"><input type="checkbox" checked={manualArtifactForm.lock} onChange={event=>setManualArtifactForm(prev=>({...prev,lock:event.target.checked}))}/> Locked</label>
+          <button className="button primary" type="submit"><Plus size={15}/> Add artifact</button>
+        </form>
+        <p className="helper-note"><Info size={13}/> Enter substats as “Stat: value”, separated by commas. Manually entered artifacts can be considered by the build optimizer, but the score remains a heuristic.</p>
+      </>}
+
+      {manualInventoryMessage && <div className={'notice '+(manualInventoryMessage.startsWith('Could not') || manualInventoryMessage.startsWith('Choose') || manualInventoryMessage.startsWith('Enter')?'warning':'success')} role="status">{manualInventoryMessage}</div>}
+      <div className="manual-inventory-list">
+        <div className="manual-inventory-list-heading"><strong>{manualInventoryTab==='characters'?'Manually tracked characters':manualInventoryTab==='weapons'?'Manually tracked weapons':'Manually tracked artifacts'}</strong><span>{(persisted.manualInventory[manualInventoryTab] || []).length} entries</span></div>
+        {manualInventoryTab==='characters' && persisted.manualInventory.characters.map(item=>{
+          const character=characters.find(row=>row.id===item.characterId);
+          return <div className="manual-inventory-row" key={item.id}><div><strong>{character?.name || item.name || item.characterId}</strong><small>Lv. {item.level} · C{item.constellation} · Talents {item.talents?.join(' / ') || '1 / 1 / 1'}</small></div><button type="button" className="icon-button danger tiny" onClick={()=>removeManualInventoryItem('characters',item.id)} aria-label={'Remove '+(character?.name || item.name || 'character')}><Trash2 size={14}/></button></div>;
+        })}
+        {manualInventoryTab==='weapons' && persisted.manualInventory.weapons.map(item=><div className="manual-inventory-row" key={item.id}><div><strong>{item.name}</strong><small>{item.rarity}★ {item.type} · Lv. {item.level} · R{item.refinement}{item.equippedToName?' · Equipped: '+item.equippedToName:''}{item.lock?' · Locked':''}</small></div><button type="button" className="icon-button danger tiny" onClick={()=>removeManualInventoryItem('weapons',item.id)} aria-label={'Remove '+item.name}><Trash2 size={14}/></button></div>)}
+        {manualInventoryTab==='artifacts' && persisted.manualInventory.artifacts.map(item=><div className="manual-inventory-row" key={item.id}><div><strong>{MANUAL_ARTIFACT_SETS.find(set=>set.value===item.setKey)?.label || item.setKey} · {item.slotKey}</strong><small>{item.rarity}★ · +{item.level} · {item.mainStatKey}{item.location?' · Equipped: '+item.location:''}{item.lock?' · Locked':''} · {item.substats?.length || 0} substats</small></div><span className="manual-inventory-cv">{Number(item.critValue || 0).toFixed(1)} CV</span><button type="button" className="icon-button danger tiny" onClick={()=>removeManualInventoryItem('artifacts',item.id)} aria-label={'Remove '+item.slotKey+' artifact'}><Trash2 size={14}/></button></div>)}
+        {(persisted.manualInventory[manualInventoryTab] || []).length===0 && <p className="manual-inventory-empty">Nothing added here yet. Use the form above to record your first {manualInventoryTab==='characters'?'character':manualInventoryTab==='weapons'?'weapon':'artifact'}.</p>}
+      </div>
+      <div className="manual-inventory-footer"><span><Info size={13}/> Manual items are included in the exported tracker backup. GOOD imports are stored separately and will not erase these entries.</span><button className="button secondary" type="button" onClick={()=>navigate('materials')}><PackageOpen size={14}/> Open Materials &amp; Farming</button></div>
+    </section>
     <div className="progress-goals-layout"><div className="panel goals-panel"><div className="panel-head"><div><div className="eyebrow">YOUR OBJECTIVES</div><h3>Upgrade goals</h3></div><span className="pill muted">{persisted.goals.length} goals</span></div><form className="goal-form" onSubmit={addGoal}><label>Goal name<input value={newGoal.title} onChange={e=>setNewGoal(p=>({...p,title:e.target.value}))} placeholder="e.g. Finish Skirk talents" required/></label><label>Character (optional)<select value={newGoal.character} onChange={e=>setNewGoal(p=>({...p,character:e.target.value}))}><option value="">Select character</option>{characters.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label><div className="goal-form-row"><label>Target<select value={newGoal.target} onChange={e=>setNewGoal(p=>({...p,target:e.target.value}))}>{['Level 90','Level 80/90','Talent level 9','Triple crown','Weapon level 90','Artifact build','Custom target'].map(t=><option key={t}>{t}</option>)}</select></label><label>Due date<input type="date" value={newGoal.due} onChange={e=>setNewGoal(p=>({...p,due:e.target.value}))}/></label></div><button className="button primary full-width" type="submit"><Plus size={15}/> Add upgrade goal</button></form><div className="goal-list detailed">{persisted.goals.map(g=>{const c=characters.find(ch=>ch.id===g.character);return <div className={`goal-row ${g.done?'done':''}`} key={g.id}><button className="goal-toggle" onClick={()=>saveState(p=>({...p,goals:p.goals.map(x=>x.id===g.id?{...x,done:!x.done}:x)}))}>{g.done&&<Check size={12}/>}</button><div className="goal-info"><strong>{g.title}</strong><small>{c?`${c.name} · `:''}{g.target}{g.due?` · Due ${g.due}`:''}</small></div><button className="icon-button danger tiny" onClick={()=>deleteGoal(g.id)}><Trash2 size={13}/></button></div>;})}</div>{persisted.goals.length===0&&<p className="empty-inline">Your goals will appear here once you add them.</p>}</div><div className="panel resources-panel"><div className="panel-head"><div><div className="eyebrow">RESOURCE TRACKING</div><h3>Wish resources</h3></div><span className="pill muted">Manual</span></div><div className="resource-display"><div className="resource-emblem primogem">✧</div><div><span>Primogems</span><strong>{formatNumber(persisted.account.primogems)}</strong></div></div><ProgressBar value={persisted.account.wishes} max={180}/><div className="resource-foot"><span>{formatNumber(persisted.account.wishes)} wishes available</span><span>Pity: {persisted.account.pity}</span></div><p className="helper-note"><Info size={13}/> These values are optional manual notes, not an automated pull tracker. Update them after wishing or spending currency.</p><button className="button secondary full-width" onClick={()=>navigate('materials')}>Review upgrade materials <ArrowRight size={15}/></button></div></div>
   </div>;
 
@@ -2163,18 +2399,18 @@ export default function App() {
     <div className="optimizer-hero-strip">
       <span className="optimizer-hero-icon"><Layers3 size={23}/></span>
       <div><strong>Use what you already own before spending resin.</strong><p>The optimizer compares compatible main stats, weighted substats, relevant 2-piece/4-piece set fit and optional saved-team context. It ranks alternatives and explains the trade-offs.</p></div>
-      <div className="optimizer-hero-count"><strong>{persisted.goodInventory?.artifacts?.length || 0}</strong><span>imported artifacts</span></div>
+      <div className="optimizer-hero-count"><strong>{inventoryArtifacts.length}</strong><span>tracked artifacts</span></div>
     </div>
     <section className="panel optimizer-controls-panel">
-      <div className="panel-head"><div><div className="eyebrow">BUILD TARGET</div><h3>Choose a character</h3></div><span className={persisted.goodInventory?.artifacts?.length ? 'pill success' : 'pill muted'}>{persisted.goodInventory?.artifacts?.length ? 'Inventory ready' : 'Inventory needed'}</span></div>
+      <div className="panel-head"><div><div className="eyebrow">BUILD TARGET</div><h3>Choose a character</h3></div><span className={inventoryArtifacts.length ? 'pill success' : 'pill muted'}>{inventoryArtifacts.length ? 'Inventory ready' : 'Inventory needed'}</span></div>
       <div className="optimizer-controls-grid">
         <label>Character to optimize<select value={optimizerCharacter?.id || ''} onChange={e=>{setOptimizerCharacterId(e.target.value);setOptimizerResult(null);setOptimizerError('');}}>{characters.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(character=><option key={character.id} value={character.id}>{character.name}{character.owned?' · Owned':''} · {character.element || 'Unknown'}</option>)}</select></label>
         <label>Team context (optional)<select value={optimizerTeamId} onChange={e=>{setOptimizerTeamId(e.target.value);setOptimizerResult(null);setOptimizerError('');}}><option value="">No team context</option>{persisted.teams.map(team=><option key={team.id} value={team.id}>{team.name}</option>)}</select></label>
       </div>
       {optimizerTeamId && !optimizerTeamContainsCharacter && <div className="notice warning optimizer-inline-notice"><Info size={14}/><span>The selected team does not contain {optimizerCharacter?.name || 'this character'}. Pick a team that includes the target, or select “No team context”.</span></div>}
-      {persisted.goodInventory?.artifacts?.length ? <div className="optimizer-inventory-ready"><div><CheckCircle2 size={17}/><span><strong>{persisted.goodInventory.artifacts.length.toLocaleString()} artifacts loaded</strong><small>{persisted.goodInventory.summary?.lockedArtifacts || 0} locked · {persisted.goodInventory.summary?.highCritValueArtifacts || 0} pieces with 30+ generic CV · GOOD v{persisted.goodInventory.version}</small></span></div><button className="button secondary compact" onClick={()=>goodUploadRef.current?.click()}><Upload size={14}/> Replace import</button></div> : <div className="optimizer-no-inventory"><div className="optimizer-empty-icon"><Upload size={21}/></div><div><strong>Import a GOOD inventory to begin</strong><p>Export a <code>.GOOD</code> file from Inventory Kamera or a compatible GOOD JSON export, then import it here. Public UID sync alone cannot provide your unequipped pieces.</p><div className="optimizer-empty-actions"><input ref={goodUploadRef} className="hidden-input" type="file" accept=".good,.json,application/json,text/plain" onChange={importGoodFile}/><button className="button primary" onClick={()=>goodUploadRef.current?.click()}><Upload size={15}/> Import .GOOD inventory</button><a className="button secondary link-button" href="https://github.com/Andrewthe13th/Inventory_Kamera" target="_blank" rel="noreferrer"><ExternalLink size={14}/> Get Inventory Kamera</a><a className="button secondary link-button" href="https://frzyc.github.io/genshin-optimizer/" target="_blank" rel="noreferrer"><ExternalLink size={14}/> Genshin Optimizer</a></div></div></div>}
+      {inventoryArtifacts.length ? <div className="optimizer-inventory-ready"><div><CheckCircle2 size={17}/><span><strong>{inventoryArtifacts.length.toLocaleString()} artifacts tracked</strong><small>{inventoryArtifacts.filter(item=>item.lock).length} locked · {inventoryArtifacts.filter(item=>Number(item.critValue||0)>=30).length} pieces with 30+ generic CV · {inventoryArtifacts.filter(item=>item.source==='manual').length} manual</small></span></div><button className="button secondary compact" onClick={()=>goodUploadRef.current?.click()}><Upload size={14}/> {persisted.goodInventory?'Replace import':'Import GOOD'}</button></div> : <div className="optimizer-no-inventory"><div className="optimizer-empty-icon"><Upload size={21}/></div><div><strong>Import a GOOD inventory to begin</strong><p>Import a <code>.GOOD</code> file or add artifacts manually in Account Tracker. Public UID sync alone cannot provide your unequipped pieces.</p><div className="optimizer-empty-actions"><input ref={goodUploadRef} className="hidden-input" type="file" accept=".good,.json,application/json,text/plain" onChange={importGoodFile}/><button className="button primary" onClick={()=>goodUploadRef.current?.click()}><Upload size={15}/> Import .GOOD inventory</button><a className="button secondary link-button" href="https://github.com/Andrewthe13th/Inventory_Kamera" target="_blank" rel="noreferrer"><ExternalLink size={14}/> Get Inventory Kamera</a><a className="button secondary link-button" href="https://frzyc.github.io/genshin-optimizer/" target="_blank" rel="noreferrer"><ExternalLink size={14}/> Genshin Optimizer</a></div></div></div>}
       {goodImportMessage && <div className={'notice '+(goodImportMessage.startsWith('Import failed')?'warning':'success')}><Info size={15}/><span>{goodImportMessage}</span></div>}
-      <div className="optimizer-run-row"><div><span className="eyebrow">HOW THE SCORE WORKS</span><p>Main stat fit + stat-priority-weighted substats + role/team-aware set-bonus fit. This is a ranking heuristic, not an exact damage simulator.</p></div><button className="button primary optimizer-run-button" disabled={!persisted.goodInventory?.artifacts?.length || !optimizerCharacter} onClick={runArtifactOptimizer}><Sparkles size={15}/> Find best loadouts</button></div>
+      <div className="optimizer-run-row"><div><span className="eyebrow">HOW THE SCORE WORKS</span><p>Main stat fit + stat-priority-weighted substats + role/team-aware set-bonus fit. This is a ranking heuristic, not an exact damage simulator.</p></div><button className="button primary optimizer-run-button" disabled={!inventoryArtifacts.length || !optimizerCharacter} onClick={runArtifactOptimizer}><Sparkles size={15}/> Find best loadouts</button></div>
     </section>
     <section className="panel optimizer-akasha-panel">
       <div className="panel-head"><div><div className="eyebrow">AKASHA SYSTEM · PUBLIC DATA</div><h3>AKASHA artifact reference</h3></div><span className={optimizerAkashaProfiles.length ? 'pill success' : 'pill muted'}>{optimizerAkashaProfiles.length ? 'Character data found' : 'No matching snapshot'}</span></div>

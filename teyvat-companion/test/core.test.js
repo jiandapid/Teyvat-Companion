@@ -515,6 +515,20 @@ test('optimizer returns an actionable error when a slot is missing', () => {
 });
 
 
+test('preserves manual characters, weapons and artifacts in tracker backups', () => {
+  const manualInventory = {
+    characters: [{ id: 'manual-character-skirk', characterId: 'skirk', level: 90, constellation: 2, talents: [8, 9, 10] }],
+    weapons: [{ id: 'manual-weapon-1', name: 'Primordial Jade Cutter', level: 90, refinement: 1 }],
+    artifacts: [{ id: 'manual-artifact-1', setKey: 'EmblemOfSeveredFate', slotKey: 'flower', level: 20, rarity: 5, mainStatKey: 'HP', substats: [{ key: 'CRIT Rate', value: 10.1 }] }],
+  };
+  const backup = normalizeTrackerBackup({ characters: [{ id: 'skirk' }], manualInventory });
+  assert.deepEqual(backup.manualInventory, manualInventory);
+  assert.throws(
+    () => normalizeTrackerBackup({ characters: [{ id: 'skirk' }], manualInventory: { characters: {} } }),
+    /manualInventory.characters/,
+  );
+});
+
 test('normalizes a valid tracker backup and deduplicates character IDs', () => {
   const backup = normalizeTrackerBackup({
     format: 'teyvat-companion-backup-v1',
