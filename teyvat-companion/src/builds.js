@@ -2341,6 +2341,28 @@ function roleAdaptedProfile(profile, character, characterKey, role) {
   };
 }
 
+function classifyRoleEvidence(candidate, primaryProfile, isPrimary = false) {
+  if (isPrimary) {
+    const note = String(candidate?.sourceNote || '');
+    if (/does not publish a ranked weapon\/artifact list/i.test(note)) return 'provisional';
+    if (candidate?.sourceCheckedAt == null) return 'needs-review';
+    return 'curated';
+  }
+  const url = String(candidate?.sourceUrl || '');
+  if (/youtube\.com|youtu\.be/i.test(url)) return 'creator-reference';
+  if (/genshin\.gg\/characters\//i.test(url)) return 'reference-only';
+  return 'adapted';
+}
+
+function roleEvidenceLabel(status) {
+  if (status === 'curated') return 'recommended role';
+  if (status === 'provisional') return 'provisional build candidates';
+  if (status === 'needs-review') return 'source review needed';
+  if (status === 'creator-reference') return 'creator-video reference';
+  if (status === 'reference-only') return 'independent alternative · not source-ranked';
+  return 'independent off-meta build';
+}
+
 export function getCharacterBuildRoleOptions(profile, character = null) {
   const characterKey = Object.entries(CHARACTER_BUILD_GUIDES)
     .find(([, candidate]) => candidate === profile)?.[0]
@@ -2362,13 +2384,15 @@ export function getCharacterBuildRoleOptions(profile, character = null) {
           id: candidate.id || 'primary-' + BUILD_ROLE_IDS[role],
           label: candidate.id ? (candidate.role || role) : 'Recommended ' + role + ' build',
           profile: candidate,
-          status: 'curated',
+          status: classifyRoleEvidence(candidate, profile, candidate === profile),
+          buildCategory: candidate.buildCategory || role,
         }))
       : [{
           id: 'adapted-' + BUILD_ROLE_IDS[role],
           label: 'Independent ' + role + ' build (off-meta)',
           profile: roleAdaptedProfile(profile, character, characterKey, role),
           status: 'adapted',
+          buildCategory: role,
         }];
 
     const defaultOption = options[0];
@@ -2377,7 +2401,7 @@ export function getCharacterBuildRoleOptions(profile, character = null) {
       id: 'role-' + BUILD_ROLE_IDS[role],
       buildCategory: role,
       role: defaultOption.profile?.role || role,
-      label: isPrimary ? role + ' — recommended' : role + ' — ' + (defaultOption.status === 'adapted' ? 'independent off-meta build' : 'alternative build'),
+      label: isPrimary && defaultOption.status === 'curated' ? role + ' — recommended' : role + ' — ' + roleEvidenceLabel(defaultOption.status),
       status: defaultOption.status,
       note: defaultOption.profile?.sourceNote || '',
       profile: defaultOption.profile,

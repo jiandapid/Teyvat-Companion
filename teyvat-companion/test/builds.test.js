@@ -31,7 +31,7 @@ test('every character has exactly three selectable role sections with complete b
     assert.deepEqual(options.map(option => option.buildCategory), BUILD_ROLE_CATEGORIES, characterKey + ': role sections must be Main DPS, Sub DPS, Support');
     for (const option of options) {
       assert.ok(option.id && option.profile, characterKey + ': every role must have a selectable build profile');
-      assert.ok(['curated', 'adapted'].includes(option.status), characterKey + ': role needs a known coverage status');
+      assert.ok(['curated', 'provisional', 'needs-review', 'creator-reference', 'reference-only', 'adapted'].includes(option.status), characterKey + ': role needs an honest evidence status');
       assert.equal(option.profile.buildCategory, option.buildCategory, characterKey + ': selected profile must match its role');
       assertCompleteProfile(characterKey + '/' + option.buildCategory, option.profile);
       assert.ok(Array.isArray(option.playstyles) && option.playstyles.length > 0, characterKey + ': each role must expose at least one playstyle');
@@ -318,4 +318,38 @@ test('off-meta role builds explain when shared sets and weapon options are condi
       assert.ok(option.profile.artifacts.every(artifact => /role-specific candidates|not ranked|only|when|if|conditional|depends/i.test(artifact.note)), key + '/' + option.buildCategory + ': artifact conditions should be stated');
     }
   }
+});
+
+test('build role evidence labels do not imply a character page validates every alternate role', () => {
+  for (const [characterKey, profile] of Object.entries(CHARACTER_BUILD_GUIDES)) {
+    const options = getCharacterBuildRoleOptions(profile);
+    const primaryOption = options.find(option => option.buildCategory === profile.buildCategory);
+    assert.ok(primaryOption, characterKey + ': primary role option exists');
+    if (/does not publish a ranked weapon\/artifact list/i.test(profile.sourceNote || '')) {
+      assert.equal(primaryOption.status, 'provisional', characterKey + ': pages without ranked gear lists must be provisional');
+    } else if (profile.sourceCheckedAt == null) {
+      assert.equal(primaryOption.status, 'needs-review', characterKey + ': undated profiles need review rather than being called unranked');
+    } else {
+      assert.equal(primaryOption.status, 'curated', characterKey + ': dated source-reviewed primary profile must be identified');
+    }
+    for (const variant of profile.alternateBuilds || []) {
+      const roleOption = options.find(option => option.buildCategory === variant.buildCategory);
+      const playstyleOption = roleOption?.playstyles.find(style => style.id === variant.id);
+      assert.ok(playstyleOption, characterKey + '/' + variant.id + ': role variant must remain selectable');
+      if (/youtube\.com|youtu\.be/i.test(variant.sourceUrl || '')) {
+        assert.equal(playstyleOption.status, 'creator-reference', characterKey + '/' + variant.id + ': direct video links are source references, not guarantees of current optimality');
+      } else if (/genshin\.gg\/characters\//i.test(variant.sourceUrl || '')) {
+        assert.equal(playstyleOption.status, 'reference-only', characterKey + '/' + variant.id + ': a primary character page must not be presented as proof of an alternate role');
+      }
+    }
+  }
+});
+
+test('uncited role templates stay explicitly experimental and newer unranked profiles stay provisional', () => {
+  for (const characterKey of ['vesna', 'vodyanitsa']) {
+    const profile = CHARACTER_BUILD_GUIDES[characterKey];
+    assert.equal(getCharacterBuildRoleOptions(profile).find(option => option.buildCategory === profile.buildCategory).status, 'provisional');
+  }
+  const unknown = getCharacterBuildRoleOptions(null, { id: 'future-unit', name: 'Future Unit', element: 'Electro', weapon: 'Sword' });
+  assert.ok(unknown.every(option => option.status === 'adapted'));
 });
