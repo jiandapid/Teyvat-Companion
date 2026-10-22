@@ -2007,7 +2007,13 @@ for (const [characterKey, variants] of Object.entries(EXTRA_CURATED_ROLE_VARIANT
 }
 
 
-const CURRENT_BUILD_DATA_REVIEW_DATE = '2026-10-22';
+const CURRENT_BUILD_DATA_REVIEW_DATE = '2026-10-21';
+const CHARACTER_BUILD_REVIEW_DATES = {"neuvillette": "2026-10-22","escoffier": "2026-10-22","mona": "2026-10-22","zhongli": "2026-10-22","xiangling": "2026-10-22","yelan": "2026-10-22","fischl": "2026-10-22","sucrose": "2026-10-22","alhaitham": "2026-10-22","ganyu": "2026-10-22","tighnari": "2026-10-22","venti": "2026-10-22","xiao": "2026-10-22","yoimiya": "2026-10-22","layla": "2026-10-22","gaming": "2026-10-22","odette": "2026-10-22"};
+function buildReviewDateLabel(isoDate) {
+  const [year, month, day] = String(isoDate || CURRENT_BUILD_DATA_REVIEW_DATE).split('-');
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return Number(month) >= 1 && Number(month) <= 12 ? Number(day) + ' ' + monthNames[Number(month)-1] + ' ' + year : isoDate;
+}
 const CURRENTLY_REVIEWED_PRIMARY_BUILDS = new Set(["skirk","nefer","zibai","varka","durin","linnea","jahoda","aino","iansan","yumemizuki-mizuki","xingqiu","furina","nahida","raiden","bennett","kazuha","cyno","albedo","ayaka","ayato","childe","diluc","eula","hu-tao","itto","jean","keqing","klee","kokomi","nilou","shenhe","columbina","neuvillette","escoffier","mona","zhongli","xiangling","yelan","fischl","sucrose","alhaitham","ganyu","tighnari","venti","xiao","yoimiya","layla","gaming","odette"]);
 const BUILD_SOURCE_DISPLAY_NAMES = {"hu-tao":"Hu Tao","yae-miko":"Yae Miko","yumemizuki-mizuki":"Yumemizuki Mizuki","traveler-anemo":"Traveler (Anemo)","traveler-cryo":"Traveler (Cryo)","traveler-dendro":"Traveler (Dendro)","traveler-electro":"Traveler (Electro)","traveler-geo":"Traveler (Geo)","traveler-hydro":"Traveler (Hydro)","traveler-pyro":"Traveler (Pyro)"};
 function titleCaseBuildKey(key) {
@@ -2031,9 +2037,9 @@ function ensureBuildSourceAttribution(profile, characterKey, isAlternate = false
         : 'Reference-only build guidance. Verify current game mechanics, role viability, weapon conditions, and team rotation before farming.';
   }
   if (!isAlternate && CURRENTLY_REVIEWED_PRIMARY_BUILDS.has(characterKey)) {
-    profile.sourceCheckedAt = CURRENT_BUILD_DATA_REVIEW_DATE;
+    profile.sourceCheckedAt = CHARACTER_BUILD_REVIEW_DATES[characterKey] || CURRENT_BUILD_DATA_REVIEW_DATE;
     profile.sourceName = 'Genshin.gg — ' + titleCaseBuildKey(characterKey) + ' build page';
-    profile.sourceNote = 'Checked 22 Oct 2026 against this character’s linked Genshin.gg page. The lead choices follow the linked Genshin.gg build entry where the page exposes one; additional choices may be comparison alternatives rather than a complete source-ranked list. This is not an independent damage simulation. Team, refinement, Energy Recharge, and rotation requirements can change the best choice.';
+    profile.sourceNote = 'Checked ' + buildReviewDateLabel(profile.sourceCheckedAt) + ' against this character’s linked Genshin.gg page. The lead choices follow the linked Genshin.gg build entry where the page exposes one; additional choices may be comparison alternatives rather than a complete source-ranked list. This is not an independent damage simulation. Team, refinement, Energy Recharge, and rotation requirements can change the best choice.';
   } else if (!profile.sourceCheckedAt) profile.sourceCheckedAt = null;
 }
 for (const [characterKey, profile] of Object.entries(CHARACTER_BUILD_GUIDES)) {
