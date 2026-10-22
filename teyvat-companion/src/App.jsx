@@ -727,22 +727,23 @@ export default function App() {
   const defaultBuildRoleOption = buildRoleOptions.find(option => option.buildCategory === activeBuildBaseProfile?.buildCategory) || buildRoleOptions[0] || null;
   const selectedBuildRoleId = buildVariantId || defaultBuildRoleOption?.id || 'role-main-dps';
   const selectedBuildRoleOption = buildRoleOptions.find(option => option.id === selectedBuildRoleId) || defaultBuildRoleOption;
-  const selectedUnreviewedRole = selectedBuildRoleOption?.status === 'adapted' ? selectedBuildRoleOption : null;
-  const selectedReferenceOnlyRole = selectedBuildRoleOption?.status === 'reference-only' ? selectedBuildRoleOption : null;
-  const selectedCreatorReferenceRole = selectedBuildRoleOption?.status === 'creator-reference' ? selectedBuildRoleOption : null;
-  const selectedProvisionalRole = selectedBuildRoleOption?.status === 'provisional' ? selectedBuildRoleOption : null;
-  const selectedRoleEvidenceCaption = selectedBuildRoleOption?.status === 'adapted'
-    ? 'independent off-meta build'
-    : selectedBuildRoleOption?.status === 'reference-only'
-      ? 'independent alternative · not source-ranked'
-      : selectedBuildRoleOption?.status === 'creator-reference'
-        ? 'creator-video reference · check age and scope'
-        : selectedBuildRoleOption?.status === 'provisional'
-          ? 'provisional build candidates'
-          : (activeBuildProfile?.role && activeBuildProfile.role !== activeBuildProfile.buildCategory ? activeBuildProfile.role : '');
   const selectedBuildPlaystyleId = buildPlaystyleId || selectedBuildRoleOption?.playstyles?.[0]?.id || '';
   const selectedBuildPlaystyleOption = selectedBuildRoleOption?.playstyles?.find(style => style.id === selectedBuildPlaystyleId) || selectedBuildRoleOption?.playstyles?.[0] || null;
   const activeBuildProfile = selectedBuildPlaystyleOption?.profile || selectedBuildRoleOption?.profile || activeBuildBaseProfile;
+  const selectedBuildEvidenceStatus = selectedBuildPlaystyleOption?.status || selectedBuildRoleOption?.status || 'adapted';
+  const selectedUnreviewedRole = selectedBuildEvidenceStatus === 'adapted' ? (selectedBuildPlaystyleOption || selectedBuildRoleOption) : null;
+  const selectedReferenceOnlyRole = selectedBuildEvidenceStatus === 'reference-only' ? (selectedBuildPlaystyleOption || selectedBuildRoleOption) : null;
+  const selectedCreatorReferenceRole = selectedBuildEvidenceStatus === 'creator-reference' ? (selectedBuildPlaystyleOption || selectedBuildRoleOption) : null;
+  const selectedProvisionalRole = selectedBuildEvidenceStatus === 'provisional' ? (selectedBuildPlaystyleOption || selectedBuildRoleOption) : null;
+  const selectedRoleEvidenceCaption = selectedBuildEvidenceStatus === 'adapted'
+    ? 'independent off-meta build'
+    : selectedBuildEvidenceStatus === 'reference-only'
+      ? 'independent alternative · not source-ranked'
+      : selectedBuildEvidenceStatus === 'creator-reference'
+        ? 'creator-video reference · check age and scope'
+        : selectedBuildEvidenceStatus === 'provisional'
+          ? 'provisional build candidates'
+          : (activeBuildProfile?.role && activeBuildProfile.role !== activeBuildProfile.buildCategory ? activeBuildProfile.role : '');
   const activeBuildStats = activeBuildProfile?.stats || null;
   const activeBuildArtifacts = activeBuildProfile?.artifacts?.length ? activeBuildProfile.artifacts : (buildCharacter?.artifact ? [{ name: buildCharacter.artifact, note: 'Saved tracker value only — this is not a ranked or source-verified recommendation.' }] : []);
   const activeBuildWeapons = activeBuildProfile?.weapons?.length ? activeBuildProfile.weapons : (buildCharacter?.weaponName ? [{ name: buildCharacter.weaponName, note: 'Saved tracker value only — check the creator guides for weapon rankings.' }] : []);
