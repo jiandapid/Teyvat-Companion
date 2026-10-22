@@ -242,7 +242,7 @@ test('current build-source attribution distinguishes reviewed rankings from prov
     assert.ok(profile.sourceNote, key + ': primary build must explain evidence scope');
     assert.ok(profile.sourceUrl.startsWith('https://'), key + ': primary build source must be secure');
     if (profile.sourceCheckedAt) {
-      assert.match(profile.sourceNote, /Checked 21 Oct 2026/i, key + ': dated review needs an explicit source note');
+      assert.ok(profile.sourceNote.includes('Checked ' + String(Number(profile.sourceCheckedAt.slice(8, 10))) + ' Oct ' + profile.sourceCheckedAt.slice(0, 4)), key + ': dated review note must match its per-character source check date');
     }
     for (const alternate of profile.alternateBuilds || []) {
       assert.ok(alternate.sourceName, key + '/' + alternate.id + ': alternate must identify its source');
