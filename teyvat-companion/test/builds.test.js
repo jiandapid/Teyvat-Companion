@@ -31,7 +31,7 @@ test('every character has exactly three selectable role sections with complete b
     assert.deepEqual(options.map(option => option.buildCategory), BUILD_ROLE_CATEGORIES, characterKey + ': role sections must be Main DPS, Sub DPS, Support');
     for (const option of options) {
       assert.ok(option.id && option.profile, characterKey + ': every role must have a selectable build profile');
-      assert.ok(['curated', 'provisional', 'creator-reference', 'reference-only', 'adapted'].includes(option.status), characterKey + ': role needs an honest evidence status');
+      assert.ok(['curated', 'provisional', 'needs-review', 'creator-reference', 'reference-only', 'adapted'].includes(option.status), characterKey + ': role needs an honest evidence status');
       assert.equal(option.profile.buildCategory, option.buildCategory, characterKey + ': selected profile must match its role');
       assertCompleteProfile(characterKey + '/' + option.buildCategory, option.profile);
       assert.ok(Array.isArray(option.playstyles) && option.playstyles.length > 0, characterKey + ': each role must expose at least one playstyle');
@@ -325,8 +325,10 @@ test('build role evidence labels do not imply a character page validates every a
     const options = getCharacterBuildRoleOptions(profile);
     const primaryOption = options.find(option => option.buildCategory === profile.buildCategory);
     assert.ok(primaryOption, characterKey + ': primary role option exists');
-    if (profile.sourceCheckedAt == null) {
-      assert.equal(primaryOption.status, 'provisional', characterKey + ': undated/unranked primary profiles must be provisional');
+    if (/does not publish a ranked weapon\/artifact list/i.test(profile.sourceNote || '')) {
+      assert.equal(primaryOption.status, 'provisional', characterKey + ': pages without ranked gear lists must be provisional');
+    } else if (profile.sourceCheckedAt == null) {
+      assert.equal(primaryOption.status, 'needs-review', characterKey + ': undated profiles need review rather than being called unranked');
     } else {
       assert.equal(primaryOption.status, 'curated', characterKey + ': dated source-reviewed primary profile must be identified');
     }
