@@ -2344,7 +2344,8 @@ function roleAdaptedProfile(profile, character, characterKey, role) {
 function classifyRoleEvidence(candidate, primaryProfile, isPrimary = false) {
   if (isPrimary) {
     const note = String(candidate?.sourceNote || '');
-    if (candidate?.sourceCheckedAt == null || /does not publish a ranked weapon\/artifact list/i.test(note)) return 'provisional';
+    if (/does not publish a ranked weapon\/artifact list/i.test(note)) return 'provisional';
+    if (candidate?.sourceCheckedAt == null) return 'needs-review';
     return 'curated';
   }
   const url = String(candidate?.sourceUrl || '');
@@ -2356,6 +2357,7 @@ function classifyRoleEvidence(candidate, primaryProfile, isPrimary = false) {
 function roleEvidenceLabel(status) {
   if (status === 'curated') return 'recommended role';
   if (status === 'provisional') return 'provisional build candidates';
+  if (status === 'needs-review') return 'source review needed';
   if (status === 'creator-reference') return 'creator-video reference';
   if (status === 'reference-only') return 'independent alternative · not source-ranked';
   return 'independent off-meta build';
