@@ -2383,12 +2383,14 @@ export function getCharacterBuildRoleOptions(profile, character = null) {
           label: candidate.id ? (candidate.role || role) : 'Recommended ' + role + ' build',
           profile: candidate,
           status: classifyRoleEvidence(candidate, profile, candidate === profile),
+          buildCategory: candidate.buildCategory || role,
         }))
       : [{
           id: 'adapted-' + BUILD_ROLE_IDS[role],
           label: 'Independent ' + role + ' build (off-meta)',
           profile: roleAdaptedProfile(profile, character, characterKey, role),
           status: 'adapted',
+          buildCategory: role,
         }];
 
     const defaultOption = options[0];
