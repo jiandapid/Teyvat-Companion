@@ -452,3 +452,35 @@ test('Oct 22 source-review batch three matches current Genshin.gg build listings
     assert.match(profile.sourceNote, /Checked 22 Oct 2026/i, key + ': source attribution date matches');
   }
 });
+
+test('Oct 22 source-review batch four matches current Genshin.gg primary listings', () => {
+  const expected = {
+    yanfei: { role: 'Main DPS', weapon: 'Skyward Atlas', artifact: 'Crimson Witch of Flames 4-piece', sands: 'ATK%', goblet: 'Pyro DMG', weapons: 5, artifacts: 5 },
+    thoma: { role: 'Support', weapon: 'Favonius Lance', artifact: 'Noblesse Oblige 4-piece', sands: 'Energy Recharge / HP%', goblet: 'HP%', weapons: 5, artifacts: 5 },
+    yaoyao: { role: 'Support', weapon: 'Favonius Lance', artifact: 'Deepwood Memories 4-piece', sands: 'HP% / Energy Recharge', goblet: 'HP%', circlet: 'Healing Bonus', weapons: 5, artifacts: 5 },
+    'yun-jin': { role: 'Support', weapon: 'Favonius Lance', artifact: 'Husk of Opulent Dreams 4-piece', sands: 'DEF% / Energy Recharge', goblet: 'DEF%', circlet: 'DEF%', weapons: 5, artifacts: 5 },
+    chongyun: { role: 'Support', weapon: "Wolf's Gravestone", artifact: 'Blizzard Strayer 2-piece + Noblesse Oblige 2-piece', sands: 'ATK% / Energy Recharge / Elemental Mastery', goblet: 'Cryo DMG', weapons: 5, artifacts: 5 },
+    candace: { role: 'Support', weapon: 'Favonius Lance', artifact: 'Noblesse Oblige 4-piece', sands: 'Energy Recharge / HP%', goblet: 'HP%', weapons: 5, artifacts: 5 },
+    ningguang: { role: 'Main DPS', weapon: 'Lost Prayer to the Sacred Winds', artifact: 'Archaic Petra 2-piece + Emblem of Severed Fate 2-piece', sands: 'ATK%', goblet: 'Geo DMG', weapons: 5, artifacts: 5 },
+    noelle: { role: 'Main DPS', weapon: 'Redhorn Stonethresher', artifact: 'Husk of Opulent Dreams 4-piece', sands: 'DEF% / Energy Recharge', goblet: 'Geo DMG', weapons: 5, artifacts: 5 },
+    razor: { role: 'Main DPS', weapon: 'Gest of the Mighty Wolf', artifact: 'A Day Carved From Rising Winds 4-piece', sands: 'ATK%', goblet: 'Electro DMG', weapons: 5, artifacts: 5 },
+    rosaria: { role: 'Support', weapon: 'Staff of Homa', artifact: 'Blizzard Strayer 4-piece', sands: 'ATK%', goblet: 'Cryo DMG', weapons: 5, artifacts: 5 },
+    sara: { role: 'Support', weapon: 'Skyward Harp', artifact: 'Emblem of Severed Fate 4-piece', sands: 'Energy Recharge / ATK%', goblet: 'Electro DMG', weapons: 5, artifacts: 5 },
+    sayu: { role: 'Support', weapon: "Wolf's Gravestone", artifact: 'Viridescent Venerer 4-piece', sands: 'Energy Recharge / Elemental Mastery', goblet: 'ATK% / Elemental Mastery', weapons: 5, artifacts: 5 },
+  };
+  for (const [key, expectation] of Object.entries(expected)) {
+    const profile = CHARACTER_BUILD_GUIDES[key];
+    assert.ok(profile, key + ': profile exists');
+    assert.equal(profile.buildCategory, expectation.role, key + ': role matches current source');
+    assert.equal(profile.weapons[0]?.name, expectation.weapon, key + ': first weapon agrees with source ordering');
+    assert.equal(profile.artifacts[0]?.name, expectation.artifact, key + ': first artifact agrees with source ordering');
+    assert.equal(profile.stats.sands, expectation.sands, key + ': Sands agree with source stats');
+    assert.equal(profile.stats.goblet, expectation.goblet, key + ': Goblet agrees with source stats');
+    if (expectation.circlet) assert.equal(profile.stats.circlet, expectation.circlet, key + ': Circlet agrees with source stats');
+    assert.equal(profile.weapons.length, expectation.weapons, key + ': source weapon list count is preserved');
+    assert.equal(profile.artifacts.length, expectation.artifacts, key + ': source artifact list count is preserved');
+    assert.ok(profile.talentOrder.length > 0, key + ': kit-based talent priority stays available');
+    assert.equal(profile.sourceCheckedAt, '2026-10-22', key + ': source-review date is recorded');
+    assert.match(profile.sourceNote, /Checked 22 Oct 2026/i, key + ': source note has matching review date');
+  }
+});
