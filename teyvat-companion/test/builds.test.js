@@ -421,3 +421,34 @@ test('Oct 22 source-review batch two follows current Genshin.gg character listin
     if (expectation.artifacts) assert.equal(profile.artifacts.length, expectation.artifacts, key + ': store source-supported artifact count');
   }
 });
+
+test('Oct 22 source-review batch three matches current Genshin.gg build listings', () => {
+  const expected = {
+    baizhu: { role: 'Support', weapon: "Jadefall's Splendor", artifact: 'Deepwood Memories 4-piece', sands: 'HP% / Energy Recharge', goblet: 'HP%', circlet: 'HP%', weapons: 5, artifacts: 5 },
+    chevreuse: { role: 'Support', weapon: 'Favonius Lance', artifact: 'Noblesse Oblige 4-piece', sands: 'HP%', weapons: 4, artifacts: 5 },
+    beidou: { role: 'Sub DPS', weapon: "Wolf's Gravestone", artifact: 'Emblem of Severed Fate 4-piece', sands: 'ATK% / Energy Recharge', weapons: 5, artifacts: 5 },
+    'kuki-shinobu': { role: 'Sub DPS', weapon: 'Freedom-Sworn', artifact: 'Flower of Paradise Lost 4-piece', sands: 'Elemental Mastery', goblet: 'Elemental Mastery', circlet: 'Elemental Mastery', weapons: 5, artifacts: 5 },
+    faruzan: { role: 'Support', weapon: 'Favonius Warbow', artifact: 'Viridescent Venerer 4-piece', sands: 'Energy Recharge', goblet: 'Anemo DMG', weapons: 5, artifacts: 5 },
+    dehya: { role: 'Support', weapon: 'Favonius Greatsword', artifact: 'Tenacity of the Millelith 4-piece', sands: 'HP%', weapons: 4, artifacts: 5 },
+    kirara: { role: 'Support', weapon: 'Favonius Sword', artifact: "Tenacity of the Millelith 2-piece + Vourukasha's Glow 2-piece", sands: 'HP% / Energy Recharge', weapons: 5, artifacts: 4 },
+    navia: { role: 'Main DPS', weapon: 'Verdict', artifact: 'Nighttime Whispers in the Echoing Woods 4-piece', sands: 'ATK%', goblet: 'Geo DMG', weapons: 5, artifacts: 5 },
+    lyney: { role: 'Main DPS', weapon: 'The First Great Magic', artifact: 'Marechaussee Hunter 4-piece', sands: 'ATK%', goblet: 'Pyro DMG', weapons: 5, artifacts: 5 },
+    wanderer: { role: 'Main DPS', weapon: "Tulaytullah's Remembrance", artifact: 'Desert Pavilion Chronicle 4-piece', sands: 'ATK%', goblet: 'Anemo DMG', weapons: 5, artifacts: 5 },
+    qiqi: { role: 'Support', weapon: 'Favonius Sword', artifact: 'Tenacity of the Millelith 4-piece', sands: 'ATK% / Energy Recharge', goblet: 'ATK%', weapons: 5, artifacts: 5 },
+    collei: { role: 'Support', weapon: 'Elegy for the End', artifact: 'Deepwood Memories 4-piece', sands: 'Energy Recharge / ATK% / Elemental Mastery', goblet: 'Dendro DMG', weapons: 5, artifacts: 5 },
+  };
+  for (const [key, expectation] of Object.entries(expected)) {
+    const profile = CHARACTER_BUILD_GUIDES[key];
+    assert.ok(profile, key + ': profile exists');
+    assert.equal(profile.buildCategory, expectation.role, key + ': role matches current source');
+    assert.equal(profile.weapons[0]?.name, expectation.weapon, key + ': first visible weapon matches source');
+    assert.equal(profile.artifacts[0]?.name, expectation.artifact, key + ': first visible artifact matches source');
+    assert.equal(profile.stats.sands, expectation.sands, key + ': Sands matches source');
+    if (expectation.goblet) assert.equal(profile.stats.goblet, expectation.goblet, key + ': Goblet matches source');
+    if (expectation.circlet) assert.equal(profile.stats.circlet, expectation.circlet, key + ': Circlet matches source');
+    assert.equal(profile.weapons.length, expectation.weapons, key + ': preserve the visible source-listed weapon count');
+    assert.equal(profile.artifacts.length, expectation.artifacts, key + ': preserve source-listed artifact count');
+    assert.equal(profile.sourceCheckedAt, '2026-10-22', key + ': per-character source-review date is recorded');
+    assert.match(profile.sourceNote, /Checked 22 Oct 2026/i, key + ': source attribution date matches');
+  }
+});
