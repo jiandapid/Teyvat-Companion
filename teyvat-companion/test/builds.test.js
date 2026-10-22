@@ -334,9 +334,9 @@ test('build role evidence labels do not imply a character page validates every a
       const roleOption = options.find(option => option.buildCategory === variant.buildCategory);
       const playstyleOption = roleOption?.playstyles.find(style => style.id === variant.id);
       assert.ok(playstyleOption, characterKey + '/' + variant.id + ': role variant must remain selectable');
-      if (/youtube\\.com|youtu\\.be/i.test(variant.sourceUrl || '')) {
+      if (/youtube\.com|youtu\.be/i.test(variant.sourceUrl || '')) {
         assert.equal(playstyleOption.status, 'creator-reference', characterKey + '/' + variant.id + ': direct video links are source references, not guarantees of current optimality');
-      } else if (/genshin\\.gg\\/characters\\//i.test(variant.sourceUrl || '')) {
+      } else if (/genshin\.gg\/characters\//i.test(variant.sourceUrl || '')) {
         assert.equal(playstyleOption.status, 'reference-only', characterKey + '/' + variant.id + ': a primary character page must not be presented as proof of an alternate role');
       }
     }
