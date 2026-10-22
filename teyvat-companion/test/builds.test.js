@@ -378,7 +378,7 @@ test('Oct 22 source-review batch follows the current Genshin.gg primary listing'
     const profile = CHARACTER_BUILD_GUIDES[key];
     assert.ok(profile, key + ': source-reviewed profile exists');
     assert.equal(profile.buildCategory, expectation.role, key + ': role must match current source page');
-    assert.equal(profile.role, expectation.role === 'Main DPS' ? profile.role : profile.role, key + ': role descriptor remains present');
+    assert.ok(typeof profile.role === 'string' && profile.role.length > 0, key + ': role descriptor must be present');
     assert.equal(profile.weapons[0]?.name, expectation.weapon, key + ': first displayed weapon agrees with current Genshin.gg listing');
     assert.equal(profile.artifacts[0]?.name, expectation.artifact, key + ': first displayed artifact agrees with current Genshin.gg listing');
     assert.equal(profile.stats.sands, expectation.sands, key + ': main stat matches the source snapshot');
