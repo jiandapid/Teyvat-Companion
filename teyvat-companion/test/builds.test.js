@@ -532,3 +532,13 @@ test('25 additional primary profiles match source-reviewed Genshin.gg role, gear
   }
   assert.deepEqual(CHARACTER_BUILD_GUIDES.sethos.talentOrder, ['Normal Attack', 'Elemental Burst', 'Elemental Skill']);
 });
+
+
+test('source review stores the published ranks instead of renumbering hidden weapon entries', () => {
+  const profile = CHARACTER_BUILD_GUIDES.sigewinne;
+  assert.deepEqual(profile.weapons.map(weapon => weapon.name), ['Silvershower Heartstrings', 'Recurve Bow', 'Favonius Warbow', 'Elegy for the End']);
+  assert.match(profile.weapons[0].note, /entry #1/);
+  assert.match(profile.weapons[1].note, /entry #2/);
+  assert.match(profile.weapons[2].note, /entry #4/);
+  assert.match(profile.weapons[3].note, /entry #5/);
+});
