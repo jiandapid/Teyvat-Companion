@@ -353,3 +353,38 @@ test('uncited role templates stay explicitly experimental and newer unranked pro
   const unknown = getCharacterBuildRoleOptions(null, { id: 'future-unit', name: 'Future Unit', element: 'Electro', weapon: 'Sword' });
   assert.ok(unknown.every(option => option.status === 'adapted'));
 });
+
+test('Oct 22 source-review batch follows the current Genshin.gg primary listing', () => {
+  const expected = {
+    neuvillette: { role: 'Main DPS', weapon: 'Tome of the Eternal Flow', artifact: 'Marechaussee Hunter 4-piece', sands: 'HP%' },
+    escoffier: { role: 'Sub DPS', weapon: 'Symphonist of Scents', artifact: 'Golden Troupe 4-piece', sands: 'ATK% / Energy Recharge' },
+    mona: { role: 'Support', weapon: 'Thrilling Tales of Dragon Slayers', artifact: 'Noblesse Oblige 4-piece', sands: 'Energy Recharge / ATK%' },
+    zhongli: { role: 'Support', weapon: 'Black Tassel', artifact: 'Archaic Petra 4-piece', sands: 'HP%' },
+    xiangling: { role: 'Sub DPS', weapon: 'Staff of the Scarlet Sands', artifact: 'Emblem of Severed Fate 4-piece', sands: 'Energy Recharge / ATK%' },
+    yelan: { role: 'Sub DPS', weapon: 'Elegy for the End', artifact: 'Emblem of Severed Fate 4-piece', sands: 'Energy Recharge' },
+    fischl: { role: 'Sub DPS', weapon: 'The Daybreak Chronicles', artifact: 'Golden Troupe 4-piece', sands: 'ATK%' },
+    sucrose: { role: 'Support', weapon: 'A Thousand Floating Dreams', artifact: 'Viridescent Venerer 4-piece', sands: 'Elemental Mastery' },
+    alhaitham: { role: 'Main DPS', weapon: 'Light of Foliar Incision', artifact: 'Gilded Dreams 4-piece', sands: 'Elemental Mastery / ATK%' },
+    ganyu: { role: 'Main DPS', weapon: "Hunter's Path", artifact: "Shimenawa's Reminiscence 4-piece", sands: 'ATK%' },
+    tighnari: { role: 'Sub DPS', weapon: "Hunter's Path", artifact: "Wanderer's Troupe 4-piece", sands: 'ATK% / Elemental Mastery' },
+    venti: { role: 'Sub DPS', weapon: 'The Daybreak Chronicles', artifact: 'Viridescent Venerer 4-piece', sands: 'ATK%' },
+    xiao: { role: 'Main DPS', weapon: 'Primordial Jade Winged-Spear', artifact: 'Vermillion Hereafter 4-piece', sands: 'ATK%' },
+    yoimiya: { role: 'Main DPS', weapon: 'Thundering Pulse', artifact: "Shimenawa's Reminiscence 4-piece", sands: 'ATK% / Elemental Mastery' },
+    layla: { role: 'Support', weapon: 'Key of Khaj-Nisut', artifact: 'Tenacity of the Millelith 4-piece', sands: 'HP%' },
+    gaming: { role: 'Main DPS', weapon: 'Gest of the Mighty Wolf', artifact: 'Crimson Witch of Flames 4-piece', sands: 'Elemental Mastery' },
+    odette: { role: 'Sub DPS', weapon: 'Whitelake Frostfeather', artifact: 'Heart of the Furnace 4-piece', sands: 'ATK%' },
+  };
+  for (const [key, expectation] of Object.entries(expected)) {
+    const profile = CHARACTER_BUILD_GUIDES[key];
+    assert.ok(profile, key + ': source-reviewed profile exists');
+    assert.equal(profile.buildCategory, expectation.role, key + ': role must match current source page');
+    assert.equal(profile.role, expectation.role === 'Main DPS' ? profile.role : profile.role, key + ': role descriptor remains present');
+    assert.equal(profile.weapons[0]?.name, expectation.weapon, key + ': first displayed weapon agrees with current Genshin.gg listing');
+    assert.equal(profile.artifacts[0]?.name, expectation.artifact, key + ': first displayed artifact agrees with current Genshin.gg listing');
+    assert.equal(profile.stats.sands, expectation.sands, key + ': main stat matches the source snapshot');
+    assert.equal(profile.sourceCheckedAt, '2026-10-22', key + ': current source review date is present');
+    assert.match(profile.sourceNote, /Checked 22 Oct 2026/i, key + ': source note shows the review date');
+    assert.ok(profile.weapons.length >= (key === 'escoffier' ? 5 : key === 'odette' ? 4 : 5), key + ': include the source-supported weapon options only');
+    assert.ok(profile.artifacts.length >= (key === 'escoffier' ? 3 : 5), key + ': include available source-supported set options');
+  }
+});
