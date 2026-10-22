@@ -484,3 +484,61 @@ test('Oct 22 source-review batch four matches current Genshin.gg primary listing
     assert.match(profile.sourceNote, /Checked 22 Oct 2026/i, key + ': source note has matching review date');
   }
 });
+
+
+test('25 additional primary profiles match source-reviewed Genshin.gg role, gear ordering, stats and date', () => {
+  const expected = {
+    barbara: { role:'Support', weapon:'Thrilling Tales of Dragon Slayers', artifact:'Maiden Beloved 4-piece', sands:'HP%', goblet:'HP%', circlet:'Healing Bonus', weapons:5, artifacts:5 },
+    diona: { role:'Support', weapon:'Favonius Warbow', artifact:'Noblesse Oblige 4-piece', sands:'Energy Recharge / HP%', goblet:'HP%', circlet:'HP% / Healing Bonus', weapons:5, artifacts:5 },
+    gorou: { role:'Support', weapon:'Favonius Warbow', artifact:'The Exile 4-piece', sands:'Energy Recharge', goblet:'Geo DMG', circlet:'CRIT Rate', weapons:5, artifacts:5 },
+    heizou: { role:'Sub DPS', weapon:'A Thousand Floating Dreams', artifact:'Viridescent Venerer 4-piece', sands:'Elemental Mastery', goblet:'Elemental Mastery', circlet:'Elemental Mastery', weapons:5, artifacts:5 },
+    kaeya: { role:'Sub DPS', weapon:'Primordial Jade Cutter', artifact:'Emblem of Severed Fate 4-piece', sands:'Energy Recharge / ATK%', goblet:'Cryo DMG', circlet:'CRIT Rate / CRIT DMG', weapons:5, artifacts:5 },
+    kaveh: { role:'Main DPS', weapon:'Favonius Greatsword', artifact:'Deepwood Memories 4-piece', sands:'Energy Recharge / Elemental Mastery', goblet:'Elemental Mastery', circlet:'Elemental Mastery', weapons:5, artifacts:5 },
+    xianyun: { role:'Support', weapon:"Crane's Echoing Call", artifact:'Viridescent Venerer 4-piece', sands:'Energy Recharge / ATK%', goblet:'ATK%', circlet:'Healing Bonus / ATK%', weapons:5, artifacts:5 },
+    sethos: { role:'Sub DPS', weapon:"Hunter's Path", artifact:"Wanderer's Troupe 4-piece", sands:'Elemental Mastery', goblet:'Electro DMG', circlet:'CRIT Rate / CRIT DMG', weapons:2, artifacts:5 },
+    flins: { role:'Main DPS', weapon:'Bloodsoaked Ruins', artifact:"Night of the Sky's Unveiling 4-piece", sands:'ATK%', goblet:'ATK%', circlet:'CRIT Rate / CRIT DMG', weapons:5, artifacts:5 },
+    illuga: { role:'Support', weapon:'Favonius Lance', artifact:"Silken Moon's Serenade 4-piece", sands:'Elemental Mastery / Energy Recharge', goblet:'Elemental Mastery', circlet:'Elemental Mastery', weapons:4, artifacts:2 },
+    aloy: { role:'Sub DPS', weapon:'Thundering Pulse', artifact:'Noblesse Oblige 4-piece', sands:'ATK% / Elemental Mastery', goblet:'Cryo DMG', circlet:'CRIT Rate / CRIT DMG', weapons:5, artifacts:5 },
+    amber: { role:'Sub DPS', weapon:'Elegy for the End', artifact:'Noblesse Oblige 4-piece', sands:'Energy Recharge', goblet:'Pyro DMG', circlet:'CRIT Rate / CRIT DMG', weapons:5, artifacts:5 },
+    charlotte: { role:'Support', weapon:'Prototype Amber', artifact:'Noblesse Oblige 4-piece', sands:'Energy Recharge / ATK%', goblet:'ATK%', circlet:'Healing Bonus / ATK%', weapons:5, artifacts:5 },
+    dori: { role:'Support', weapon:'Favonius Greatsword', artifact:'Noblesse Oblige 4-piece', sands:'Energy Recharge / HP% / Elemental Mastery', goblet:'HP% / Elemental Mastery', circlet:'Healing Bonus / HP% / Elemental Mastery', weapons:5, artifacts:5 },
+    freminet: { role:'Main DPS', weapon:'Gest of the Mighty Wolf', artifact:'Pale Flame 4-piece', sands:'ATK%', goblet:'Physical DMG', circlet:'CRIT Rate / CRIT DMG', weapons:5, artifacts:5 },
+    kachina: { role:'Sub DPS', weapon:'Favonius Lance', artifact:'Scroll of the Hero of Cinder City 4-piece', sands:'Energy Recharge / DEF%', goblet:'Geo DMG / DEF%', circlet:'CRIT Rate / CRIT DMG', weapons:4, artifacts:1 },
+    lynette: { role:'Support', weapon:'Sacrificial Sword', artifact:'Viridescent Venerer 4-piece', sands:'Energy Recharge / ATK%', goblet:'Anemo DMG', circlet:'CRIT Rate / CRIT DMG', weapons:5, artifacts:5 },
+    mika: { role:'Support', weapon:'Favonius Lance', artifact:'Noblesse Oblige 4-piece', sands:'Energy Recharge / HP%', goblet:'HP%', circlet:'Healing Bonus / HP%', weapons:5, artifacts:5 },
+    sigewinne: { role:'Support', weapon:'Silvershower Heartstrings', artifact:'Ocean-Hued Clam 4-piece', sands:'HP%', goblet:'HP%', circlet:'HP%', weapons:4, artifacts:5 },
+    dahlia: { role:'Support', weapon:'Favonius Sword', artifact:'Noblesse Oblige 4-piece', sands:'Energy Recharge / HP%', goblet:'HP%', circlet:'HP%', weapons:5, artifacts:3 },
+    nicole: { role:'Support', weapon:"Angelos' Heptades", artifact:'Celestial Gift 4-piece', sands:'Energy Recharge / ATK%', goblet:'ATK%', circlet:'ATK% / CRIT Rate', weapons:5, artifacts:3 },
+    prune: { role:'Support', weapon:'Favonius Codex', artifact:'Viridescent Venerer 4-piece', sands:'Energy Recharge / ATK%', goblet:'ATK%', circlet:'ATK% / CRIT Rate', weapons:5, artifacts:3 },
+    lohen: { role:'Main DPS', weapon:'Disaster and Remorse', artifact:'A Day Carved From Rising Winds 4-piece', sands:'ATK%', goblet:'Cryo DMG', circlet:'CRIT Rate / CRIT DMG', weapons:5, artifacts:5 },
+    sandrone: { role:'Main DPS', weapon:'A Teaspoon of Transcendence', artifact:'Disenchantment in Deep Shadow 4-piece', sands:'ATK%', goblet:'ATK%', circlet:'CRIT Rate / CRIT DMG', weapons:5, artifacts:3 },
+    alyosha: { role:'Support', weapon:'Symphonist of Scents', artifact:'Heart of the Furnace 4-piece', sands:'ATK% / Energy Recharge', goblet:'ATK%', circlet:'ATK%', weapons:5, artifacts:3 },
+  };
+  for (const [key, item] of Object.entries(expected)) {
+    const profile = CHARACTER_BUILD_GUIDES[key];
+    assert.ok(profile, key + ': reviewed profile exists');
+    assert.equal(profile.buildCategory, item.role, key + ': primary role agrees with Genshin.gg');
+    assert.equal(profile.weapons[0]?.name, item.weapon, key + ': first weapon agrees with source order');
+    assert.equal(profile.artifacts[0]?.name, item.artifact, key + ': first artifact agrees with source order');
+    assert.equal(profile.stats.sands, item.sands, key + ': Sands source stat');
+    assert.equal(profile.stats.goblet, item.goblet, key + ': Goblet source stat');
+    assert.equal(profile.stats.circlet, item.circlet, key + ': Circlet source stat');
+    assert.equal(profile.weapons.length, item.weapons, key + ': preserve exact number of listed weapon options');
+    assert.equal(profile.artifacts.length, item.artifacts, key + ': preserve exact number of listed artifact options');
+    assert.equal(profile.sourceCheckedAt, '2026-10-22', key + ': source review date recorded');
+    assert.match(profile.sourceNote, /Checked 22 Oct 2026/i, key + ': source note includes matching date');
+    assert.ok(profile.substats.length >= 2, key + ': substat priority remains provided');
+    assert.ok(profile.talentOrder.length > 0, key + ': talent order remains available');
+  }
+  assert.deepEqual(CHARACTER_BUILD_GUIDES.sethos.talentOrder, ['Normal Attack', 'Elemental Burst', 'Elemental Skill']);
+});
+
+
+test('source review stores the published ranks instead of renumbering hidden weapon entries', () => {
+  const profile = CHARACTER_BUILD_GUIDES.sigewinne;
+  assert.deepEqual(profile.weapons.map(weapon => weapon.name), ['Silvershower Heartstrings', 'Recurve Bow', 'Favonius Warbow', 'Elegy for the End']);
+  assert.match(profile.weapons[0].note, /entry #1/);
+  assert.match(profile.weapons[1].note, /entry #2/);
+  assert.match(profile.weapons[2].note, /entry #4/);
+  assert.match(profile.weapons[3].note, /entry #5/);
+});
