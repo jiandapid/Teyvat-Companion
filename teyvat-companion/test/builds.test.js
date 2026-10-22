@@ -388,3 +388,36 @@ test('Oct 22 source-review batch follows the current Genshin.gg primary listing'
     assert.ok(profile.artifacts.length >= (key === 'escoffier' ? 3 : 5), key + ': include available source-supported set options');
   }
 });
+
+test('Oct 22 source-review batch two follows current Genshin.gg character listings', () => {
+  const expected = {
+    arlecchino: { role: 'Main DPS', weapon: "Crimson Moon's Semblance", artifact: 'Fragment of Harmonic Whimsy 4-piece', sands: 'ATK%' },
+    mavuika: { role: 'Main DPS', weapon: 'A Thousand Blazing Suns', artifact: 'Obsidian Codex 4-piece', sands: 'Elemental Mastery', weapons: 4, artifacts: 3 },
+    xilonen: { role: 'Support', weapon: 'Peak Patrol Song', artifact: 'Scroll of the Hero of Cinder City 4-piece', sands: 'DEF% / Energy Recharge', artifacts: 3 },
+    citlali: { role: 'Support', weapon: "Starcaller's Watch", artifact: 'Scroll of the Hero of Cinder City 4-piece', sands: 'Elemental Mastery / Energy Recharge', weapons: 4, artifacts: 3 },
+    chasca: { role: 'Main DPS', weapon: "Astral Vulture's Crimson Plumage", artifact: 'Obsidian Codex 4-piece', sands: 'ATK%', artifacts: 4 },
+    ororon: { role: 'Support', weapon: 'Polar Star', artifact: 'Scroll of the Hero of Cinder City 4-piece', sands: 'ATK% / Energy Recharge', artifacts: 3 },
+    varesa: { role: 'Main DPS', weapon: 'Vivid Notions', artifact: "Long Night's Oath 4-piece", sands: 'ATK%', artifacts: 4 },
+    ifa: { role: 'Sub DPS', weapon: "Tulaytullah's Remembrance", artifact: 'Obsidian Codex 4-piece', sands: 'ATK%' },
+    lauma: { role: 'Support', weapon: "Nightweaver's Looking Glass", artifact: "Silken Moon's Serenade 4-piece", sands: 'Energy Recharge / Elemental Mastery', artifacts: 4 },
+    emilie: { role: 'Sub DPS', weapon: 'Lumidouce Elegy', artifact: 'Unfinished Reverie 4-piece', sands: 'ATK%' },
+    mualani: { role: 'Main DPS', weapon: "Surf's Up", artifact: 'Obsidian Codex 4-piece', sands: 'Elemental Mastery / HP%' },
+    kinich: { role: 'Main DPS', weapon: 'Fang of the Mountain King', artifact: 'Obsidian Codex 4-piece', sands: 'ATK%' },
+    clorinde: { role: 'Main DPS', weapon: 'Absolution', artifact: 'Fragment of Harmonic Whimsy 4-piece', sands: 'ATK% / Elemental Mastery', weapons: 4, artifacts: 4 },
+    wriothesley: { role: 'Main DPS', weapon: 'Cashflow Supervision', artifact: 'Disenchantment in Deep Shadow 4-piece', sands: 'ATK%', goblet: 'ATK%', artifacts: 4 },
+  };
+  for (const [key, expectation] of Object.entries(expected)) {
+    const profile = CHARACTER_BUILD_GUIDES[key];
+    assert.ok(profile, key + ': profile exists');
+    assert.equal(profile.buildCategory, expectation.role, key + ': role matches the current source page');
+    assert.ok(typeof profile.role === 'string' && profile.role.length > 0, key + ': role description is present');
+    assert.equal(profile.weapons[0]?.name, expectation.weapon, key + ': first visible source weapon is stored correctly');
+    assert.equal(profile.artifacts[0]?.name, expectation.artifact, key + ': first visible source artifact is stored correctly');
+    assert.equal(profile.stats.sands, expectation.sands, key + ': main stat matches the source');
+    if (expectation.goblet) assert.equal(profile.stats.goblet, expectation.goblet, key + ': visible source Goblet is preserved');
+    assert.equal(profile.sourceCheckedAt, '2026-10-22', key + ': individual source review date is recorded');
+    assert.match(profile.sourceNote, /Checked 22 Oct 2026/i, key + ': review note date matches');
+    if (expectation.weapons) assert.equal(profile.weapons.length, expectation.weapons, key + ': store only visible weapon entries');
+    if (expectation.artifacts) assert.equal(profile.artifacts.length, expectation.artifacts, key + ': store source-supported artifact count');
+  }
+});
