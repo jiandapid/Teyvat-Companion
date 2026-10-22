@@ -2344,12 +2344,12 @@ function roleAdaptedProfile(profile, character, characterKey, role) {
 function classifyRoleEvidence(candidate, primaryProfile, isPrimary = false) {
   if (isPrimary) {
     const note = String(candidate?.sourceNote || '');
-    if (candidate?.sourceCheckedAt == null || /does not publish a ranked weapon\\/artifact list/i.test(note)) return 'provisional';
+    if (candidate?.sourceCheckedAt == null || /does not publish a ranked weapon\/artifact list/i.test(note)) return 'provisional';
     return 'curated';
   }
   const url = String(candidate?.sourceUrl || '');
-  if (/youtube\\.com|youtu\\.be/i.test(url)) return 'creator-reference';
-  if (/genshin\\.gg\\/characters\\//i.test(url)) return 'reference-only';
+  if (/youtube\.com|youtu\.be/i.test(url)) return 'creator-reference';
+  if (/genshin\.gg\/characters\//i.test(url)) return 'reference-only';
   return 'adapted';
 }
 
