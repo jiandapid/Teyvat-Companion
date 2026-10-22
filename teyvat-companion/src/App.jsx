@@ -728,6 +728,18 @@ export default function App() {
   const selectedBuildRoleId = buildVariantId || defaultBuildRoleOption?.id || 'role-main-dps';
   const selectedBuildRoleOption = buildRoleOptions.find(option => option.id === selectedBuildRoleId) || defaultBuildRoleOption;
   const selectedUnreviewedRole = selectedBuildRoleOption?.status === 'adapted' ? selectedBuildRoleOption : null;
+  const selectedReferenceOnlyRole = selectedBuildRoleOption?.status === 'reference-only' ? selectedBuildRoleOption : null;
+  const selectedCreatorReferenceRole = selectedBuildRoleOption?.status === 'creator-reference' ? selectedBuildRoleOption : null;
+  const selectedProvisionalRole = selectedBuildRoleOption?.status === 'provisional' ? selectedBuildRoleOption : null;
+  const selectedRoleEvidenceCaption = selectedBuildRoleOption?.status === 'adapted'
+    ? 'independent off-meta build'
+    : selectedBuildRoleOption?.status === 'reference-only'
+      ? 'independent alternative · not source-ranked'
+      : selectedBuildRoleOption?.status === 'creator-reference'
+        ? 'creator-video reference · check age and scope'
+        : selectedBuildRoleOption?.status === 'provisional'
+          ? 'provisional build candidates'
+          : (activeBuildProfile?.role && activeBuildProfile.role !== activeBuildProfile.buildCategory ? activeBuildProfile.role : '');
   const selectedBuildPlaystyleId = buildPlaystyleId || selectedBuildRoleOption?.playstyles?.[0]?.id || '';
   const selectedBuildPlaystyleOption = selectedBuildRoleOption?.playstyles?.find(style => style.id === selectedBuildPlaystyleId) || selectedBuildRoleOption?.playstyles?.[0] || null;
   const activeBuildProfile = selectedBuildPlaystyleOption?.profile || selectedBuildRoleOption?.profile || activeBuildBaseProfile;
@@ -2050,7 +2062,7 @@ export default function App() {
           <div className="eyebrow">CHARACTER BUILD SHEET</div>
           <div className="build-character-tags"><span className="element-label"><ElementGlyph element={buildCharacter.element}/>{buildCharacter.element || 'Element unknown'}</span><span>{buildCharacter.weapon || 'Weapon unknown'}</span><span>{[4,5].includes(Number(buildCharacter.rarity)) ? '★'.repeat(Number(buildCharacter.rarity)) : 'Rarity N/A'}</span></div>
           <h1>{buildCharacter.name}</h1>
-          <p><strong>{activeBuildProfile?.buildCategory || 'Role not reviewed'}</strong>{selectedUnreviewedRole ? ' · independent off-meta build' : (activeBuildProfile?.role && activeBuildProfile.role !== activeBuildProfile.buildCategory ? ' · ' + activeBuildProfile.role : '')} · {buildCharacter.region || 'Region not set'}</p>
+          <p><strong>{activeBuildProfile?.buildCategory || 'Role not reviewed'}</strong>{selectedRoleEvidenceCaption ? ' · ' + selectedRoleEvidenceCaption : ''} · {buildCharacter.region || 'Region not set'}</p>
           <div className="build-hero-status"><span className={activeBuildProfile ? 'build-status-pill' : 'build-status-pill needs-review'}>{activeBuildProfile ? 'Quick reference available' : 'Needs a reviewed build profile'}</span><span>{buildCharacter.owned ? 'Owned · Lv. ' + (buildCharacter.level || 1) : 'Not marked as owned'}</span></div>
           <div className="build-hero-actions"><button className="button primary" onClick={() => {setOptimizerCharacterId(buildCharacter.id);setOptimizerTeamId('');setOptimizerResult(null);setOptimizerError('');navigate('optimizer');}}><Layers3 size={15}/> Optimize artifacts</button><button className="button secondary" onClick={() => addGoalForCharacter(buildCharacter)}><Target size={15}/> Add build goal</button><button className="button secondary" onClick={() => openCharacter(buildCharacter)}><Pencil size={15}/> Edit tracker data</button></div>
         </div>
@@ -2058,7 +2070,10 @@ export default function App() {
 
       <div className="build-detail-layout">
         <main className="build-detail-main">
-          {selectedUnreviewedRole ? <div className="notice warning build-profile-warning role-adaptation-warning"><Info size={16}/><span><strong>This is an experimental independent {selectedUnreviewedRole.buildCategory} build.</strong> It is built separately for {buildCharacter.name} using their element, scaling clues, weapon class and role-specific artifact conditions. It is not source-ranked best-in-slot, and it may be much weaker than their normal role. Check the character’s actual kit, set conditions, weapon passive and rotation before spending resources.</span></div> : null}
+          {selectedUnreviewedRole ? <div className="notice warning build-profile-warning role-adaptation-warning"><Info size={16}/><span><strong>This is an experimental independent {selectedUnreviewedRole.buildCategory} build.</strong> It is generated separately for {buildCharacter.name} using their element, scaling clues, weapon class and role-conditioned artifact candidates. No source ranks this role as best-in-slot, and it may be much weaker than their normal role. Check kit viability, set triggers, weapon passives and rotations before spending resources.</span></div> : null}
+          {selectedReferenceOnlyRole ? <div className="notice warning build-profile-warning role-adaptation-warning"><Info size={16}/><span><strong>This {selectedReferenceOnlyRole.buildCategory} alternative is not validated by the linked Genshin.gg ranking.</strong> Its link points to the character’s reference page; that page supports the baseline profile, not necessarily this exact alternate role. Treat the recommendations as an independent plan and cross-check a creator guide before farming.</span></div> : null}
+          {selectedCreatorReferenceRole ? <div className="notice warning build-profile-warning role-adaptation-warning"><Info size={16}/><span><strong>Creator-video reference — check its age and exact coverage.</strong> This build links to a creator video, but it may predate current characters, weapons, artifacts or balance changes. The source note below describes its intended scope; confirm it still fits your team before farming.</span></div> : null}
+          {selectedProvisionalRole ? <div className="notice warning build-profile-warning role-adaptation-warning"><Info size={16}/><span><strong>Provisional build candidates.</strong> The current character page does not provide a verified ranked weapon/artifact list for this profile. Treat these as testable starting points, not proven best-in-slot advice.</span></div> : null}
           <section className="panel build-section-panel">
             <div className="build-panel-heading"><div><div className="eyebrow">START HERE</div><h2>{activeBuildProfile?.buildCategory ? activeBuildProfile.buildCategory + ' build' : 'Recommended build'}</h2><p>Recommended role and stats for this character; adjust for your weapon, team and rotation.</p></div><span className="pill muted">Quick reference</span></div>
             {buildCharacter ? <div className="build-role-picker">
@@ -2075,7 +2090,7 @@ export default function App() {
                   onClick={() => { setBuildVariantId(option.id); setBuildPlaystyleId(option.playstyles?.[0]?.id || ''); }}
                 >
                   <strong>{option.buildCategory}</strong>
-                  <small>{option.status === 'adapted' ? 'Independent off-meta build' : option.buildCategory === activeBuildBaseProfile?.buildCategory ? 'Recommended role' : 'Alternate build'}</small>
+                  <small>{option.status === 'curated' ? (option.buildCategory === activeBuildBaseProfile?.buildCategory ? 'Recommended role' : 'Reviewed role build') : option.status === 'provisional' ? 'Provisional source profile' : option.status === 'creator-reference' ? 'Creator video · check patch' : option.status === 'reference-only' ? 'Independent alternate' : 'Independent off-meta build'}</small>
                 </button>)}
               </div>
               {selectedBuildRoleOption?.playstyles?.length > 1 ? <label htmlFor="build-playstyle-select">BUILD VARIANT / PLAYSTYLE
@@ -2176,9 +2191,10 @@ export default function App() {
             <p className="build-video-note"><Info size={13}/> Some linked videos are older references. Check the upload date and current patch, then compare weapons, team rotations and Energy Recharge needs before spending resources.</p>
           </section>
           <section className="panel build-source-panel">
-            <div className="eyebrow">DATA CONFIDENCE</div><h3>{selectedUnreviewedRole ? 'Independent off-meta role build' : 'Character-specific build profile'}</h3>
-            <p>{selectedUnreviewedRole ? 'This build is independently assembled for this character and role using character-specific element, scaling clues, compatible weapon class and role-conditioned artifact candidates. The source does not rank this off-meta role as best-in-slot; use it to experiment, and verify native kit utility, weapon passives, team rotations and artifact triggers before farming.' : 'This is a character-specific quick-reference profile, not a universal best-in-slot ranking. Compare it against current Zy0x / IWTL content and the linked character guide before spending resources.'}</p>
+            <div className="eyebrow">DATA CONFIDENCE</div><h3>{selectedUnreviewedRole ? 'Experimental independent role build' : selectedReferenceOnlyRole ? 'Independent alternative · source is reference only' : selectedCreatorReferenceRole ? 'Creator-video role reference' : selectedProvisionalRole ? 'Provisional source profile' : 'Character-specific build profile'}</h3>
+            <p>{selectedUnreviewedRole ? 'This role is generated as an experiment from the character’s element, scaling clues, compatible weapon type and conditional artifact candidates. There is no source-ranked best-in-slot claim for this role; it can be a poor fit for characters with limited on-field damage, off-field application or native team utility.' : selectedReferenceOnlyRole ? 'This alternative is maintained by Teyvat Companion, but the linked Genshin.gg page documents the character baseline rather than validating this exact role build. Artifact and weapon suggestions are comparisons, not recommendations ranked by Genshin.gg. Cross-check the intended playstyle, kit multipliers and set triggers before farming.' : selectedCreatorReferenceRole ? 'A direct creator video is linked for this variant, but a video link alone does not prove the listed setup is optimal today. Read its source note for age and scope, then compare current weapons, artifact effects and team rotations.' : selectedProvisionalRole ? 'The linked character page does not provide a ranked weapon/artifact list for this build yet. Items here are provisional kit-based candidates; verify the final kit, set effects, weapon passives and rotation rather than treating this as best-in-slot.' : 'This is a character-specific quick-reference profile, not a universal best-in-slot ranking. The primary profile was checked against the linked Genshin.gg page where dated review metadata is available. Compare team requirements, creator testing and current patch changes before farming.'}</p>
             <div className="build-source-mini"><span><Database size={13}/> Game catalogue</span><span><BookOpen size={13}/> Build reference</span><span><PlayCircle size={13}/> Creator video/search</span><a href={activeBuildProfile?.sourceUrl || activeBuildBaseProfile?.sourceUrl || 'https://genshin.gg/builds/'} target="_blank" rel="noreferrer"><ExternalLink size={13}/> {activeBuildProfile?.sourceName || 'Genshin.gg / source reference'}</a></div>
+            <div className="build-source-mini"><span>Search (results must be checked):</span><a href={'https://www.youtube.com/results?search_query=' + encodeURIComponent('Zy0x ' + (buildCharacter?.name || '') + ' Genshin build guide')} target="_blank" rel="noreferrer"><ExternalLink size={13}/> Search Zy0x</a><a href={'https://www.youtube.com/results?search_query=' + encodeURIComponent('IWinToLose Gaming ' + (buildCharacter?.name || '') + ' build guide')} target="_blank" rel="noreferrer"><ExternalLink size={13}/> Search IWinToLose Gaming</a></div>
           </section>
         </aside>
       </div>
