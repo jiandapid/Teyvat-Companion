@@ -7,6 +7,12 @@
 // Game8-restricted search rather than inventing a character-page URL.
 export function getGame8SearchUrl(characterName, role = '') {
   const name = String(characterName || '').trim();
+  const normalized = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const key = CHARACTER_BUILD_ALIASES?.[normalized] || normalized;
+  const reviewedGuide = GAME8_REVIEWED_BUILD_OVERRIDES?.[key]?.primary;
+  if (reviewedGuide?.sourceUrl && /^Game8 —/i.test(reviewedGuide.sourceName || '')) return reviewedGuide.sourceUrl;
+  const profile = CHARACTER_BUILD_GUIDES?.[key];
+  if (profile?.sourceUrl && /^Game8 —/i.test(profile.sourceName || '')) return profile.sourceUrl;
   const query = ['site:game8.co/games/Genshin-Impact/archives', name || 'Genshin Impact character', role, 'best builds teams artifacts weapons']
     .filter(Boolean).join(' ');
   return 'https://www.google.com/search?q=' + encodeURIComponent(query);
@@ -2700,7 +2706,7 @@ function classifyRoleEvidence(candidate, primaryProfile, isPrimary = false) {
     if (/does not publish a ranked weapon\/artifact list/i.test(note)) return 'provisional';
     // Previous dates describe the old source review, not a Game8 verification.
     // Do not label any primary profile curated until it has explicit Game8 review metadata.
-    if (candidate?.game8VerifiedAt || candidate?.sourceRoleVerified === true) return 'curated';
+    if (candidate?.game8VerifiedAt || candidate?.sourceRoleVerified === true || (/^Game8 —/i.test(candidate?.sourceName || '') && candidate?.sourceCheckedAt)) return 'curated';
     return 'needs-review';
   }
   // Only mark an alternate as role-curated when its cited guide directly covers that role.
