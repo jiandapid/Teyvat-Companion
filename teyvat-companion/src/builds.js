@@ -5,14 +5,8 @@
 
 // Game8 guide links: use a verified direct guide when available; otherwise use a
 // Game8-restricted search rather than inventing a character-page URL.
-const VERIFIED_GAME8_GUIDES = {
-  escoffier: 'https://game8.co/games/Genshin-Impact/archives/385307k12',
-  yelan: 'https://game8.co/games/Genshin-Impact/archives/372781IfuwantofffieldsubdpsI%C3%83%C6%92%C3%86%E2%80%99%C3%83%E2%80%A0%C3%A2%E2%82%AC%E2%84%A2%C3%83%C6%92%C3%A2%E2%82%AC%C5%A1',
-};
 export function getGame8SearchUrl(characterName, role = '') {
   const name = String(characterName || '').trim();
-  const normalized = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  if (VERIFIED_GAME8_GUIDES[normalized]) return VERIFIED_GAME8_GUIDES[normalized];
   const query = ['site:game8.co/games/Genshin-Impact/archives', name || 'Genshin Impact character', role, 'best builds teams artifacts weapons']
     .filter(Boolean).join(' ');
   return 'https://www.google.com/search?q=' + encodeURIComponent(query);
