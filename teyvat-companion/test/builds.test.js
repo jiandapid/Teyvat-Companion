@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import { BUILD_ROLE_CATEGORIES, CHARACTER_BUILD_ALIASES, CHARACTER_BUILD_GUIDES, CHARACTER_ROLE_BUILDS, getCharacterBuildRoleOptions } from '../src/builds.js';
 
 const validCategories = new Set(BUILD_ROLE_CATEGORIES);
+const OCT_23_REVIEWED_PRIMARY_BUILDS = new Set(['fischl', 'xiangling', 'yelan', 'zhongli', 'neuvillette', 'sucrose', 'layla', 'wanderer']);
+const expectedReviewDate = key => OCT_23_REVIEWED_PRIMARY_BUILDS.has(key) ? '2026-10-23' : '2026-10-22';
+const expectedReviewLabel = key => OCT_23_REVIEWED_PRIMARY_BUILDS.has(key) ? '23 Oct 2026' : '22 Oct 2026';
 
 function assertCompleteProfile(key, profile) {
   assert.ok(profile.role, key + ': role is required');
@@ -416,8 +419,8 @@ test('Oct 22 source-review batch follows the current Genshin.gg primary listing'
     assert.equal(profile.weapons[0]?.name, expectation.weapon, key + ': first displayed weapon agrees with current Genshin.gg listing');
     assert.equal(profile.artifacts[0]?.name, expectation.artifact, key + ': first displayed artifact agrees with current Genshin.gg listing');
     assert.equal(profile.stats.sands, expectation.sands, key + ': main stat matches the source snapshot');
-    assert.equal(profile.sourceCheckedAt, '2026-10-22', key + ': current source review date is present');
-    assert.match(profile.sourceNote, /Checked 22 Oct 2026/i, key + ': source note shows the review date');
+    assert.equal(profile.sourceCheckedAt, expectedReviewDate(key), key + ': current source review date is present');
+    assert.ok(profile.sourceNote.includes('Checked ' + expectedReviewLabel(key)), key + ': source note shows the review date');
     assert.ok(profile.weapons.length >= (key === 'escoffier' ? 5 : key === 'odette' ? 4 : 5), key + ': include the source-supported weapon options only');
     assert.ok(profile.artifacts.length >= (key === 'escoffier' ? 3 : 5), key + ': include available source-supported set options');
   }
@@ -449,8 +452,8 @@ test('Oct 22 source-review batch two follows current Genshin.gg character listin
     assert.equal(profile.artifacts[0]?.name, expectation.artifact, key + ': first visible source artifact is stored correctly');
     assert.equal(profile.stats.sands, expectation.sands, key + ': main stat matches the source');
     if (expectation.goblet) assert.equal(profile.stats.goblet, expectation.goblet, key + ': visible source Goblet is preserved');
-    assert.equal(profile.sourceCheckedAt, '2026-10-22', key + ': individual source review date is recorded');
-    assert.match(profile.sourceNote, /Checked 22 Oct 2026/i, key + ': review note date matches');
+    assert.equal(profile.sourceCheckedAt, expectedReviewDate(key), key + ': individual source review date is recorded');
+    assert.ok(profile.sourceNote.includes('Checked ' + expectedReviewLabel(key)), key + ': review note date matches');
     if (expectation.weapons) assert.equal(profile.weapons.length, expectation.weapons, key + ': store only visible weapon entries');
     if (expectation.artifacts) assert.equal(profile.artifacts.length, expectation.artifacts, key + ': store source-supported artifact count');
   }
@@ -482,8 +485,8 @@ test('Oct 22 source-review batch three matches current Genshin.gg build listings
     if (expectation.circlet) assert.equal(profile.stats.circlet, expectation.circlet, key + ': Circlet matches source');
     assert.equal(profile.weapons.length, expectation.weapons, key + ': preserve the visible source-listed weapon count');
     assert.equal(profile.artifacts.length, expectation.artifacts, key + ': preserve source-listed artifact count');
-    assert.equal(profile.sourceCheckedAt, '2026-10-22', key + ': per-character source-review date is recorded');
-    assert.match(profile.sourceNote, /Checked 22 Oct 2026/i, key + ': source attribution date matches');
+    assert.equal(profile.sourceCheckedAt, expectedReviewDate(key), key + ': per-character source-review date is recorded');
+    assert.ok(profile.sourceNote.includes('Checked ' + expectedReviewLabel(key)), key + ': source attribution date matches');
   }
 });
 
@@ -749,8 +752,8 @@ test('Oct 22 source-review batch 2 matches current Genshin.gg weapon, artifact a
     assert.equal(profile.stats.sands, item.sands, key + ': source main stat matches');
     assert.equal(profile.weapons.length, item.weaponCount, key + ': only visible source weapon entries are included');
     assert.equal(profile.artifacts.length, item.artifactCount, key + ': source visible artifact entries are included');
-    assert.equal(profile.sourceCheckedAt, '2026-10-22', key + ': profile has per-character source review date');
-    assert.match(profile.sourceNote, /Checked 22 Oct 2026/i, key + ': source note has matching date');
+    assert.equal(profile.sourceCheckedAt, expectedReviewDate(key), key + ': profile has per-character source review date');
+    assert.ok(profile.sourceNote.includes('Checked ' + expectedReviewLabel(key)), key + ': source note has matching date');
   }
 });
 
@@ -969,4 +972,78 @@ test('Vesna and Vodyanitsa were checked but remain provisional without ranked ge
     const roleOption = getCharacterBuildRoleOptions(profile).find(option => option.buildCategory === role);
     assert.equal(roleOption.status, 'provisional');
   }
+});
+
+test('Oct 23 current Genshin.gg build review has ranked gear, contextual notes, and role talent priorities', () => {
+  const expected = {
+    fischl: {
+      weapons: ['The Daybreak Chronicles', 'Polar Star', 'Aqua Simulacra', 'Thundering Pulse', 'Chain Breaker R5'],
+      artifacts: ['Golden Troupe 4-piece', 'A Day Carved From Rising Winds 4-piece', 'Golden Troupe 2-piece + Thundering Fury 2-piece', 'Golden Troupe 2-piece + Thundersoother 2-piece', 'A Day Carved From Rising Winds 2-piece + Golden Troupe 2-piece'],
+      category: 'Sub DPS', stats: { sands: 'ATK%', goblet: 'Electro DMG', circlet: 'CRIT Rate / CRIT DMG' },
+      talents: ['Elemental Skill', 'Elemental Burst', 'Normal Attack'],
+    },
+    xiangling: {
+      weapons: ['Staff of the Scarlet Sands', 'Staff of Homa', 'Engulfing Lightning', 'The Catch R5', 'Deathmatch'],
+      artifacts: ['Emblem of Severed Fate 4-piece', 'Crimson Witch of Flames 4-piece', 'Crimson Witch of Flames 2-piece + Emblem of Severed Fate 2-piece', 'Emblem of Severed Fate 2-piece + Noblesse Oblige 2-piece', 'Crimson Witch of Flames 2-piece + Noblesse Oblige 2-piece'],
+      category: 'Sub DPS', stats: { sands: 'Energy Recharge / ATK%', goblet: 'Pyro DMG', circlet: 'CRIT Rate / CRIT DMG' },
+      talents: ['Elemental Burst', 'Elemental Skill', 'Normal Attack'],
+    },
+    yelan: {
+      weapons: ['Elegy for the End', 'Favonius Warbow', 'Aqua Simulacra', 'Sacrificial Bow R5', 'Slingshot'],
+      artifacts: ['Emblem of Severed Fate 4-piece', 'Emblem of Severed Fate 2-piece + Tenacity of the Millelith 2-piece', 'Emblem of Severed Fate 2-piece + Heart of Depth 2-piece', 'Emblem of Severed Fate 2-piece + Noblesse Oblige 2-piece', 'Heart of Depth 2-piece + Tenacity of the Millelith 2-piece'],
+      category: 'Sub DPS', stats: { sands: 'Energy Recharge', goblet: 'Hydro DMG', circlet: 'CRIT Rate / CRIT DMG' },
+      talents: ['Elemental Burst', 'Elemental Skill', 'Normal Attack'],
+    },
+    zhongli: {
+      weapons: ['Black Tassel', 'Favonius Lance', 'Staff of Homa', 'Skyward Spine', 'Engulfing Lightning'],
+      artifacts: ['Archaic Petra 4-piece', 'Scroll of the Hero of Cinder City 4-piece', 'Deepwood Memories 4-piece', 'Instructor 4-piece', 'Tenacity of the Millelith 4-piece'],
+      category: 'Support', stats: { sands: 'HP%', goblet: 'HP%', circlet: 'HP%' },
+      talents: ['Elemental Skill', 'Elemental Burst', 'Normal Attack'],
+    },
+    neuvillette: {
+      weapons: ['Tome of the Eternal Flow', 'Sacrificial Jade', "Jadefall's Splendor", 'Prototype Amber', "Kagura's Verity"],
+      artifacts: ['Marechaussee Hunter 4-piece', 'Heart of Depth 4-piece', 'Heart of Depth 2-piece + Marechaussee Hunter 2-piece', 'Marechaussee Hunter 2-piece + Tenacity of the Millelith 2-piece', 'Heart of Depth 2-piece + Tenacity of the Millelith 2-piece'],
+      category: 'Main DPS', stats: { sands: 'HP%', goblet: 'Hydro DMG', circlet: 'CRIT Rate / CRIT DMG' },
+      talents: ['Normal Attack', 'Elemental Burst', 'Elemental Skill'],
+    },
+    sucrose: {
+      weapons: ['A Thousand Floating Dreams', 'Wandering Evenstar', 'Sacrificial Fragments', 'Thrilling Tales of Dragon Slayers', 'Hakushin Ring'],
+      artifacts: ['Viridescent Venerer 4-piece', 'Instructor 4-piece', "Gilded Dreams 2-piece + Wanderer's Troupe 2-piece", 'Gilded Dreams 4-piece', 'Gilded Dreams 2-piece + Viridescent Venerer 2-piece'],
+      category: 'Support', stats: { sands: 'Elemental Mastery', goblet: 'Elemental Mastery', circlet: 'Elemental Mastery' },
+      talents: ['Elemental Skill', 'Elemental Burst', 'Normal Attack'],
+    },
+    layla: {
+      weapons: ['Key of Khaj-Nisut', 'Primordial Jade Cutter', 'Favonius Sword', 'Freedom-Sworn', 'Harbinger of Dawn'],
+      artifacts: ['Tenacity of the Millelith 4-piece', 'Noblesse Oblige 4-piece', 'Blizzard Strayer 2-piece + Tenacity of the Millelith 2-piece', 'Emblem of Severed Fate 2-piece + Tenacity of the Millelith 2-piece', 'Blizzard Strayer 2-piece + Emblem of Severed Fate 2-piece'],
+      category: 'Support', stats: { sands: 'HP%', goblet: 'HP%', circlet: 'HP%' },
+      talents: ['Elemental Skill', 'Elemental Burst', 'Normal Attack'],
+    },
+    wanderer: {
+      weapons: ["Tulaytullah's Remembrance", 'Reliquary of Truth', 'Vivid Notions', 'Lost Prayer to the Sacred Winds', 'The Widsith'],
+      artifacts: ['Desert Pavilion Chronicle 4-piece', "Shimenawa's Reminiscence 4-piece", 'Echoes of an Offering 4-piece', 'Desert Pavilion Chronicle 2-piece + Viridescent Venerer 2-piece', "Desert Pavilion Chronicle 2-piece + Shimenawa's Reminiscence 2-piece"],
+      category: 'Main DPS', stats: { sands: 'ATK%', goblet: 'Anemo DMG', circlet: 'CRIT Rate / CRIT DMG' },
+      talents: ['Normal Attack', 'Elemental Skill', 'Elemental Burst'],
+    },
+  };
+  for (const [key, spec] of Object.entries(expected)) {
+    const profile = CHARACTER_BUILD_GUIDES[key];
+    assert.ok(profile, key + ': build profile is present');
+    assert.equal(profile.sourceCheckedAt, '2026-10-23', key + ': source review date');
+    assert.match(profile.sourceNote, /Checked 23 Oct 2026/i, key + ': dated source note');
+    assert.equal(profile.buildCategory, spec.category, key + ': primary role');
+    assert.deepEqual(profile.weapons.map(item => item.name), spec.weapons, key + ': current source-ranked weapon list');
+    assert.deepEqual(profile.artifacts.map(item => item.name), spec.artifacts, key + ': current source-ranked artifact list');
+    assert.deepEqual(profile.stats, spec.stats, key + ': main stat slots');
+    assert.deepEqual(profile.talentOrder, spec.talents, key + ': talent investment order');
+    assert.ok(profile.artifacts.every(item => item.note.length > 35), key + ': artifact notes must explain conditions');
+    assert.ok(profile.weapons.every(item => item.note.includes('23 Oct 2026')), key + ': weapon entries must carry the correct review date');
+  }
+  assert.match(CHARACTER_BUILD_GUIDES.fischl.playstyle, /off-field/i);
+  assert.match(CHARACTER_BUILD_GUIDES.xiangling.teamFocus, /Energy Recharge/i);
+  assert.match(CHARACTER_BUILD_GUIDES.yelan.teamFocus, /Normal Attack/i);
+  assert.match(CHARACTER_BUILD_GUIDES.zhongli.artifacts[0].note, /shard/i);
+  assert.match(CHARACTER_BUILD_GUIDES.neuvillette.artifacts[0].note, /HP changes/i);
+  assert.match(CHARACTER_BUILD_GUIDES.sucrose.artifacts[0].note, /resistance/i);
+  assert.match(CHARACTER_BUILD_GUIDES.layla.teamFocus, /shield/i);
+  assert.match(CHARACTER_BUILD_GUIDES.wanderer.playstyle, /Shimenawa/i);
 });
