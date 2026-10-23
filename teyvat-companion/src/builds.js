@@ -2096,20 +2096,20 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       sourceCheckedAt: "2026-10-23",
       sourceNote: "Checked 23 Oct 2026 against Game8's Escoffier guide (indexed page reports last updated 7 Apr 2026). Game8 identifies her as a Freeze Sub-DPS: Golden Troupe is the damage baseline, while Noblesse Oblige and Tenacity of the Millelith are support alternatives. Her Hydro/Cryo RES shred depends on team composition, so confirm the intended role and rotation before farming.",
       artifacts: [
-        { name: "Golden Troupe 4-piece", note: "Game8's listed best artifact set for Escoffier's Freeze Sub-DPS role." },
-        { name: "Noblesse Oblige 4-piece", note: "Game8 support alternative when the team benefits from the Burst ATK buff and another character is not already using Noblesse." },
-        { name: "Tenacity of the Millelith 4-piece", note: "Game8 support alternative; use only if Escoffier can trigger the set consistently in the intended rotation." }
+        { name: "Golden Troupe 4-piece", note: "Game8's listed best artifact set for Escoffier's Freeze Sub-DPS role. Checked 23 Oct 2026; confirm the current set bonus and whether her damage is dealt off-field before farming." },
+        { name: "Noblesse Oblige 4-piece", note: "Game8 support alternative when the team benefits from the Burst ATK buff and another character is not already using Noblesse. Checked 23 Oct 2026; avoid duplicate team buffs." },
+        { name: "Tenacity of the Millelith 4-piece", note: "Game8 support alternative; use only if Escoffier can trigger the set consistently in the intended rotation. Checked 23 Oct 2026; verify uptime before farming." }
       ],
       stats: { sands: "ATK% / Energy Recharge", goblet: "Cryo DMG Bonus / ATK%", circlet: "CRIT Rate / CRIT DMG" },
       substats: ["Energy Recharge for reliable Burst uptime", "CRIT Rate / CRIT DMG", "ATK%"],
       weapons: [
-        { name: "Symphonist of Scents", note: "Game8's featured weapon for Escoffier." },
-        { name: "Sacrificer's Staff", note: "Game8-listed replacement option; check the passive and team energy needs." },
-        { name: "Staff of Homa", note: "Game8-listed replacement option; compare the passive with your build and team." },
-        { name: "Engulfing Lightning", note: "Game8-listed replacement option; useful to compare when Energy Recharge is valuable." },
-        { name: "Prospector's Drill", note: "Game8-listed replacement option; verify its passive fits the planned rotation." },
-        { name: "Tamayuratei no Ohanashi", note: "Game8-listed replacement option; compare team utility and availability." },
-        { name: "Favonius Lance", note: "Game8-listed team-energy option; build enough CRIT Rate to trigger its passive reliably." }
+        { name: "Symphonist of Scents", note: "Game8's featured weapon for Escoffier. Checked 23 Oct 2026; compare its passive with the intended Freeze/Sub-DPS rotation before investing." },
+        { name: "Sacrificer's Staff", note: "Game8-listed replacement option; check the passive and team energy needs. Checked 23 Oct 2026; verify the effect is useful for this build." },
+        { name: "Staff of Homa", note: "Game8-listed replacement option; compare the passive with your build and team. Checked 23 Oct 2026; weigh its offensive value against team needs." },
+        { name: "Engulfing Lightning", note: "Game8-listed replacement option; useful to compare when Energy Recharge is valuable. Checked 23 Oct 2026; confirm the passive and rotation fit." },
+        { name: "Prospector's Drill", note: "Game8-listed replacement option; verify its passive fits the planned rotation. Checked 23 Oct 2026; compare against other weapons you already own." },
+        { name: "Tamayuratei no Ohanashi", note: "Game8-listed replacement option; compare team utility and availability. Checked 23 Oct 2026; confirm the passive's value for your team." },
+        { name: "Favonius Lance", note: "Game8-listed team-energy option; build enough CRIT Rate to trigger its passive reliably. Checked 23 Oct 2026; prioritize consistent team energy if needed." }
       ],
       talentOrder: ["Elemental Skill", "Elemental Burst", "Normal Attack"],
       teamFocus: "Escoffier's strongest utility is in Cryo/Hydro-heavy teams: her RES reduction scales with the number of Hydro/Cryo teammates and can reach 55%. Include enough Energy Recharge to Burst and heal reliably.",
@@ -2742,6 +2742,7 @@ function classifyRoleEvidence(candidate, primaryProfile, isPrimary = false) {
   if (candidate?.sourceRoleVerified === true) return 'curated';
   const url = String(candidate?.sourceUrl || '');
   if (/youtube\.com|youtu\.be/i.test(url)) return 'creator-reference';
+  if (/google\.com\/search\?q=.*game8\.co|game8\.co\/games\/Genshin-Impact\/archives/i.test(url)) return 'reference-only';
   if (/genshin\.gg\/characters\//i.test(url)) return 'reference-only';
   return 'adapted';
 }
