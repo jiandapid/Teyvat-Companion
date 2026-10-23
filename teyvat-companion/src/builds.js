@@ -2142,7 +2142,7 @@ Object.assign(CHARACTER_BUILD_GUIDES.yelan, {
   sourceName: 'Game8 — Yelan Best Builds and Teams',
   sourceCheckedAt: '2026-10-23',
   game8Verified: true,
-  sourceNote: 'Checked against Game8’s Yelan Best Builds and Teams guide on 23 Oct 2026; that page was last updated on 31 Mar 2026. The guide’s Sub-DPS build recommends 4-piece Emblem of Severed Fate, Aqua Simulacra, Hydro DMG Bonus goblet, CRIT circlet, and about 170–200% Energy Recharge depending on team and weapon. Legacy catalog checked 22 Oct 2026; this profile was separately rechecked against Game8 on 23 Oct 2026.',
+  sourceNote: 'Checked against Game8’s Yelan Best Builds and Teams guide on 23 Oct 2026; that page was last updated on 31 Mar 2026. The guide’s Sub-DPS build recommends 4-piece Emblem of Severed Fate, Aqua Simulacra, Hydro DMG Bonus goblet, CRIT circlet, and about 170–200% Energy Recharge depending on team and weapon. Legacy catalog: Checked 22 Oct 2026; this profile was separately rechecked against Game8 on 23 Oct 2026.',
   artifacts: [
     { name: 'Emblem of Severed Fate 4-piece', note: 'Game8 best artifact set for Yelan’s Sub-DPS build.' },
     { name: 'Emblem of Severed Fate 2-piece + Noblesse Oblige 2-piece', note: 'Game8-mentioned alternative when not using 4-piece Emblem.' },
