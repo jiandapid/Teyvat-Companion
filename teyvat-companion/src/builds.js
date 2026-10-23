@@ -2087,6 +2087,31 @@ for (const [characterKey, profile] of Object.entries(CHARACTER_BUILD_GUIDES)) {
  * profile keeps explicit source provenance and role-specific scope.
  */
 const GAME8_REVIEWED_BUILD_OVERRIDES = {
+  mona: {
+    primary: {
+      role: "Support / Quickswap Buffer",
+      buildCategory: "Support",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/297526",
+      sourceName: "Game8 — Mona Best Builds and Teams",
+      sourceCheckedAt: "2026-10-23",
+      sourceNote: "Checked 23 Oct 2026 against Game8's Mona guide. Game8 ranks Noblesse Oblige first for her Burst-oriented support style and lists Thrilling Tales of Dragon Slayers as her top quickswap support weapon. Song of Days Past is a niche alternative when paired with Prototype Amber for a healing-focused setup. This verifies Mona's support/quickswap build only; her other requested roles still require separate source review.",
+      artifacts: [
+        { name: "Noblesse Oblige 4-piece", note: "Game8's top-ranked artifact set for Mona's Burst-oriented support build; the team ATK buff does not stack with another 4-piece Noblesse effect." },
+        { name: "Song of Days Past 4-piece", note: "Game8-listed niche alternative when Mona uses Prototype Amber to support healing and trigger the set effect." }
+      ],
+      stats: { sands: "Energy Recharge / ATK%", goblet: "ATK% / Hydro DMG Bonus", circlet: "CRIT Rate / CRIT DMG" },
+      substats: ["Energy Recharge", "CRIT Rate / CRIT DMG", "ATK%"],
+      weapons: [
+        { name: "Thrilling Tales of Dragon Slayers", note: "Game8's top quickswap support weapon; pass the ATK buff to the intended damage dealer." },
+        { name: "Prototype Amber", note: "Game8-listed niche option for a healing-oriented Song of Days Past setup." },
+        { name: "Skyward Atlas", note: "Game8 discusses this as a quickswap option for personal damage rather than a team-buff replacement." }
+      ],
+      talentOrder: ["Elemental Burst", "Normal Attack", "Elemental Skill"],
+      teamFocus: "Use Mona's Omen debuff and Burst immediately before the main damage window. Thrilling Tales requires planning the swap order so the intended carry receives the buff.",
+      playstyle: "Keep enough Energy Recharge to use the Burst reliably. Use Song of Days Past only when the team and healing setup can trigger its effect; avoid treating it as the default over Noblesse Oblige."
+    },
+    alternates: []
+  },
   escoffier: {
     primary: {
       role: "Cryo Sub DPS / RES Shred Support",
