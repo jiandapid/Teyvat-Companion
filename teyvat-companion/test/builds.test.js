@@ -375,10 +375,12 @@ test('build role evidence labels do not imply a character page validates every a
       const roleOption = options.find(option => option.buildCategory === variant.buildCategory);
       const playstyleOption = roleOption?.playstyles.find(style => style.id === variant.id);
       assert.ok(playstyleOption, characterKey + '/' + variant.id + ': role variant must remain selectable');
-      if (/youtube\.com|youtu\.be/i.test(variant.sourceUrl || '')) {
+      if (variant.sourceRoleVerified === true) {
+        assert.equal(playstyleOption.status, 'curated', characterKey + '/' + variant.id + ': explicitly role-verified Game8 variants remain curated');
+      } else if (/youtube\.com|youtu\.be/i.test(variant.sourceUrl || '')) {
         assert.equal(playstyleOption.status, 'creator-reference', characterKey + '/' + variant.id + ': direct video links are source references, not guarantees of current optimality');
       } else if (/google\.com\/search\?q=.*game8\.co|game8\.co\/games\/Genshin-Impact\/archives|genshin\.gg\/characters\//i.test(variant.sourceUrl || '')) {
-        assert.equal(playstyleOption.status, 'reference-only', characterKey + '/' + variant.id + ': a primary character page must not be presented as proof of an alternate role');
+        assert.equal(playstyleOption.status, 'reference-only', characterKey + '/' + variant.id + ': a character guide or Game8 search does not validate an alternate role unless explicitly role-verified');
       }
     }
   }
