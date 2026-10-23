@@ -2087,6 +2087,33 @@ for (const [characterKey, profile] of Object.entries(CHARACTER_BUILD_GUIDES)) {
  * profile keeps explicit source provenance and role-specific scope.
  */
 const GAME8_REVIEWED_BUILD_OVERRIDES = {
+  xingqiu: {
+    primary: {
+      role: "Hydro Sub-DPS",
+      buildCategory: "Sub DPS",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/297531",
+      sourceName: "Game8 — Xingqiu Best Builds and Teams",
+      sourceCheckedAt: "2026-10-23",
+      sourceNote: "Checked 23 Oct 2026 against Game8's Xingqiu guide. Game8 recommends Sacrificial Sword and 4-piece Emblem of Severed Fate for his off-field Burst damage. The guide estimates roughly 200% Energy Recharge without Sacrificial Sword and around 150% with it; use that as a rotation check, not a universal fixed target.",
+      artifacts: [
+        { name: "Emblem of Severed Fate 4-piece", note: "Game8's first-ranked artifact set for Xingqiu's Burst-focused Sub-DPS build. Checked 23 Oct 2026; prioritize enough Energy Recharge to keep his Burst ready." },
+        { name: "Noblesse Oblige 2-piece + Heart of Depth 2-piece", note: "Game8-listed damage alternative combining Burst DMG and Hydro DMG bonuses. Checked 23 Oct 2026; compare its substats with Emblem before refarming." },
+        { name: "Noblesse Oblige 4-piece", note: "Game8-listed team-support alternative when the party benefits from its ATK buff and no other unit already carries the set. Checked 23 Oct 2026." }
+      ],
+      stats: { sands: "ATK% / Energy Recharge", goblet: "Hydro DMG Bonus", circlet: "CRIT Rate / CRIT DMG" },
+      substats: ["Energy Recharge", "CRIT Rate / CRIT DMG", "ATK%", "Elemental Mastery when reaction teams benefit"],
+      weapons: [
+        { name: "Sacrificial Sword", note: "Game8's featured weapon. Checked 23 Oct 2026; its Skill reset can help both energy generation and Burst uptime." },
+        { name: "Primordial Jade Cutter", note: "Game8-listed replacement. Checked 23 Oct 2026; use only if the build still meets its Energy Recharge needs." },
+        { name: "Mistsplitter Reforged", note: "Game8-listed replacement for personal damage. Checked 23 Oct 2026; compare the passive with the rotation and energy budget." },
+        { name: "Amenoma Kageuchi", note: "Game8-listed replacement. Checked 23 Oct 2026; validate energy generation against the intended rotation." }
+      ],
+      talentOrder: ["Elemental Burst", "Elemental Skill", "Normal Attack"],
+      teamFocus: "Pair Xingqiu with a Normal Attack driver and a damage dealer that benefits from consistent off-field Hydro. Check Energy Recharge against the weapon: Game8 gives about 200% without Sacrificial Sword and around 150% with it as starting estimates.",
+      playstyle: "Use the Burst every rotation. If it is not ready on cooldown, increase Energy Recharge before chasing more CRIT or ATK."
+    },
+    alternates: []
+  },
   mona: {
     primary: {
       role: "Support / Quickswap Buffer",
