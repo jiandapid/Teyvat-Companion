@@ -2532,12 +2532,15 @@ function classifyRoleEvidence(candidate, primaryProfile, isPrimary = false) {
   if (isPrimary) {
     const note = String(candidate?.sourceNote || '');
     if (/does not publish a ranked weapon\/artifact list/i.test(note)) return 'provisional';
-    if (candidate?.sourceCheckedAt == null) return 'needs-review';
+    if (candidate?.game8Verified === false || candidate?.sourceCheckedAt == null) return 'needs-review';
     return 'curated';
   }
   const url = String(candidate?.sourceUrl || '');
   if (/youtube\.com|youtu\.be/i.test(url)) return 'creator-reference';
   if (/genshin\.gg\/characters\//i.test(url)) return 'reference-only';
+  if (candidate?.game8Verified === false
+      && (/game8\.co\/games\/genshin-impact\/archives\//i.test(url)
+        || /google\.com\/search\?q=.*site%3Agame8\.co/i.test(url))) return 'reference-only';
   return 'adapted';
 }
 
