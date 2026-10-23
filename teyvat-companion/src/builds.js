@@ -2171,7 +2171,7 @@ Object.assign(CHARACTER_BUILD_GUIDES.yelan, {
     { name: 'Silvershower Heartstrings', note: 'Included in Game8’s list of recommended weapons for Yelan.' },
   ],
   talentOrder: ['Elemental Burst', 'Elemental Skill', 'Normal Attack'],
-  teamFocus: 'Game8 notes that Yelan typically wants around 170–200% Energy Recharge, with the exact need depending on weapon, teammates, and rotation. Pair her Burst with a normal-attack driver.',
+  teamFocus: 'Game8 notes that Yelan typically wants around 170–200% Energy Recharge, with the exact need depending on weapon, teammates, and rotation. Pair her Burst with a Normal Attack driver.',
   playstyle: 'Maximize Skill and Burst damage while keeping enough Energy Recharge to use her Burst every rotation; tune HP% and CRIT around actual team energy needs.',
 });
 
