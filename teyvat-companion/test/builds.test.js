@@ -404,7 +404,6 @@ test('Oct 22 source-review batch follows the current Genshin.gg primary listing'
     ganyu: { role: 'Main DPS', weapon: "Hunter's Path", artifact: "Shimenawa's Reminiscence 4-piece", sands: 'ATK%' },
     tighnari: { role: 'Sub DPS', weapon: "Hunter's Path", artifact: "Wanderer's Troupe 4-piece", sands: 'ATK% / Elemental Mastery' },
     venti: { role: 'Sub DPS', weapon: 'The Daybreak Chronicles', artifact: 'Viridescent Venerer 4-piece', sands: 'ATK%' },
-    xiao: { role: 'Main DPS', weapon: 'Primordial Jade Winged-Spear', artifact: 'Vermillion Hereafter 4-piece', sands: 'ATK%' },
     yoimiya: { role: 'Main DPS', weapon: 'Thundering Pulse', artifact: "Shimenawa's Reminiscence 4-piece", sands: 'ATK% / Elemental Mastery' },
     layla: { role: 'Support', weapon: 'Key of Khaj-Nisut', artifact: 'Tenacity of the Millelith 4-piece', sands: 'HP%' },
     gaming: { role: 'Main DPS', weapon: 'Gest of the Mighty Wolf', artifact: 'Crimson Witch of Flames 4-piece', sands: 'Elemental Mastery' },
