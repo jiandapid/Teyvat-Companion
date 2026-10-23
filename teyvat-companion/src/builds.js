@@ -2064,6 +2064,167 @@ for (const [characterKey, profile] of Object.entries(CHARACTER_BUILD_GUIDES)) {
   for (const alternate of profile.alternateBuilds || []) ensureBuildSourceAttribution(alternate, characterKey, true);
 }
 
+// Game8 is the selected build-reference source. Known guide URLs point straight to Game8;
+// other characters use a site-restricted search so we do not guess archive IDs or invent URLs.
+export const GAME8_CHARACTER_GUIDE_URLS = {
+  escoffier: 'https://game8.co/games/Genshin-Impact/archives/385307',
+  yelan: 'https://game8.co/games/Genshin-Impact/archives/372781',
+  xiao: 'https://game8.co/games/Genshin-Impact/archives/297527',
+  jean: 'https://game8.co/games/Genshin-Impact/archives/297536',
+  eula: 'https://game8.co/games/Genshin-Impact/archives/328764',
+};
+
+export function getGame8CharacterGuideUrl(characterKey, characterName = '') {
+  if (GAME8_CHARACTER_GUIDE_URLS[characterKey]) return GAME8_CHARACTER_GUIDE_URLS[characterKey];
+  const characterLabel = String(characterName || titleCaseBuildKey(characterKey));
+  const query = 'site:game8.co/games/Genshin-Impact/archives "' + characterLabel + '" "Best Builds and Teams"';
+  return 'https://www.google.com/search?q=' + encodeURIComponent(query);
+}
+
+function cleanLegacyBuildText(value) {
+  return String(value || '')
+    .replace(/Genshin\.gg current Best (Weapons|Artifacts) (option|listing) #(\d+) \(checked 22 Oct 2026\)\./gi,
+      (_, category, kind, rank) => 'Legacy imported ' + category.toLowerCase() + ' entry #' + rank + '; not yet verified against Game8.')
+    .replace(/Genshin\.gg's/gi, "the previous catalog's")
+    .replace(/Genshin\.gg/gi, 'the previous build catalog');
+}
+
+function cleanLegacyBuildValues(value) {
+  if (typeof value === 'string') return cleanLegacyBuildText(value);
+  if (Array.isArray(value)) return value.map(cleanLegacyBuildValues);
+  if (value && typeof value === 'object') {
+    for (const key of Object.keys(value)) value[key] = cleanLegacyBuildValues(value[key]);
+  }
+  return value;
+}
+
+function migrateProfileToGame8(profile, characterKey, isAlternate = false) {
+  if (!profile || typeof profile !== 'object') return;
+  const originalSourceUrl = String(profile.sourceUrl || '');
+  const originalSourceName = String(profile.sourceName || '');
+  const keepCreatorReference = isAlternate && /(?:youtube\\.com|youtu\\.be)/i.test(originalSourceUrl);
+  const legacySourceNote = cleanLegacyBuildText(profile.sourceNote || '');
+  profile.legacySourceCheckedAt = profile.sourceCheckedAt || null;
+  profile.sourceCheckedAt = null;
+  profile.game8Verified = false;
+  cleanLegacyBuildValues(profile);
+  const characterName = titleCaseBuildKey(characterKey);
+  if (keepCreatorReference) {
+    // Preserve directly linked creator research on alternate-role variants; it is not Game8-verified.
+    profile.sourceUrl = originalSourceUrl;
+    profile.sourceName = cleanLegacyBuildText(originalSourceName) || 'YouTube creator reference';
+  } else {
+    profile.sourceUrl = getGame8CharacterGuideUrl(characterKey, profile.name || characterName);
+    profile.sourceName = 'Game8 guide lookup — ' + characterName;
+  }
+  profile.sourceNote = (legacySourceNote ? legacySourceNote + ' ' : '')
+    + 'This is legacy build-catalog data and has not yet been checked line-by-line against the linked Game8 guide. Treat weapon and artifact suggestions as provisional; Game8 is the selected reference for verification. The three role sections are kept separate, but alternate roles are not source-ranked by Game8 unless that role is explicitly covered by the linked guide.';
+}
+
+for (const [characterKey, profile] of Object.entries(CHARACTER_BUILD_GUIDES)) {
+  migrateProfileToGame8(profile, characterKey, false);
+  for (const alternate of profile.alternateBuilds || []) migrateProfileToGame8(alternate, characterKey, true);
+}
+
+// These two primary profiles have been checked against their Game8 character guides.
+// Alternate roles remain separately marked for review unless their exact setup is supported.
+Object.assign(CHARACTER_BUILD_GUIDES.escoffier, {
+  sourceUrl: GAME8_CHARACTER_GUIDE_URLS.escoffier,
+  sourceName: 'Game8 — Escoffier Best Builds and Teams',
+  sourceCheckedAt: '2026-10-23',
+  game8Verified: true,
+  sourceNote: 'Checked 23 Oct 2026 against Game8’s Escoffier Best Builds and Teams guide; that page was last updated on 7 Apr 2026. Game8 recommends Golden Troupe for Freeze Sub-DPS and identifies Noblesse Oblige or Tenacity of the Millelith as support-focused alternatives. The weapon and stat lists below follow the Game8 role summary. Legacy catalog: Checked 22 Oct 2026; this profile was separately rechecked against Game8 on 23 Oct 2026.',
+  artifacts: [
+    { name: 'Golden Troupe 4-piece', note: 'Game8 recommended set for Freeze Sub-DPS; highest personal Elemental Skill damage in the guide.' },
+    { name: 'Noblesse Oblige 4-piece', note: 'Game8-listed team-buff alternative for a more support-focused setup.' },
+    { name: 'Tenacity of the Millelith 4-piece', note: 'Game8-listed support alternative for ATK and Shield Strength buffs.' },
+  ],
+  stats: { sands: 'ATK% / Energy Recharge', goblet: 'Cryo DMG Bonus / ATK%', circlet: 'CRIT Rate / CRIT DMG' },
+  substats: ['CRIT Rate / CRIT DMG', 'ATK%', 'Energy Recharge'],
+  weapons: [
+    { name: 'Symphonist of Scents', note: 'Game8 best weapon listed for Escoffier’s Freeze Sub-DPS build.' },
+    { name: "Sacrificer's Staff", note: 'Game8-listed replacement weapon for the Freeze Sub-DPS setup.' },
+    { name: 'Staff of Homa', note: 'Game8-listed CRIT DMG replacement weapon.' },
+    { name: 'Engulfing Lightning', note: 'Game8-listed replacement; consider Energy Recharge needs and passive fit.' },
+    { name: "Prospector's Drill", note: 'Game8-listed replacement weapon in the Freeze Sub-DPS guide.' },
+  ],
+});
+Object.assign(CHARACTER_BUILD_GUIDES.yelan, {
+  sourceUrl: GAME8_CHARACTER_GUIDE_URLS.yelan,
+  sourceName: 'Game8 — Yelan Best Builds and Teams',
+  sourceCheckedAt: '2026-10-23',
+  game8Verified: true,
+  sourceNote: 'Checked 23 Oct 2026 against Game8’s Yelan Best Builds and Teams guide; that page was last updated on 31 Mar 2026. The guide’s Sub-DPS build recommends 4-piece Emblem of Severed Fate, Aqua Simulacra, Hydro DMG Bonus goblet, CRIT circlet, and about 170–200% Energy Recharge depending on team and weapon. Legacy catalog: Checked 22 Oct 2026; this profile was separately rechecked against Game8 on 23 Oct 2026.',
+  artifacts: [
+    { name: 'Emblem of Severed Fate 4-piece', note: 'Game8 best artifact set for Yelan’s Sub-DPS build.' },
+    { name: 'Emblem of Severed Fate 2-piece + Noblesse Oblige 2-piece', note: 'Game8-mentioned alternative when not using 4-piece Emblem.' },
+    { name: 'Emblem of Severed Fate 2-piece + Tenacity of the Millelith 2-piece', note: 'Game8-listed alternative artifact combination.' },
+    { name: 'The Exile 4-piece', note: 'Game8-listed 4-star option that helps provide team Energy.' },
+  ],
+  stats: { sands: 'HP% / Energy Recharge', goblet: 'Hydro DMG Bonus', circlet: 'CRIT Rate / CRIT DMG' },
+  substats: ['Energy Recharge', 'HP%', 'CRIT Rate / CRIT DMG'],
+  weapons: [
+    { name: 'Aqua Simulacra', note: 'Game8 best weapon listed for Yelan’s Sub-DPS build.' },
+    { name: 'Elegy for the End', note: 'Game8-listed replacement that also provides team support.' },
+    { name: 'Favonius Warbow', note: 'Game8-listed replacement; CRIT hits help restore team energy.' },
+    { name: 'Slingshot', note: 'Game8-listed free-to-play weapon option.' },
+    { name: 'Silvershower Heartstrings', note: 'Included in Game8’s list of recommended weapons for Yelan.' },
+  ],
+  talentOrder: ['Elemental Burst', 'Elemental Skill', 'Normal Attack'],
+  teamFocus: 'Game8 notes that Yelan typically wants around 170–200% Energy Recharge, with the exact need depending on weapon, teammates, and rotation. Pair her Burst with a Normal Attack driver.',
+  playstyle: 'Maximize Skill and Burst damage while keeping enough Energy Recharge to use her Burst every rotation; tune HP% and CRIT around actual team energy needs.',
+});
+
+
+Object.assign(CHARACTER_BUILD_GUIDES.xiao, {
+  sourceUrl: GAME8_CHARACTER_GUIDE_URLS.xiao,
+  sourceName: 'Game8 — Xiao Best Builds and Teams',
+  sourceCheckedAt: '2026-10-23',
+  game8Verified: true,
+  sourceNote: 'Checked 23 Oct 2026 against Game8’s Xiao Best Builds and Teams guide; the page was last updated on 4 Aug 2025. Game8 recommends Long Night’s Oath 4-piece, with Vermillion Hereafter as a strong alternative and Marechaussee Hunter as a conditional option for teams with reliable HP changes. The page’s weapon and main-stat recommendations are shown below; because the article is older, check current-patch equipment changes before farming.',
+  artifacts: [
+    { name: 'Long Night’s Oath 4-piece', note: 'Game8 best-in-slot artifact set listed for Xiao’s Plunge DPS build.' },
+    { name: 'Vermillion Hereafter 4-piece', note: 'Game8-listed alternative; still a strong option with good existing substats.' },
+    { name: 'Marechaussee Hunter 4-piece', note: 'Conditional option Game8 discusses for teams, such as Furina teams, that provide reliable HP changes.' },
+  ],
+  stats: { sands: 'ATK% / Energy Recharge', goblet: 'Anemo DMG Bonus', circlet: 'CRIT Rate / CRIT DMG' },
+  substats: ['Energy Recharge', 'CRIT Rate', 'CRIT DMG', 'ATK%'],
+  weapons: [
+    { name: 'Primordial Jade Winged-Spear', note: 'Game8 best weapon listed for Xiao’s Plunge DPS build.' },
+    { name: 'Staff of Homa', note: 'Game8-listed replacement weapon.' },
+    { name: 'Calamity Queller', note: 'Game8-listed replacement weapon.' },
+    { name: 'Deathmatch', note: 'Game8-listed replacement weapon.' },
+    { name: 'Lithic Spear', note: 'Game8-listed replacement weapon; value depends on team composition.' },
+  ],
+  talentOrder: ['Normal Attack', 'Elemental Burst', 'Elemental Skill'],
+  teamFocus: 'Game8 recommends a plunge-focused team. Faruzan and Xianyun support Xiao’s Anemo and plunge damage; Furina can add damage, while Jean or Sucrose can help cover energy needs.',
+  playstyle: 'Build enough Energy Recharge to use the Burst on schedule, then optimize CRIT and ATK. Marechaussee Hunter depends on reliable HP changes and should not be treated as universally best.',
+});
+Object.assign(CHARACTER_BUILD_GUIDES.eula, {
+  sourceUrl: GAME8_CHARACTER_GUIDE_URLS.eula,
+  sourceName: 'Game8 — Eula Rating and Best Builds',
+  sourceCheckedAt: '2026-10-23',
+  game8Verified: true,
+  sourceNote: 'Checked 23 Oct 2026 against Game8’s Eula Rating and Best Builds guide; the page was last updated on 31 Mar 2026. Game8’s main setup is a Physical-damage Main DPS using Pale Flame 4-piece, with a 2-piece Pale Flame + 2-piece Bloodstained Chivalry alternative. Energy Recharge and consistent Burst use matter heavily for her rotation.',
+  artifacts: [
+    { name: 'Pale Flame 4-piece', note: 'Game8’s first-listed artifact set for Eula; its Skill-triggered stacks strengthen Physical damage and ATK.' },
+    { name: 'Pale Flame 2-piece + Bloodstained Chivalry 2-piece', note: 'Game8-listed alternative that provides Physical DMG bonuses from both 2-piece effects.' },
+    { name: 'Pale Flame 2-piece + Emblem of Severed Fate 2-piece', note: 'A ranked mixed-set alternative shown by Game8 for builds that benefit from more Energy Recharge.' },
+  ],
+  stats: { sands: 'ATK%', goblet: 'Physical DMG Bonus', circlet: 'CRIT Rate / CRIT DMG' },
+  substats: ['Energy Recharge', 'CRIT DMG', 'CRIT Rate', 'ATK%'],
+  weapons: [
+    { name: 'Song of Broken Pines', note: 'Game8 best weapon listed for Eula’s Main DPS build.' },
+    { name: 'Beacon of the Reed Sea', note: 'Game8-listed replacement weapon with CRIT Rate and ATK conditions.' },
+    { name: 'Wolf’s Gravestone', note: 'Game8-listed replacement weapon.' },
+    { name: 'Serpent Spine', note: 'Game8-listed replacement; protect its stacks and account for the increased damage taken.' },
+    { name: 'Prototype Archaic', note: 'Game8-listed craftable free-to-play option.' },
+  ],
+  talentOrder: ['Elemental Burst', 'Normal Attack', 'Elemental Skill'],
+  teamFocus: 'Game8’s Superconduct examples pair Eula with frequent Electro application (such as Raiden or Fischl), plus support such as Mika, Diona, Bennett, or Zhongli. Plan around the Burst’s damage window.',
+  playstyle: 'Prioritize enough Energy Recharge to use the expensive Burst reliably. Her Lightfall Sword can lose much of its value if the enemy moves away or the Burst fails to crit.',
+});
+
 export const CHARACTER_BUILD_ALIASES = {
   'raiden-shogun': 'raiden',
   'kaedehara-kazuha': 'kazuha',
@@ -2371,12 +2532,15 @@ function classifyRoleEvidence(candidate, primaryProfile, isPrimary = false) {
   if (isPrimary) {
     const note = String(candidate?.sourceNote || '');
     if (/does not publish a ranked weapon\/artifact list/i.test(note)) return 'provisional';
-    if (candidate?.sourceCheckedAt == null) return 'needs-review';
+    if (candidate?.game8Verified === false || candidate?.sourceCheckedAt == null) return 'needs-review';
     return 'curated';
   }
   const url = String(candidate?.sourceUrl || '');
   if (/youtube\.com|youtu\.be/i.test(url)) return 'creator-reference';
   if (/genshin\.gg\/characters\//i.test(url)) return 'reference-only';
+  if (candidate?.game8Verified === false
+      && (/game8\.co\/games\/genshin-impact\/archives\//i.test(url)
+        || /google\.com\/search\?q=.*site%3Agame8\.co/i.test(url))) return 'reference-only';
   return 'adapted';
 }
 
