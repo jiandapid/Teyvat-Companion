@@ -542,3 +542,180 @@ test('source review stores the published ranks instead of renumbering hidden wea
   assert.match(profile.weapons[2].note, /entry #4/);
   assert.match(profile.weapons[3].note, /entry #5/);
 });
+
+test('Oct 22 source-review batch 2 matches current Genshin.gg weapon, artifact and stat listings', () => {
+  const expected = {
+  "wanderer": {
+    "role": "Main DPS",
+    "weapon": "Tulaytullah's Remembrance",
+    "artifact": "Desert Pavilion Chronicle 4-piece",
+    "sands": "ATK%",
+    "weaponCount": 5,
+    "artifactCount": 5
+  },
+  "qiqi": {
+    "role": "Support",
+    "weapon": "Favonius Sword",
+    "artifact": "Tenacity of the Millelith 4-piece",
+    "sands": "ATK% / Energy Recharge",
+    "weaponCount": 5,
+    "artifactCount": 5
+  },
+  "beidou": {
+    "role": "Sub DPS",
+    "weapon": "Wolf's Gravestone",
+    "artifact": "Emblem of Severed Fate 4-piece",
+    "sands": "ATK% / Energy Recharge",
+    "weaponCount": 5,
+    "artifactCount": 5
+  },
+  "barbara": {
+    "role": "Support",
+    "weapon": "Thrilling Tales of Dragon Slayers",
+    "artifact": "Maiden Beloved 4-piece",
+    "sands": "HP%",
+    "weaponCount": 5,
+    "artifactCount": 5
+  },
+  "diona": {
+    "role": "Support",
+    "weapon": "Favonius Warbow",
+    "artifact": "Noblesse Oblige 4-piece",
+    "sands": "Energy Recharge / HP%",
+    "weaponCount": 5,
+    "artifactCount": 5
+  },
+  "rosaria": {
+    "role": "Support",
+    "weapon": "Staff of Homa",
+    "artifact": "Blizzard Strayer 4-piece",
+    "sands": "ATK%",
+    "weaponCount": 5,
+    "artifactCount": 5
+  },
+  "yanfei": {
+    "role": "Main DPS",
+    "weapon": "Skyward Atlas",
+    "artifact": "Crimson Witch of Flames 4-piece",
+    "sands": "ATK%",
+    "weaponCount": 5,
+    "artifactCount": 5
+  },
+  "navia": {
+    "role": "Main DPS",
+    "weapon": "Verdict",
+    "artifact": "Nighttime Whispers in the Echoing Woods 4-piece",
+    "sands": "ATK%",
+    "weaponCount": 5,
+    "artifactCount": 5
+  },
+  "arlecchino": {
+    "role": "Main DPS",
+    "weapon": "Crimson Moon's Semblance",
+    "artifact": "Fragment of Harmonic Whimsy 4-piece",
+    "sands": "ATK%",
+    "weaponCount": 5,
+    "artifactCount": 5
+  },
+  "clorinde": {
+    "role": "Main DPS",
+    "weapon": "Absolution",
+    "artifact": "Fragment of Harmonic Whimsy 4-piece",
+    "sands": "ATK% / Elemental Mastery",
+    "weaponCount": 4,
+    "artifactCount": 4
+  },
+  "lyney": {
+    "role": "Main DPS",
+    "weapon": "The First Great Magic",
+    "artifact": "Marechaussee Hunter 4-piece",
+    "sands": "ATK%",
+    "weaponCount": 5,
+    "artifactCount": 5
+  },
+  "yaoyao": {
+    "role": "Support",
+    "weapon": "Favonius Lance",
+    "artifact": "Deepwood Memories 4-piece",
+    "sands": "HP% / Energy Recharge",
+    "weaponCount": 5,
+    "artifactCount": 5
+  },
+  "baizhu": {
+    "role": "Support",
+    "weapon": "Jadefall's Splendor",
+    "artifact": "Deepwood Memories 4-piece",
+    "sands": "HP% / Energy Recharge",
+    "weaponCount": 5,
+    "artifactCount": 5
+  },
+  "kirara": {
+    "role": "Support",
+    "weapon": "Favonius Sword",
+    "artifact": "Tenacity of the Millelith 2-piece + Vourukasha's Glow 2-piece",
+    "sands": "HP% / Energy Recharge",
+    "weaponCount": 5,
+    "artifactCount": 4
+  },
+  "wriothesley": {
+    "role": "Main DPS",
+    "weapon": "Cashflow Supervision",
+    "artifact": "Disenchantment in Deep Shadow 4-piece",
+    "sands": "ATK%",
+    "weaponCount": 5,
+    "artifactCount": 4
+  },
+  "xianyun": {
+    "role": "Support",
+    "weapon": "Crane's Echoing Call",
+    "artifact": "Viridescent Venerer 4-piece",
+    "sands": "Energy Recharge / ATK%",
+    "weaponCount": 5,
+    "artifactCount": 5
+  },
+  "freminet": {
+    "role": "Main DPS",
+    "weapon": "Gest of the Mighty Wolf",
+    "artifact": "Pale Flame 4-piece",
+    "sands": "ATK%",
+    "weaponCount": 5,
+    "artifactCount": 5
+  },
+  "charlotte": {
+    "role": "Support",
+    "weapon": "Prototype Amber",
+    "artifact": "Noblesse Oblige 4-piece",
+    "sands": "Energy Recharge / ATK%",
+    "weaponCount": 5,
+    "artifactCount": 5
+  },
+  "dori": {
+    "role": "Support",
+    "weapon": "Favonius Greatsword",
+    "artifact": "Noblesse Oblige 4-piece",
+    "sands": "Energy Recharge / HP% / Elemental Mastery",
+    "weaponCount": 5,
+    "artifactCount": 5
+  },
+  "mika": {
+    "role": "Support",
+    "weapon": "Favonius Lance",
+    "artifact": "Noblesse Oblige 4-piece",
+    "sands": "Energy Recharge / HP%",
+    "weaponCount": 5,
+    "artifactCount": 5
+  }
+};
+  for (const [key, item] of Object.entries(expected)) {
+    const profile = CHARACTER_BUILD_GUIDES[key];
+    assert.ok(profile, key + ': character profile exists');
+    assert.equal(profile.buildCategory, item.role, key + ': source role matches');
+    assert.equal(profile.weapons[0]?.name, item.weapon, key + ': first visible source weapon matches');
+    assert.equal(profile.artifacts[0]?.name, item.artifact, key + ': first visible source artifact matches');
+    assert.equal(profile.stats.sands, item.sands, key + ': source main stat matches');
+    assert.equal(profile.weapons.length, item.weaponCount, key + ': only visible source weapon entries are included');
+    assert.equal(profile.artifacts.length, item.artifactCount, key + ': source visible artifact entries are included');
+    assert.equal(profile.sourceCheckedAt, '2026-10-22', key + ': profile has per-character source review date');
+    assert.match(profile.sourceNote, /Checked 22 Oct 2026/i, key + ': source note has matching date');
+  }
+});
