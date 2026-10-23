@@ -424,7 +424,7 @@ test('Oct 22 source-review batch two follows current Genshin.gg character listin
 
 test('Oct 22 source-review batch three matches current Genshin.gg build listings', () => {
   const expected = {
-    baizhu: { role: 'Support', weapon: "Jadefall's Splendor", artifact: 'Deepwood Memories 4-piece', sands: 'HP% / Energy Recharge', goblet: 'HP%', circlet: 'HP%', weapons: 5, artifacts: 5 },
+    baizhu: { role: 'Support', weapon: "Jadefall's Splendor", artifact: 'Deepwood Memories 4-piece', sands: 'HP% / Energy Recharge', goblet: 'HP%', circlet: 'HP', weapons: 5, artifacts: 5 },
     chevreuse: { role: 'Support', weapon: 'Favonius Lance', artifact: 'Noblesse Oblige 4-piece', sands: 'HP%', weapons: 4, artifacts: 5 },
     beidou: { role: 'Sub DPS', weapon: "Wolf's Gravestone", artifact: 'Emblem of Severed Fate 4-piece', sands: 'ATK% / Energy Recharge', weapons: 5, artifacts: 5 },
     'kuki-shinobu': { role: 'Sub DPS', weapon: 'Freedom-Sworn', artifact: 'Flower of Paradise Lost 4-piece', sands: 'Elemental Mastery', goblet: 'Elemental Mastery', circlet: 'Elemental Mastery', weapons: 5, artifacts: 5 },
