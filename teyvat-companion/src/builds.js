@@ -2691,6 +2691,8 @@ function classifyRoleEvidence(candidate, primaryProfile, isPrimary = false) {
     if (candidate?.sourceCheckedAt == null) return 'needs-review';
     return 'curated';
   }
+  // Only mark an alternate as role-curated when its cited guide directly covers that role.
+  if (candidate?.sourceRoleVerified === true) return 'curated';
   const url = String(candidate?.sourceUrl || '');
   if (/youtube\.com|youtu\.be/i.test(url)) return 'creator-reference';
   if (/genshin\.gg\/characters\//i.test(url)) return 'reference-only';
