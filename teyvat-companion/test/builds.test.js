@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { BUILD_ROLE_CATEGORIES, CHARACTER_BUILD_ALIASES, CHARACTER_BUILD_GUIDES, getCharacterBuildRoleOptions } from '../src/builds.js';
+import { BUILD_ROLE_CATEGORIES, CHARACTER_BUILD_ALIASES, CHARACTER_BUILD_GUIDES, CHARACTER_ROLE_BUILDS, getCharacterBuildRoleOptions } from '../src/builds.js';
 
 const validCategories = new Set(BUILD_ROLE_CATEGORIES);
 
@@ -41,6 +41,40 @@ test('every character has exactly three selectable role sections with complete b
         assert.match(option.profile.playstyle, /experimental|role-adapted/i);
       }
     }
+  }
+});
+
+test('the static character-role registry stores three separate complete build records for every character', () => {
+  const characterKeys = Object.keys(CHARACTER_BUILD_GUIDES);
+  assert.ok(characterKeys.length >= 123, 'expected the current full playable roster');
+  assert.deepEqual(Object.keys(CHARACTER_ROLE_BUILDS).sort(), [...characterKeys].sort());
+
+  for (const characterKey of characterKeys) {
+    const base = CHARACTER_BUILD_GUIDES[characterKey];
+    const roles = CHARACTER_ROLE_BUILDS[characterKey];
+    assert.equal(roles.length, 3, characterKey + ': registry must store exactly three role builds');
+    assert.deepEqual(roles.map(option => option.buildCategory), BUILD_ROLE_CATEGORIES);
+    assert.deepEqual(Object.keys(base.roleBuilds), BUILD_ROLE_CATEGORIES, characterKey + ': role builds must be directly available on the character profile');
+
+    const profileReferences = new Set();
+    const roleIds = new Set();
+    for (const option of roles) {
+      assert.ok(base.roleBuilds[option.buildCategory], characterKey + ': missing stored ' + option.buildCategory + ' profile');
+      assert.equal(base.roleBuilds[option.buildCategory], option, characterKey + ': direct and indexed role profile must agree');
+      assert.equal(option.profile.buildCategory, option.buildCategory);
+      assert.equal(option.profile.characterKey, characterKey);
+      assert.ok(option.profile.roleBuildId.startsWith(characterKey + ':'), characterKey + ': build IDs must be character-specific');
+      assert.ok(!roleIds.has(option.profile.roleBuildId), characterKey + ': role profile IDs must not collide');
+      roleIds.add(option.profile.roleBuildId);
+      assert.ok(!profileReferences.has(option.profile), characterKey + ': each role needs its own profile object');
+      profileReferences.add(option.profile);
+      assertCompleteProfile(characterKey + '/' + option.buildCategory, option.profile);
+      assert.ok(option.profile.teamFocus && option.profile.playstyle, characterKey + ': role profile needs team and rotation guidance');
+      assert.ok(option.profile.sourceName && option.profile.sourceNote, characterKey + ': role profile must explain source/evidence status');
+    }
+
+    assert.deepEqual(getCharacterBuildRoleOptions(base).map(option => option.profile.roleBuildId), roles.map(option => option.profile.roleBuildId),
+      characterKey + ': UI selector must read the stored role profiles');
   }
 });
 
