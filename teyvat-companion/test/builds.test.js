@@ -377,7 +377,7 @@ test('build role evidence labels do not imply a character page validates every a
       assert.ok(playstyleOption, characterKey + '/' + variant.id + ': role variant must remain selectable');
       if (/youtube\.com|youtu\.be/i.test(variant.sourceUrl || '')) {
         assert.equal(playstyleOption.status, 'creator-reference', characterKey + '/' + variant.id + ': direct video links are source references, not guarantees of current optimality');
-      } else if (/genshin\.gg\/characters\//i.test(variant.sourceUrl || '')) {
+      } else if (/google\.com\/search\?q=.*game8\.co|game8\.co\/games\/Genshin-Impact\/archives|genshin\.gg\/characters\//i.test(variant.sourceUrl || '')) {
         assert.equal(playstyleOption.status, 'reference-only', characterKey + '/' + variant.id + ': a primary character page must not be presented as proof of an alternate role');
       }
     }
