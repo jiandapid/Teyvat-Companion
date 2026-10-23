@@ -2069,9 +2069,6 @@ for (const [characterKey, profile] of Object.entries(CHARACTER_BUILD_GUIDES)) {
 export const GAME8_CHARACTER_GUIDE_URLS = {
   escoffier: 'https://game8.co/games/Genshin-Impact/archives/385307k12',
   yelan: 'https://game8.co/games/Genshin-Impact/archives/372781',
-  xiao: 'https://game8.co/games/Genshin-Impact/archives/297527',
-  jean: 'https://game8.co/games/Genshin-Impact/archives/297536',
-  eula: 'https://game8.co/games/Genshin-Impact/archives/328764',
 };
 
 export function getGame8CharacterGuideUrl(characterKey, characterName = '') {
