@@ -201,7 +201,7 @@ test('additional alternate-role profiles are complete and source-linked', () => 
       assert.ok(variant, key + ': expected alternate build ' + id);
       assertCompleteProfile(key + '/' + id, variant);
       assert.ok(variant.sourceName && variant.sourceNote, key + '/' + id + ': source details are required');
-      assert.ok(variant.sourceUrl.startsWith('https://genshin.gg/characters/'), key + '/' + id + ': use a character-specific source');
+      assert.ok(variant.sourceUrl.includes('game8.co') || variant.sourceUrl.includes('youtube.com'), key + '/' + id + ': use a Game8-restricted search or a role-specific creator source');
     }
   }
   assert.match(CHARACTER_BUILD_GUIDES.yanfei.alternateBuilds.find(b => b.id === 'c4-shield-support').sourceNote, /Constellation 4/);
@@ -414,8 +414,8 @@ test('Oct 22 legacy source-review batch preserves existing primary listing data 
     assert.ok(profile, key + ': source-reviewed profile exists');
     assert.equal(profile.buildCategory, expectation.role, key + ': role must match current source page');
     assert.ok(typeof profile.role === 'string' && profile.role.length > 0, key + ': role descriptor must be present');
-    assert.equal(profile.weapons[0]?.name, expectation.weapon, key + ': first displayed weapon agrees with current Genshin.gg listing');
-    assert.equal(profile.artifacts[0]?.name, expectation.artifact, key + ': first displayed artifact agrees with current Genshin.gg listing');
+    assert.equal(profile.weapons[0]?.name, expectation.weapon, key + ': first displayed weapon agrees with current legacy source listing');
+    assert.equal(profile.artifacts[0]?.name, expectation.artifact, key + ': first displayed artifact agrees with current legacy source listing');
     assert.equal(profile.stats.sands, expectation.sands, key + ': main stat matches the source snapshot');
     assert.equal(profile.sourceCheckedAt, expectedReviewDate(key), key + ': current source review date is present');
     assert.ok(profile.sourceNote.includes('Checked ' + expectedReviewLabel(key)), key + ': source note shows the review date');
