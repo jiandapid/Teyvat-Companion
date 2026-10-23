@@ -2064,6 +2064,323 @@ for (const [characterKey, profile] of Object.entries(CHARACTER_BUILD_GUIDES)) {
   for (const alternate of profile.alternateBuilds || []) ensureBuildSourceAttribution(alternate, characterKey, true);
 }
 
+
+/**
+ * Role-specific data pass grounded in Game8's published build sections.
+ * This is deliberately separate from the Genshin.gg review table above so each
+ * profile keeps explicit source provenance and role-specific scope.
+ */
+const GAME8_REVIEWED_BUILD_OVERRIDES = {
+  jean: {
+    primary: {
+      role: "Anemo Support / Healer",
+      buildCategory: "Support",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/297536",
+      sourceName: "Game8 — Jean Rating and Best Builds",
+      sourceCheckedAt: "2026-10-23",
+      sourceNote: "Checked 23 Oct 2026 against Game8's Jean guide (indexed page reports last updated 31 Mar 2026). Game8 explicitly lists Anemo Healer Support and ATK Buffer builds; the set and weapon choice depends on whether resistance shred, healing uptime, or team ATK buffing is needed. This is source-based guidance, not a universal damage simulation.",
+      artifacts: [
+        { name: "Viridescent Venerer 4-piece", note: "Game8's Anemo Healer Support set; use when Jean can Swirl the team's damage element and no other holder already covers the resistance shred." },
+        { name: "Noblesse Oblige 4-piece", note: "Game8's ATK Buffer alternative for teams that benefit from the Burst buff and do not already have a Noblesse holder." },
+        { name: "Gladiator's Finale 2-piece + Viridescent Venerer 2-piece", note: "Game8's Sub-DPS pairing; favors Jean's personal Skill/Burst damage when another teammate handles the 4-piece Viridescent effect." }
+      ],
+      stats: { sands: "ATK% / Energy Recharge", goblet: "Anemo DMG Bonus", circlet: "Healing Bonus / CRIT Rate / CRIT DMG" },
+      substats: ["Energy Recharge for reliable Burst healing", "ATK%", "CRIT Rate / CRIT DMG"],
+      weapons: [
+        { name: "Freedom-Sworn", note: "Game8's featured Anemo Healer Support weapon; value comes from team utility, not just Jean's personal damage." },
+        { name: "Skyward Blade", note: "Game8 replacement; Energy Recharge and a high Base ATK help comfort and support output." },
+        { name: "Festering Desire", note: "Game8 replacement if owned; its event availability is limited." },
+        { name: "Amenoma Kageuchi", note: "Game8 replacement; craftable Energy support option." },
+        { name: "Favonius Sword", note: "Game8's ATK Buffer replacement; build enough CRIT Rate to trigger its team-energy passive consistently." }
+      ],
+      talentOrder: ["Elemental Burst", "Elemental Skill", "Normal Attack"],
+      teamFocus: "Prioritize Burst healing and Swirl resistance shred. Use Noblesse instead when an ATK buff helps the team and the 4-piece effect is not already covered.",
+      playstyle: "Jean's healing scales with ATK. Keep enough Energy Recharge to use her Burst on schedule; a personal-damage set is best considered when another unit already handles Viridescent Venerer."
+    },
+    alternates: [
+      {
+        id: "game8-sub-dps",
+        role: "Anemo Sub-DPS",
+        buildCategory: "Sub DPS",
+        sourceUrl: "https://game8.co/games/Genshin-Impact/archives/297536",
+        sourceName: "Game8 — Jean Sub-DPS build section",
+        sourceCheckedAt: "2026-10-23",
+        sourceRoleVerified: true,
+        sourceNote: "Checked 23 Oct 2026. Game8 explicitly publishes a Sub-DPS build for Jean: Primordial Jade Cutter, Gladiator's Finale 2-piece + Viridescent Venerer 2-piece, ATK%/Anemo DMG/CRIT stats. This is a source-backed role variant; it assumes another team member handles 4-piece Viridescent resistance shred.",
+        artifacts: [
+          { name: "Gladiator's Finale 2-piece + Viridescent Venerer 2-piece", note: "Game8's listed Sub-DPS set pairing for ATK and Anemo damage." },
+          { name: "Viridescent Venerer 4-piece", note: "Use instead when Jean is the team's resistance-shred holder; this trades away the two-piece personal-damage mix." }
+        ],
+        stats: { sands: "ATK%", goblet: "Anemo DMG Bonus", circlet: "CRIT Rate / CRIT DMG" },
+        substats: ["ATK%", "Energy Recharge", "CRIT Rate / CRIT DMG", "Elemental Mastery where reactions justify it"],
+        weapons: [
+          { name: "Primordial Jade Cutter", note: "Game8's featured Sub-DPS weapon." },
+          { name: "Sacrificial Sword", note: "Game8 replacement; Skill reset value depends on rotation and energy needs." },
+          { name: "Festering Desire", note: "Game8 replacement if owned." },
+          { name: "Amenoma Kageuchi", note: "Game8 replacement; craftable energy support option." }
+        ],
+        talentOrder: ["Elemental Burst", "Elemental Skill", "Normal Attack"],
+        teamFocus: "Use Jean in a quick-swap window for Skill and Burst damage; this set is most attractive when another character already handles resistance shred.",
+        playstyle: "This follows Game8's explicit Sub-DPS setup, not an invented carry role. Keep Jean's healing and Burst availability in mind when trading utility for damage."
+      }
+    ]
+  },
+  eula: {
+    primary: {
+      role: "Physical Main DPS",
+      buildCategory: "Main DPS",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/328764",
+      sourceName: "Game8 — Eula Rating and Best Builds",
+      sourceCheckedAt: "2026-10-23",
+      sourceNote: "Checked 23 Oct 2026 against Game8's Eula guide (indexed page reports last updated 31 Mar 2026). Game8 ranks Pale Flame 4-piece first, with Pale Flame + Bloodstained Chivalry as the main mixed-set alternative. Energy Recharge and Burst timing matter because her Lightfall Sword stores damage during her field time.",
+      artifacts: [
+        { name: "Pale Flame 4-piece", note: "Game8's top-listed set; her Skill sequence can build the set's stacks for Physical DMG and ATK." },
+        { name: "Pale Flame 2-piece + Bloodstained Chivalry 2-piece", note: "Game8's listed alternative with a combined 50% Physical DMG bonus from the two-piece effects." },
+        { name: "Pale Flame 2-piece + Emblem of Severed Fate 2-piece", note: "Game8's artifact ranking includes this Energy Recharge / Physical DMG mix when Burst uptime is the bottleneck." },
+        { name: "Gladiator's Finale 2-piece + Pale Flame 2-piece", note: "Comparison option; use only when the pieces have meaningfully better substats than the complete sets." },
+        { name: "Martial Artist 4-piece", note: "Game8's four-star early-game option; replace it with a five-star set as account progression allows." }
+      ],
+      stats: { sands: "ATK%", goblet: "Physical DMG Bonus", circlet: "CRIT Rate / CRIT DMG" },
+      substats: ["Energy Recharge to support Burst rotations", "CRIT DMG", "CRIT Rate", "ATK%"],
+      weapons: [
+        { name: "Song of Broken Pines", note: "Game8's featured weapon for Eula." },
+        { name: "Beacon of the Reed Sea", note: "Game8-listed replacement; compare the passive and team shield/HP conditions." },
+        { name: "Wolf's Gravestone", note: "Game8-listed replacement; strong ATK option." },
+        { name: "Serpent Spine", note: "Game8-listed replacement; CRIT Rate option whose stacks are easier to maintain with defensive support." },
+        { name: "Prototype Archaic", note: "Game8's free-to-play craftable option." }
+      ],
+      talentOrder: ["Elemental Burst", "Normal Attack", "Elemental Skill"],
+      teamFocus: "Pair with reliable Electro application for Superconduct and enough energy generation to use Burst each rotation. Eula's Burst stacks from attacks and Skill use before its Lightfall Sword detonates.",
+      playstyle: "The guide's priority is Burst first, then Normal Attack and Skill. Keep a consistent attack string after casting Burst instead of swapping her off field early."
+    }
+  },
+  freminet: {
+    primary: {
+      role: "Physical Main DPS",
+      buildCategory: "Main DPS",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/417207",
+      sourceName: "Game8 — Freminet Rating and Best Builds",
+      sourceCheckedAt: "2026-10-23",
+      sourceNote: "Checked 23 Oct 2026 against Game8's Freminet guide (indexed page reports last updated 31 Mar 2026). Game8 gives three distinct damage setups: Pale Flame Physical, Blizzard Strayer Cryo, and a Blizzard/Pale Flame hybrid. The correct setup depends on which damage type and Pers Level the rotation is built around.",
+      artifacts: [
+        { name: "Pale Flame 4-piece", note: "Game8's featured Physical build; suited to his Level 4 Skill and Normal Attack physical damage." },
+        { name: "Blizzard Strayer 4-piece", note: "Game8's Cryo option; team setup and consistent Cryo/Freeze application affect its value." },
+        { name: "Blizzard Strayer 2-piece + Pale Flame 2-piece", note: "Game8's hybrid build, trading the full-set bonus for Cryo and Physical DMG bonuses." },
+        { name: "Pale Flame 2-piece + Bloodstained Chivalry 2-piece", note: "Physical comparison option when a strong mixed-set inventory beats the available 4-piece set." },
+        { name: "Pale Flame 2-piece + ATK% 2-piece", note: "Flexible transitional pieces; compare actual substats before investing in a new domain." }
+      ],
+      stats: { sands: "ATK%", goblet: "Physical DMG Bonus / ATK%", circlet: "CRIT Rate / CRIT DMG" },
+      substats: ["CRIT Rate / CRIT DMG", "ATK%", "Elemental Mastery for reaction teams", "Energy Recharge if Burst uptime needs help"],
+      weapons: [
+        { name: "Song of Broken Pines", note: "Game8's featured Physical weapon." },
+        { name: "Wolf's Gravestone", note: "Game8-listed replacement." },
+        { name: "Prototype Archaic", note: "Game8-listed craftable option." },
+        { name: "Snow-Tombed Starsilver", note: "Game8-listed Physical damage alternative." },
+        { name: "Serpent Spine", note: "Game8-listed CRIT Rate option; shield/defensive support helps preserve its stacks." }
+      ],
+      talentOrder: ["Elemental Skill", "Normal Attack", "Elemental Burst"],
+      teamFocus: "For Physical Freminet, use Electro application for Superconduct. His Pers Level changes the Physical/Cryo split, so choose the goblet and team around whether the rotation emphasizes Level 4 or Level 0 Skill damage.",
+      playstyle: "Game8 prioritizes Skill, Normal Attack, then Burst. Do not transfer the Cryo build's artifact assumptions to the Physical build without checking the planned Skill rotation."
+    },
+    alternates: [
+      {
+        id: "game8-cryo-dps",
+        role: "Cryo Main DPS",
+        buildCategory: "Main DPS",
+        sourceUrl: "https://game8.co/games/Genshin-Impact/archives/417207",
+        sourceName: "Game8 — Freminet Cryo DPS build section",
+        sourceCheckedAt: "2026-10-23",
+        sourceRoleVerified: true,
+        sourceNote: "Checked 23 Oct 2026. This matches Game8's explicitly published Blizzard Strayer Cryo build: it favors Cryo Skill damage around Pers Level 0 and needs team optimization to maintain the relevant Cryo/Freeze conditions.",
+        artifacts: [
+          { name: "Blizzard Strayer 4-piece", note: "Game8's Cryo build set." },
+          { name: "Blizzard Strayer 2-piece + Pale Flame 2-piece", note: "Hybrid comparison when a fully optimized Blizzard Strayer set is unavailable." }
+        ],
+        stats: { sands: "ATK%", goblet: "Cryo DMG Bonus", circlet: "CRIT Rate / CRIT DMG" },
+        substats: ["ATK%", "CRIT Rate / CRIT DMG", "Elemental Mastery", "Energy Recharge if required"],
+        weapons: [
+          { name: "Beacon of the Reed Sea", note: "Game8's featured weapon for the Cryo Freminet variant." },
+          { name: "Wolf's Gravestone", note: "Game8-listed alternative." },
+          { name: "Serpent Spine", note: "Game8-listed alternative." },
+          { name: "Tidal Shadow", note: "Game8-listed alternative; evaluate its condition in the team's rotation." }
+        ],
+        talentOrder: ["Elemental Skill", "Normal Attack", "Elemental Burst"],
+        teamFocus: "Maintain Cryo application and choose teammates that enable the intended Freeze/Shatter playstyle.",
+        playstyle: "A source-backed alternative within Main DPS, not a separate Sub DPS or Support claim."
+      },
+      {
+        id: "game8-hybrid-dps",
+        role: "Physical / Cryo Hybrid Main DPS",
+        buildCategory: "Main DPS",
+        sourceUrl: "https://game8.co/games/Genshin-Impact/archives/417207",
+        sourceName: "Game8 — Freminet Hybrid DPS build section",
+        sourceCheckedAt: "2026-10-23",
+        sourceRoleVerified: true,
+        sourceNote: "Checked 23 Oct 2026. Game8 explicitly includes a hybrid setup with Blizzard Strayer 2-piece + Pale Flame 2-piece. Choose Physical or Cryo goblet according to the weapon and which part of the Skill sequence contributes most damage.",
+        artifacts: [{ name: "Blizzard Strayer 2-piece + Pale Flame 2-piece", note: "Game8's hybrid set pairing: Cryo and Physical DMG bonuses without requiring both full four-piece conditions." }],
+        stats: { sands: "ATK%", goblet: "Physical DMG Bonus / Cryo DMG Bonus", circlet: "CRIT Rate / CRIT DMG" },
+        substats: ["CRIT Rate / CRIT DMG", "ATK%", "Elemental Mastery", "Energy Recharge if required"],
+        weapons: [
+          { name: "Beacon of the Reed Sea", note: "Game8's featured Hybrid weapon." },
+          { name: "Song of Broken Pines", note: "Game8-listed alternative for Physical-leaning hybrids." },
+          { name: "Prototype Archaic", note: "Game8-listed craftable option." },
+          { name: "Serpent Spine", note: "Game8-listed CRIT option." },
+          { name: "Tidal Shadow", note: "Game8-listed alternative; passive uptime is team/rotation dependent." }
+        ],
+        talentOrder: ["Elemental Skill", "Normal Attack", "Elemental Burst"],
+        teamFocus: "Choose the goblet from the dominant damage type and use Superconduct if the rotation deals a meaningful amount of Physical DMG.",
+        playstyle: "Use this hybrid only when it improves your existing weapon/artifact inventory; it is not automatically better than specializing Physical or Cryo."
+      }
+    ]
+  },
+  "hu-tao": {
+    primary: {
+      role: "Pyro Main DPS",
+      buildCategory: "Main DPS",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/314347",
+      sourceName: "Game8 — Hu Tao Rating and Best Builds",
+      sourceCheckedAt: "2026-10-23",
+      sourceNote: "Checked 23 Oct 2026 against Game8's Hu Tao guide. The indexed result is older than the March 2026 guides, so treat new-set coverage as an additional caveat. Game8 explicitly limits Marechaussee Hunter to teams with both Furina and Xianyun using Plunging Attack Vaporize; do not apply that variant to every Hu Tao team.",
+      artifacts: [
+        { name: "Crimson Witch of Flames 4-piece", note: "Standard Vaporize/reaction-oriented option; maintain consistent Hydro application and make use of its reaction bonuses." },
+        { name: "Shimenawa's Reminiscence 4-piece", note: "Charged Attack damage alternative; the Energy drain can affect Burst timing and healing." },
+        { name: "Marechaussee Hunter 4-piece", note: "Game8's specific option for Furina + Xianyun Plunging Attack Vaporize teams; its CRIT Rate bonus needs reliable HP changes." },
+        { name: "Crimson Witch of Flames 2-piece + Elemental Mastery 2-piece", note: "Mixed reaction-stat option while farming; compare substats to complete sets." },
+        { name: "Crimson Witch of Flames 2-piece + Tenacity of the Millelith 2-piece", note: "HP/Pyro hybrid comparison when substats are better; not a source-ranked best-in-slot recommendation." }
+      ],
+      stats: { sands: "HP% / Elemental Mastery", goblet: "Pyro DMG Bonus", circlet: "CRIT Rate / CRIT DMG" },
+      substats: ["CRIT Rate / CRIT DMG", "Elemental Mastery", "HP%", "Energy Recharge only when needed"],
+      weapons: [
+        { name: "Staff of Homa", note: "Game8's featured weapon." },
+        { name: "Staff of the Scarlet Sands", note: "Game8-listed replacement; scales with Elemental Mastery and CRIT needs." },
+        { name: "Ballad of the Fjords", note: "Game8-listed Battle Pass option; value depends on meeting its team-element condition." },
+        { name: "Dragon's Bane", note: "Game8-listed reaction weapon; powerful in Vaporize teams with adequate ER/HP/CRIT." },
+        { name: "Deathmatch", note: "Game8-listed CRIT Rate option." }
+      ],
+      talentOrder: ["Normal Attack", "Elemental Skill", "Elemental Burst"],
+      teamFocus: "Reliable Hydro application enables Vaporize. Keep Hu Tao's Skill window active and do not choose Marechaussee Hunter unless the team reliably activates its HP-change condition.",
+      playstyle: "Level Normal Attack and Skill together; Burst is the next priority for extra damage and self-healing."
+    },
+    alternates: [
+      {
+        id: "game8-marechaussee-plunge",
+        role: "Plunge Vaporize Main DPS (Furina + Xianyun)",
+        buildCategory: "Main DPS",
+        sourceUrl: "https://game8.co/games/Genshin-Impact/archives/314347",
+        sourceName: "Game8 — Hu Tao Marechaussee Plunge build section",
+        sourceCheckedAt: "2026-10-23",
+        sourceRoleVerified: true,
+        sourceNote: "Checked 23 Oct 2026. Game8 specifically describes Marechaussee Hunter for Plunging Attack Vaporize when Furina and Xianyun are both on the team. The guide's indexed article is older, so verify any newer set/weapon options before farming.",
+        artifacts: [{ name: "Marechaussee Hunter 4-piece", note: "Game8's conditional set for the Furina + Xianyun plunge team; outside that setup, prefer a set suited to Hu Tao's actual reaction/attack rotation." }],
+        stats: { sands: "HP% / Elemental Mastery", goblet: "Pyro DMG Bonus", circlet: "CRIT Rate / CRIT DMG" },
+        substats: ["CRIT DMG", "CRIT Rate", "HP%", "Elemental Mastery"],
+        weapons: [
+          { name: "Staff of Homa", note: "Game8's featured weapon for the Hu Tao build." },
+          { name: "Staff of the Scarlet Sands", note: "Game8-listed alternative." },
+          { name: "Ballad of the Fjords", note: "Game8-listed alternative." },
+          { name: "Dragon's Bane", note: "Game8-listed alternative." }
+        ],
+        talentOrder: ["Normal Attack", "Elemental Skill", "Elemental Burst"],
+        teamFocus: "Build around Furina's Hydro application and Xianyun's plunge buff/healing; retain a second Hydro applier if Vaporize consistency requires it.",
+        playstyle: "A team-conditional Main DPS variant, not the default Hu Tao artifact set for every composition."
+      }
+    ]
+  },
+  yelan: {
+    primary: {
+      role: "Off-field Hydro Sub DPS",
+      buildCategory: "Sub DPS",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/372781",
+      sourceName: "Game8 — Yelan Best Builds and Teams",
+      sourceCheckedAt: "2026-10-23",
+      sourceNote: "Checked 23 Oct 2026 against Game8's Yelan guide (indexed page reports last updated 31 Mar 2026). Game8 recommends Emblem of Severed Fate 4-piece and an ER target around 170–200% as a starting range; refine the target for C1/C6, weapon, Hydro teammates and the real rotation.",
+      artifacts: [
+        { name: "Emblem of Severed Fate 4-piece", note: "Game8's top-listed set; supports Burst damage and Energy Recharge." },
+        { name: "Emblem of Severed Fate 2-piece + Noblesse Oblige 2-piece", note: "Game8-listed Burst damage mix." },
+        { name: "Emblem of Severed Fate 2-piece + Tenacity of the Millelith 2-piece", note: "Game8-listed ER/HP mix when its substats beat full Emblem." },
+        { name: "Tenacity of the Millelith 2-piece + Heart of Depth 2-piece", note: "HP/Hydro alternative; compare actual substats and Burst uptime." }
+      ],
+      stats: { sands: "HP% / Energy Recharge", goblet: "Hydro DMG Bonus", circlet: "CRIT Rate / CRIT DMG" },
+      substats: ["Energy Recharge until the chosen rotation works (often around 170–200%)", "HP%", "CRIT Rate / CRIT DMG"],
+      weapons: [
+        { name: "Aqua Simulacra", note: "Game8's featured Sub-DPS weapon." },
+        { name: "Elegy for the End", note: "Game8-listed replacement; team buff can outweigh personal damage in reaction teams." },
+        { name: "Favonius Warbow", note: "Game8-listed replacement and reliable team-energy option when CRIT Rate is sufficient." },
+        { name: "Slingshot", note: "Game8-listed accessible option; compare damage in your actual rotation rather than assuming a universal weapon ranking." },
+        { name: "Fading Twilight", note: "An event option for players who already own it; compare passive uptime and energy needs." }
+      ],
+      talentOrder: ["Elemental Burst", "Elemental Skill", "Normal Attack"],
+      teamFocus: "Her Burst fires coordinated attacks when the active character performs Normal Attacks; choose a driver and set ER around the full team rotation.",
+      playstyle: "Game8 treats Yelan primarily as an off-field Sub DPS. A Main DPS tab should remain marked experimental unless a current source explicitly supports that role."
+    }
+  },
+  xiao: {
+    primary: {
+      role: "On-field Anemo Main DPS",
+      buildCategory: "Main DPS",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/297527",
+      sourceName: "Game8 — Xiao Best Builds and Teams",
+      sourceCheckedAt: "2026-10-23",
+      sourceNote: "Checked 23 Oct 2026 against Game8's Xiao guide. The indexed guide is older than the March 2026 pages and includes both its newer Long Night's Oath recommendation and a Furina-dependent Marechaussee option; recheck later artifact/weapon additions and energy needs before farming.",
+      artifacts: [
+        { name: "Long Night's Oath 4-piece", note: "Game8's newer Xiao-focused set referenced by the guide; compare the full-set damage gain against the substats on sets you already own." },
+        { name: "Vermillion Hereafter 4-piece", note: "Established Xiao set option; strong if your existing pieces substantially outperform a newly farmed set." },
+        { name: "Marechaussee Hunter 4-piece", note: "Game8's conditional alternative when teamed with Furina for reliable HP changes; it reduces the CRIT Rate needed from substats." },
+        { name: "Desert Pavilion Chronicle 4-piece", note: "Anemo/Plunging damage comparison; check its attack-pattern conditions against the actual combo." },
+        { name: "Vermillion Hereafter 2-piece + Anemo DMG 2-piece", note: "Mixed-set fallback when substats are much stronger than available full sets." }
+      ],
+      stats: { sands: "ATK% / Energy Recharge", goblet: "Anemo DMG Bonus", circlet: "CRIT Rate / CRIT DMG" },
+      substats: ["Energy Recharge until Burst is ready each rotation", "CRIT Rate / CRIT DMG", "ATK%"],
+      weapons: [
+        { name: "Primordial Jade Winged-Spear", note: "Game8's featured weapon." },
+        { name: "Staff of Homa", note: "Game8-listed replacement." },
+        { name: "Calamity Queller", note: "Game8-listed replacement." },
+        { name: "Deathmatch", note: "Game8-listed replacement; a CRIT Rate option." },
+        { name: "Blackcliff Pole", note: "Game8-listed replacement; its passive depends on defeating opponents." }
+      ],
+      talentOrder: ["Normal Attack", "Elemental Burst", "Elemental Skill"],
+      teamFocus: "Xiao relies on Burst uptime and Plunging Attacks; build around his field-time window with an Anemo battery, damage support and healing/shielding as needed.",
+      playstyle: "Game8's talent priority is Normal Attack, Burst, Skill. Don't farm a new artifact set just for a small theoretical gain if your existing set already has much stronger substats."
+    },
+    alternates: [
+      {
+        id: "game8-marechaussee-furina",
+        role: "Marechaussee Plunge Main DPS (Furina)",
+        buildCategory: "Main DPS",
+        sourceUrl: "https://game8.co/games/Genshin-Impact/archives/297527",
+        sourceName: "Game8 — Xiao Marechaussee Hunter variant",
+        sourceCheckedAt: "2026-10-23",
+        sourceRoleVerified: true,
+        sourceNote: "Checked 23 Oct 2026. Game8 explicitly discusses 4-piece Marechaussee Hunter for Xiao when teamed with Furina; HP fluctuations lower his external CRIT Rate requirement. It is conditional, not the universal best set.",
+        artifacts: [{ name: "Marechaussee Hunter 4-piece", note: "Use with reliable HP changes (commonly Furina); otherwise the set's CRIT Rate effect is not dependable." }],
+        stats: { sands: "ATK% / Energy Recharge", goblet: "Anemo DMG Bonus", circlet: "CRIT DMG / CRIT Rate (rebalance after Marechaussee's CRIT Rate bonus)" },
+        substats: ["Energy Recharge for rotation", "CRIT DMG", "ATK%", "CRIT Rate only to the adjusted target"],
+        weapons: [
+          { name: "Primordial Jade Winged-Spear", note: "Game8's featured weapon." },
+          { name: "Staff of Homa", note: "Game8-listed alternative." },
+          { name: "Deathmatch", note: "Game8-listed alternative." },
+          { name: "Blackcliff Pole", note: "Game8-listed alternative." }
+        ],
+        talentOrder: ["Normal Attack", "Elemental Burst", "Elemental Skill"],
+        teamFocus: "Run Furina and enough healing to maintain useful HP changes, plus an energy plan for Xiao's expensive Burst.",
+        playstyle: "A Game8-supported artifact variant inside the Main DPS role, not a separate Sub DPS recommendation."
+      }
+    ]
+  }
+};
+
+for (const [characterKey, update] of Object.entries(GAME8_REVIEWED_BUILD_OVERRIDES)) {
+  const profile = CHARACTER_BUILD_GUIDES[characterKey];
+  if (!profile) throw new Error("Missing Game8-reviewed character profile: " + characterKey);
+  Object.assign(profile, update.primary);
+  for (const variant of update.alternates || []) {
+    profile.alternateBuilds = [
+      ...(profile.alternateBuilds || []).filter(existing => existing.id !== variant.id),
+      variant
+    ];
+  }
+}
+
 export const CHARACTER_BUILD_ALIASES = {
   'raiden-shogun': 'raiden',
   'kaedehara-kazuha': 'kazuha',
