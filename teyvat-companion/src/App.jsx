@@ -9,7 +9,7 @@ import {
 import { ELEMENTS, ELEMENT_META, MATERIAL_STARTER, NAV_ITEMS, STARTER_CHARACTERS, STARTER_TEAMS } from './data';
 import { CHARACTER_BUILD_ALIASES, CHARACTER_BUILD_GUIDES, CREATOR_CHANNELS, getCharacterBuildRoleOptions } from './builds';
 import { supabase, supabaseConfigured } from './lib/supabase.js';
-import { analyzeTeamComposition, buildProgressionPlan, enkaTtlSeconds, flattenEnkaSavedBuilds, getCharacterUpgradeMaterialRequirements, isValidGenshinUid, matchGoodCharacterKey, normalizeTrackerBackup, mergeCharacterCatalogue, mergeCharacterSourceRecords, mergeEnkaShowcaseCharacter, normalizeAkashaArtifacts, normalizeAkashaProfiles, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory, validateCharacterCatalogue } from './core';
+import { analyzeTeamComposition, buildProgressionPlan, createCharacterBuildGoal, enkaTtlSeconds, flattenEnkaSavedBuilds, getCharacterUpgradeMaterialRequirements, isValidGenshinUid, matchGoodCharacterKey, normalizeTrackerBackup, mergeCharacterCatalogue, mergeCharacterSourceRecords, mergeEnkaShowcaseCharacter, normalizeAkashaArtifacts, normalizeAkashaProfiles, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory, validateCharacterCatalogue } from './core';
 
 const ICONS = { LayoutDashboard, Users, Swords, PackageOpen, MapPinned, ChartNoAxesCombined, PlayCircle, Settings2, Bot, BookOpen, Layers3 };
 const STORAGE_KEY = 'teyvat-companion-v1';
@@ -954,7 +954,27 @@ export default function App() {
       setToast('Goal restored');
     });
   };
-  const addGoalForCharacter = c => { saveState(prev=>({...prev,goals:[{id:`goal-${Date.now()}`,title:`Build ${c.name}`,character:c.id,target:'Level 90',done:false},...prev.goals]})); setActiveCharacter(null); setToast(`${c.name} added to goals`); };
+  const addGoalForCharacter = (c, buildProfile = null, evidenceStatus = '') => {
+    const goal = createCharacterBuildGoal(c, buildProfile, evidenceStatus);
+    if (!goal) {
+      setToast('Could not create a build goal for this character');
+      return;
+    }
+    let added = false;
+    saveState(prev => {
+      const duplicate = prev.goals.some(item => !item.done
+        && String(item.character || '') === goal.character
+        && (item.buildRole || '') === (goal.buildRole || '')
+        && (item.buildProfileId || '') === (goal.buildProfileId || ''));
+      if (duplicate) return prev;
+      added = true;
+      return { ...prev, goals: [goal, ...prev.goals] };
+    });
+    setActiveCharacter(null);
+    setToast(added
+      ? (goal.buildRole ? c.name + ' ' + goal.buildRole + ' build added to goals' : c.name + ' added to goals')
+      : (goal.buildRole ? c.name + ' already has this role build in active goals' : c.name + ' already has an active build goal'));
+  };
   const addCharacterMaterialsToPlan = c => {
     if (!c?.gameData) {
       setToast('Load the character’s Talents & mats tab first so the planner can use source-provided costs.');
@@ -2068,7 +2088,7 @@ export default function App() {
           <h1>{buildCharacter.name}</h1>
           <p><strong>{activeBuildProfile?.buildCategory || 'Role not reviewed'}</strong>{selectedRoleEvidenceCaption ? ' · ' + selectedRoleEvidenceCaption : ''} · {buildCharacter.region || 'Region not set'}</p>
           <div className="build-hero-status"><span className={activeBuildProfile ? 'build-status-pill' : 'build-status-pill needs-review'}>{activeBuildProfile ? 'Quick reference available' : 'Needs a reviewed build profile'}</span><span>{buildCharacter.owned ? 'Owned · Lv. ' + (buildCharacter.level || 1) : 'Not marked as owned'}</span></div>
-          <div className="build-hero-actions"><button className="button primary" onClick={() => {setOptimizerCharacterId(buildCharacter.id);setOptimizerTeamId('');setOptimizerResult(null);setOptimizerError('');navigate('optimizer');}}><Layers3 size={15}/> Optimize artifacts</button><button className="button secondary" onClick={() => addGoalForCharacter(buildCharacter)}><Target size={15}/> Add build goal</button><button className="button secondary" onClick={() => openCharacter(buildCharacter)}><Pencil size={15}/> Edit tracker data</button></div>
+          <div className="build-hero-actions"><button className="button primary" onClick={() => {setOptimizerCharacterId(buildCharacter.id);setOptimizerTeamId('');setOptimizerResult(null);setOptimizerError('');navigate('optimizer');}}><Layers3 size={15}/> Optimize artifacts</button><button className="button secondary" onClick={() => addGoalForCharacter(buildCharacter, activeBuildProfile, selectedBuildEvidenceStatus)}><Target size={15}/> Add {activeBuildProfile?.buildCategory || 'build'} goal</button><button className="button secondary" onClick={() => addCharacterMaterialsToPlan(buildCharacter)}><PackageOpen size={15}/> Create material checklist</button><button className="button secondary" onClick={() => openCharacter(buildCharacter)}><Pencil size={15}/> Edit tracker data</button></div>
         </div>
       </section>
 
