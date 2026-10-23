@@ -2465,7 +2465,7 @@ function roleBuildDisplayName(characterKey, profile) {
   if (overrides[characterKey]) return overrides[characterKey];
   return String(characterKey || 'Unknown Character')
     .replace(/[-_]+/g, ' ')
-    .replace(/\\b[a-z]/g, letter => letter.toUpperCase());
+    .replace(/\b[a-z]/g, letter => letter.toUpperCase());
 }
 
 function materializeCharacterRoleBuilds() {
