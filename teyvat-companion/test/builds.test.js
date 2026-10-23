@@ -407,10 +407,10 @@ test('build role evidence labels do not imply a character page validates every a
     assert.ok(primaryOption, characterKey + ': primary role option exists');
     if (/does not publish a ranked weapon\/artifact list/i.test(profile.sourceNote || '')) {
       assert.equal(primaryOption.status, 'provisional', characterKey + ': pages without ranked gear lists must be provisional');
-    } else if (profile.legacySourceCheckedAt == null) {
-      assert.equal(primaryOption.status, 'needs-review', characterKey + ': undated profiles need review rather than being called unranked');
+    } else if (profile.sourceCheckedAt == null || profile.game8Verified !== true) {
+      assert.equal(primaryOption.status, 'needs-review', characterKey + ': profiles not checked against Game8 need review even when legacy data had a date');
     } else {
-      assert.equal(primaryOption.status, 'curated', characterKey + ': dated source-reviewed primary profile must be identified');
+      assert.equal(primaryOption.status, 'curated', characterKey + ': Game8-verified primary profile must be identified');
     }
     for (const variant of profile.alternateBuilds || []) {
       const roleOption = options.find(option => option.buildCategory === variant.buildCategory);
