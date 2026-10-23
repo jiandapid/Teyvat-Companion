@@ -1038,7 +1038,7 @@ test('Oct 23 core legacy build batch preserves gear and stat listings pending Ga
   kazuha:{role:'Support',weapons:['Freedom-Sworn','Favonius Sword',"Xiphos' Moonlight",'Sacrificial Sword','Skyward Blade'],artifacts:['Viridescent Venerer 4-piece','Instructor 4-piece','Thundering Fury 4-piece',"Gilded Dreams 2-piece + Wanderer's Troupe 2-piece",'Gilded Dreams 2-piece + Viridescent Venerer 2-piece'],stats:{sands:'Elemental Mastery',goblet:'Elemental Mastery',circlet:'Elemental Mastery'},talents:['Elemental Skill','Elemental Burst','Normal Attack']},
   raiden:{role:'Sub DPS',weapons:['Engulfing Lightning','Staff of Homa','Primordial Jade Winged-Spear','Staff of the Scarlet Sands','The Catch R5'],artifacts:['Emblem of Severed Fate 4-piece','Emblem of Severed Fate 2-piece + Noblesse Oblige 2-piece','Emblem of Severed Fate 2-piece + Thundering Fury 2-piece','Noblesse Oblige 2-piece + Thundering Fury 2-piece',"Emblem of Severed Fate 2-piece + Shimenawa's Reminiscence 2-piece"],stats:{sands:'Energy Recharge / ATK%',goblet:'Electro DMG / ATK%',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Burst','Elemental Skill','Normal Attack']},
   furina:{role:'Sub DPS',weapons:['Splendor of Tranquil Waters','Favonius Sword','Primordial Jade Cutter',"Serenity's Call R5",'Uraku Misugiri'],artifacts:['Golden Troupe 4-piece','Tenacity of the Millelith 4-piece','Golden Troupe 2-piece + Tenacity of the Millelith 2-piece','Golden Troupe 2-piece + Heart of Depth 2-piece','Heart of Depth 2-piece + Tenacity of the Millelith 2-piece'],stats:{sands:'Energy Recharge / HP%',goblet:'Hydro DMG / HP%',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Skill','Elemental Burst','Normal Attack']},
-  escoffier:{role:'Sub DPS',weapons:['Symphonist of Scents','Engulfing Lightning','Calamity Queller','Staff of Homa','Kitain Cross Spear R5'],artifacts:['Golden Troupe 4-piece','Blizzard Strayer 4-piece','Blizzard Strayer 2-piece + Golden Troupe 2-piece'],stats:{sands:'ATK% / Energy Recharge',goblet:'Cryo DMG',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Skill','Elemental Burst','Normal Attack']},
+  escoffier:{role:'Sub DPS',weapons:['Symphonist of Scents',"Sacrificer's Staff",'Staff of Homa','Engulfing Lightning',"Prospector's Drill",'Tamayuratei no Ohanashi','Favonius Lance'],artifacts:['Golden Troupe 4-piece','Noblesse Oblige 4-piece','Tenacity of the Millelith 4-piece'],stats:{sands:'ATK% / Energy Recharge',goblet:'Cryo DMG Bonus / ATK%',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Skill','Elemental Burst','Normal Attack']},
   mona:{role:'Support',weapons:['Thrilling Tales of Dragon Slayers','Favonius Codex','Prototype Amber','Wine and Song','The Widsith'],artifacts:['Noblesse Oblige 4-piece','Tenacity of the Millelith 4-piece','Emblem of Severed Fate 2-piece + Scholar 2-piece','Emblem of Severed Fate 4-piece','Scholar 4-piece'],stats:{sands:'Energy Recharge / ATK%',goblet:'Hydro DMG / ATK%',circlet:'CRIT Rate'},talents:['Elemental Burst','Elemental Skill','Normal Attack']},
   bennett:{role:'Support',weapons:['Mistsplitter Reforged','Aquila Favonia','Skyward Blade','Freedom-Sworn','The Alley Flash'],artifacts:['Noblesse Oblige 4-piece','Emblem of Severed Fate 4-piece','Crimson Witch of Flames 4-piece','Emblem of Severed Fate 2-piece + Noblesse Oblige 2-piece','Crimson Witch of Flames 2-piece + Noblesse Oblige 2-piece'],stats:{sands:'ATK% / Energy Recharge',goblet:'Pyro DMG',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Burst','Elemental Skill','Normal Attack']},
   nahida:{role:'Sub DPS',weapons:["A Thousand Floating Dreams","Kagura's Verity",'Sacrificial Fragments','Wandering Evenstar','The Widsith'],artifacts:['Deepwood Memories 4-piece','Gilded Dreams 4-piece','Golden Troupe 4-piece','Flower of Paradise Lost 2-piece + Gilded Dreams 2-piece',"Gilded Dreams 2-piece + Wanderer's Troupe 2-piece"],stats:{sands:'Elemental Mastery',goblet:'Elemental Mastery',circlet:'Elemental Mastery'},talents:['Elemental Skill','Elemental Burst','Normal Attack']},
@@ -1069,6 +1069,14 @@ test('Oct 23 core legacy build batch preserves gear and stat listings pending Ga
 
 test('Game8-reviewed profiles use guide-specific gear, stats, talents and role evidence', () => {
   const expected = {
+    escoffier: {
+      url: 'https://game8.co/games/Genshin-Impact/archives/385307k12',
+      category: 'Sub DPS',
+      artifact: 'Golden Troupe 4-piece',
+      weapon: 'Symphonist of Scents',
+      stats: ['ATK% / Energy Recharge', 'Cryo DMG Bonus / ATK%', 'CRIT Rate / CRIT DMG'],
+      talents: ['Elemental Skill', 'Elemental Burst', 'Normal Attack'],
+    },
     jean: {
       url: 'https://game8.co/games/Genshin-Impact/archives/297536',
       category: 'Support',
