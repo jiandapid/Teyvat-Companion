@@ -2109,7 +2109,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
         { name: "Amenoma Kageuchi", note: "Game8-listed replacement. Checked 23 Oct 2026; validate energy generation against the intended rotation." }
       ],
       talentOrder: ["Elemental Burst", "Elemental Skill", "Normal Attack"],
-      teamFocus: "Pair Xingqiu with a Normal Attack driver and a damage dealer that benefits from consistent off-field Hydro. Check Energy Recharge against the weapon: Game8 gives about 200% without Sacrificial Sword and around 150% with it as starting estimates.",
+      teamFocus: "Pair Xingqiu with a driver who triggers his Burst with Normal Attacks and a damage dealer that benefits from consistent off-field Hydro. Check Energy Recharge against the weapon: Game8 gives about 200% without Sacrificial Sword and around 150% with it as starting estimates.",
       playstyle: "Use the Burst every rotation. If it is not ready on cooldown, increase Energy Recharge before chasing more CRIT or ATK."
     },
     alternates: []
