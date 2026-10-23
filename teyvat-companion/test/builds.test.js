@@ -44,8 +44,9 @@ test('Game8 is the active character-build reference and legacy records are flagg
     for (const alternate of profile.alternateBuilds || []) {
       assert.ok(alternate.sourceUrl.startsWith('https://game8.co/games/Genshin-Impact/archives/')
         || (alternate.sourceUrl.startsWith('https://www.google.com/search?q=')
-          && decodeURIComponent(alternate.sourceUrl).includes('site:game8.co/games/Genshin-Impact/archives')),
-        key + ': alternate profile must use a Game8 reference');
+          && decodeURIComponent(alternate.sourceUrl).includes('site:game8.co/games/Genshin-Impact/archives'))
+        || /(?:youtube\\.com|youtu\\.be)/i.test(alternate.sourceUrl),
+        key + ': alternate profile must use Game8 or a directly preserved creator reference');
       assert.equal(alternate.game8Verified, false, key + ': unreviewed alternates must remain unverified');
     }
   }
@@ -54,7 +55,7 @@ test('Game8 is the active character-build reference and legacy records are flagg
   assert.equal(getGame8CharacterGuideUrl('yelan'), GAME8_CHARACTER_GUIDE_URLS.yelan);
   assert.ok(decodeURIComponent(getGame8CharacterGuideUrl('xianyun')).includes('site:game8.co'));
 });
-const OCT_23_REVIEWED_PRIMARY_BUILDS = new Set(['fischl', 'xiangling', 'yelan', 'zhongli', 'neuvillette', 'sucrose', 'layla', 'wanderer']);
+const OCT_23_REVIEWED_PRIMARY_BUILDS = new Set(['fischl', 'xiangling', 'yelan', 'zhongli', 'neuvillette', 'sucrose', 'layla', 'wanderer', 'kazuha', 'raiden', 'furina', 'escoffier', 'mona', 'bennett', 'nahida', 'xingqiu']);
 const expectedReviewDate = key => OCT_23_REVIEWED_PRIMARY_BUILDS.has(key) ? '2026-10-23' : '2026-10-22';
 const expectedReviewLabel = key => OCT_23_REVIEWED_PRIMARY_BUILDS.has(key) ? '23 Oct 2026' : '22 Oct 2026';
 
@@ -464,6 +465,7 @@ test('Oct 22 legacy profile snapshot remains available pending Game8 verificatio
   };
   for (const [key, expectation] of Object.entries(expected)) {
     const profile = CHARACTER_BUILD_GUIDES[key];
+    if (profile.game8Verified) continue; // covered by the explicit Game8 source test above
     assert.ok(profile, key + ': source-reviewed profile exists');
     assert.equal(profile.buildCategory, expectation.role, key + ': role must match current source page');
     assert.ok(typeof profile.role === 'string' && profile.role.length > 0, key + ': role descriptor must be present');
@@ -1078,6 +1080,7 @@ test('Oct 23 current legacy source catalog build review has ranked gear, context
   };
   for (const [key, spec] of Object.entries(expected)) {
     const profile = CHARACTER_BUILD_GUIDES[key];
+    if (profile.game8Verified) continue; // covered by the explicit Game8 source test above
     assert.ok(profile, key + ': build profile is present');
     assert.equal(profile.legacySourceCheckedAt, '2026-10-23', key + ': source review date');
     assert.match(profile.sourceNote, /Checked 23 Oct 2026/i, key + ': dated source note');
