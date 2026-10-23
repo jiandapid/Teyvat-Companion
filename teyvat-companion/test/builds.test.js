@@ -1,8 +1,51 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { BUILD_ROLE_CATEGORIES, CHARACTER_BUILD_ALIASES, CHARACTER_BUILD_GUIDES, CHARACTER_ROLE_BUILDS, getCharacterBuildRoleOptions } from '../src/builds.js';
+import { BUILD_ROLE_CATEGORIES, CHARACTER_BUILD_ALIASES, CHARACTER_BUILD_GUIDES, CHARACTER_ROLE_BUILDS, GAME8_CHARACTER_GUIDE_URLS, getCharacterBuildRoleOptions, getGame8CharacterGuideUrl } from '../src/builds.js';
 
 const validCategories = new Set(BUILD_ROLE_CATEGORIES);
+
+test('Game8 is the active character-build reference and legacy records are flagged honestly', () => {
+  assert.equal(CHARACTER_BUILD_GUIDES.escoffier.sourceUrl, GAME8_CHARACTER_GUIDE_URLS.escoffier);
+  assert.equal(CHARACTER_BUILD_GUIDES.yelan.sourceUrl, GAME8_CHARACTER_GUIDE_URLS.yelan);
+  assert.equal(CHARACTER_BUILD_GUIDES.escoffier.game8Verified, true);
+  assert.equal(CHARACTER_BUILD_GUIDES.yelan.game8Verified, true);
+  assert.equal(CHARACTER_BUILD_GUIDES.escoffier.sourceCheckedAt, '2026-10-23');
+  assert.equal(CHARACTER_BUILD_GUIDES.yelan.sourceCheckedAt, '2026-10-23');
+  assert.equal(CHARACTER_BUILD_GUIDES.escoffier.weapons[0].name, 'Symphonist of Scents');
+  assert.equal(CHARACTER_BUILD_GUIDES.escoffier.artifacts[0].name, 'Golden Troupe 4-piece');
+  assert.equal(CHARACTER_BUILD_GUIDES.yelan.weapons[0].name, 'Aqua Simulacra');
+  assert.equal(CHARACTER_BUILD_GUIDES.yelan.stats.sands, 'HP% / Energy Recharge');
+
+  const entries = Object.entries(CHARACTER_BUILD_GUIDES);
+  assert.ok(entries.length >= 125, 'expected the complete character catalogue');
+  let verifiedCount = 0;
+  let legacyCount = 0;
+  for (const [key, profile] of entries) {
+    assert.ok(profile.sourceUrl.startsWith('https://game8.co/games/Genshin-Impact/archives/')
+      || (profile.sourceUrl.startsWith('https://www.google.com/search?q=')
+        && decodeURIComponent(profile.sourceUrl).includes('site:game8.co/games/Genshin-Impact/archives')),
+      key + ': primary profile must point to Game8 or a Game8-restricted guide lookup');
+    if (profile.game8Verified) {
+      verifiedCount++;
+      assert.equal(profile.sourceCheckedAt, '2026-10-23', key + ': verified Game8 data must have a current check date');
+    } else {
+      legacyCount++;
+      assert.equal(profile.sourceCheckedAt, null, key + ': legacy data cannot claim a Game8 review date');
+      assert.match(profile.sourceNote, /not yet been checked line-by-line against the linked Game8 guide/i, key + ': legacy status must be explicit');
+    }
+    for (const alternate of profile.alternateBuilds || []) {
+      assert.ok(alternate.sourceUrl.startsWith('https://game8.co/games/Genshin-Impact/archives/')
+        || (alternate.sourceUrl.startsWith('https://www.google.com/search?q=')
+          && decodeURIComponent(alternate.sourceUrl).includes('site:game8.co/games/Genshin-Impact/archives')),
+        key + ': alternate profile must use a Game8 reference');
+      assert.equal(alternate.game8Verified, false, key + ': unreviewed alternates must remain unverified');
+    }
+  }
+  assert.equal(verifiedCount, 2, 'only profiles actually checked against Game8 should be marked verified');
+  assert.ok(legacyCount > 100, 'the migration should clearly expose all remaining legacy profiles');
+  assert.equal(getGame8CharacterGuideUrl('yelan'), GAME8_CHARACTER_GUIDE_URLS.yelan);
+  assert.ok(decodeURIComponent(getGame8CharacterGuideUrl('xianyun')).includes('site:game8.co'));
+});
 const OCT_23_REVIEWED_PRIMARY_BUILDS = new Set(['fischl', 'xiangling', 'yelan', 'zhongli', 'neuvillette', 'sucrose', 'layla', 'wanderer']);
 const expectedReviewDate = key => OCT_23_REVIEWED_PRIMARY_BUILDS.has(key) ? '2026-10-23' : '2026-10-22';
 const expectedReviewLabel = key => OCT_23_REVIEWED_PRIMARY_BUILDS.has(key) ? '23 Oct 2026' : '22 Oct 2026';
@@ -130,7 +173,7 @@ test('recent roster additions have current source-backed primary build profiles'
   assert.equal(CHARACTER_BUILD_ALIASES.mizuki, 'yumemizuki-mizuki');
 });
 
-test('current Genshin.gg role labels are reflected for recently corrected profiles', () => {
+test('Existing primary role labels remain available during Game8 source migration', () => {
   assert.equal(CHARACTER_BUILD_GUIDES.raiden.buildCategory, 'Sub DPS');
   assert.equal(CHARACTER_BUILD_GUIDES['escoffier'].buildCategory, 'Sub DPS');
   assert.equal(CHARACTER_BUILD_GUIDES.tighnari.buildCategory, 'Sub DPS');
@@ -201,7 +244,7 @@ test('additional alternate-role profiles are complete and source-linked', () => 
       assert.ok(variant, key + ': expected alternate build ' + id);
       assertCompleteProfile(key + '/' + id, variant);
       assert.ok(variant.sourceName && variant.sourceNote, key + '/' + id + ': source details are required');
-      assert.ok(variant.sourceUrl.startsWith('https://genshin.gg/characters/'), key + '/' + id + ': use a character-specific source');
+      assert.ok(variant.sourceUrl.startsWith('https://game8.co/games/Genshin-Impact/archives/') || (variant.sourceUrl.startsWith('https://www.google.com/search?q=') && decodeURIComponent(variant.sourceUrl).includes('site:game8.co/games/Genshin-Impact/archives')), key + '/' + id + ': use a Game8 guide or a Game8-restricted guide lookup');
     }
   }
   assert.match(CHARACTER_BUILD_GUIDES.yanfei.alternateBuilds.find(b => b.id === 'c4-shield-support').sourceNote, /Constellation 4/);
@@ -278,8 +321,8 @@ test('current build-source attribution distinguishes reviewed rankings from prov
     assert.ok(profile.sourceName, key + ': primary build must identify its source');
     assert.ok(profile.sourceNote, key + ': primary build must explain evidence scope');
     assert.ok(profile.sourceUrl.startsWith('https://'), key + ': primary build source must be secure');
-    if (profile.sourceCheckedAt) {
-      assert.ok(profile.sourceNote.includes('Checked ' + String(Number(profile.sourceCheckedAt.slice(8, 10))) + ' Oct ' + profile.sourceCheckedAt.slice(0, 4)), key + ': dated review note must match its per-character source check date');
+    if (profile.legacySourceCheckedAt) {
+      assert.ok(profile.sourceNote.includes('Checked ' + String(Number(profile.legacySourceCheckedAt.slice(8, 10))) + ' Oct ' + profile.legacySourceCheckedAt.slice(0, 4)), key + ': dated review note must match its per-character source check date');
     }
     for (const alternate of profile.alternateBuilds || []) {
       assert.ok(alternate.sourceName, key + '/' + alternate.id + ': alternate must identify its source');
@@ -294,9 +337,9 @@ test('expanded current profiles include multiple real options and role caveats',
     assert.ok(profile, key + ': reviewed primary profile exists');
     assert.ok(profile.weapons.length >= 4, key + ': expanded weapon options');
     assert.ok(profile.artifacts.length >= 3 || ['nefer', 'jahoda', 'iansan'].includes(key), key + ': expanded artifact options or shorter source listing');
-    assert.ok(profile.sourceCheckedAt, key + ': expected dated source review for this profile');
+    assert.ok(profile.legacySourceCheckedAt, key + ': expected dated source review for this profile');
   }
-  assert.equal(CHARACTER_BUILD_GUIDES.columbina.buildCategory, 'Support', 'current Genshin.gg build index classifies Columbina as Support');
+  assert.equal(CHARACTER_BUILD_GUIDES.columbina.buildCategory, 'Support', 'legacy primary role remains intact pending Game8 verification');
   assert.match(CHARACTER_BUILD_GUIDES.columbina.role, /Support/i);
 });
 
@@ -307,8 +350,8 @@ test('Vesna and Vodyanitsa have complete, clearly provisional source-linked prof
   assertCompleteProfile('vodyanitsa', vodyanitsa);
   assert.equal(vesna.buildCategory, 'Main DPS');
   assert.equal(vodyanitsa.buildCategory, 'Support');
-  assert.equal(vesna.sourceCheckedAt, null);
-  assert.equal(vodyanitsa.sourceCheckedAt, null);
+  assert.equal(vesna.legacySourceCheckedAt, null);
+  assert.equal(vodyanitsa.legacySourceCheckedAt, null);
   assert.match(vesna.sourceNote, /does not publish a ranked weapon\/artifact list/i);
   assert.match(vodyanitsa.sourceNote, /does not publish a ranked weapon\/artifact list/i);
   for (const key of ['vesna', 'vodyanitsa']) {
@@ -364,7 +407,7 @@ test('build role evidence labels do not imply a character page validates every a
     assert.ok(primaryOption, characterKey + ': primary role option exists');
     if (/does not publish a ranked weapon\/artifact list/i.test(profile.sourceNote || '')) {
       assert.equal(primaryOption.status, 'provisional', characterKey + ': pages without ranked gear lists must be provisional');
-    } else if (profile.sourceCheckedAt == null) {
+    } else if (profile.legacySourceCheckedAt == null) {
       assert.equal(primaryOption.status, 'needs-review', characterKey + ': undated profiles need review rather than being called unranked');
     } else {
       assert.equal(primaryOption.status, 'curated', characterKey + ': dated source-reviewed primary profile must be identified');
@@ -391,14 +434,14 @@ test('uncited role templates stay explicitly experimental and newer unranked pro
   assert.ok(unknown.every(option => option.status === 'adapted'));
 });
 
-test('Oct 22 source-review batch follows the current Genshin.gg primary listing', () => {
+test('Oct 22 legacy profile snapshot remains available pending Game8 verification', () => {
   const expected = {
     neuvillette: { role: 'Main DPS', weapon: 'Tome of the Eternal Flow', artifact: 'Marechaussee Hunter 4-piece', sands: 'HP%' },
     escoffier: { role: 'Sub DPS', weapon: 'Symphonist of Scents', artifact: 'Golden Troupe 4-piece', sands: 'ATK% / Energy Recharge' },
     mona: { role: 'Support', weapon: 'Thrilling Tales of Dragon Slayers', artifact: 'Noblesse Oblige 4-piece', sands: 'Energy Recharge / ATK%' },
     zhongli: { role: 'Support', weapon: 'Black Tassel', artifact: 'Archaic Petra 4-piece', sands: 'HP%' },
     xiangling: { role: 'Sub DPS', weapon: 'Staff of the Scarlet Sands', artifact: 'Emblem of Severed Fate 4-piece', sands: 'Energy Recharge / ATK%' },
-    yelan: { role: 'Sub DPS', weapon: 'Elegy for the End', artifact: 'Emblem of Severed Fate 4-piece', sands: 'Energy Recharge' },
+    yelan: { role: 'Sub DPS', weapon: 'Aqua Simulacra', artifact: 'Emblem of Severed Fate 4-piece', sands: 'HP% / Energy Recharge' },
     fischl: { role: 'Sub DPS', weapon: 'The Daybreak Chronicles', artifact: 'Golden Troupe 4-piece', sands: 'ATK%' },
     sucrose: { role: 'Support', weapon: 'A Thousand Floating Dreams', artifact: 'Viridescent Venerer 4-piece', sands: 'Elemental Mastery' },
     alhaitham: { role: 'Main DPS', weapon: 'Light of Foliar Incision', artifact: 'Gilded Dreams 4-piece', sands: 'Elemental Mastery / ATK%' },
@@ -416,17 +459,17 @@ test('Oct 22 source-review batch follows the current Genshin.gg primary listing'
     assert.ok(profile, key + ': source-reviewed profile exists');
     assert.equal(profile.buildCategory, expectation.role, key + ': role must match current source page');
     assert.ok(typeof profile.role === 'string' && profile.role.length > 0, key + ': role descriptor must be present');
-    assert.equal(profile.weapons[0]?.name, expectation.weapon, key + ': first displayed weapon agrees with current Genshin.gg listing');
-    assert.equal(profile.artifacts[0]?.name, expectation.artifact, key + ': first displayed artifact agrees with current Genshin.gg listing');
+    assert.equal(profile.weapons[0]?.name, expectation.weapon, key + ': first displayed weapon agrees with current legacy source catalog listing');
+    assert.equal(profile.artifacts[0]?.name, expectation.artifact, key + ': first displayed artifact agrees with current legacy source catalog listing');
     assert.equal(profile.stats.sands, expectation.sands, key + ': main stat matches the source snapshot');
-    assert.equal(profile.sourceCheckedAt, expectedReviewDate(key), key + ': current source review date is present');
+    assert.equal(profile.legacySourceCheckedAt, expectedReviewDate(key), key + ': current source review date is present');
     assert.ok(profile.sourceNote.includes('Checked ' + expectedReviewLabel(key)), key + ': source note shows the review date');
     assert.ok(profile.weapons.length >= (key === 'escoffier' ? 5 : key === 'odette' ? 4 : 5), key + ': include the source-supported weapon options only');
-    assert.ok(profile.artifacts.length >= (key === 'escoffier' ? 3 : 5), key + ': include available source-supported set options');
+    assert.ok(profile.artifacts.length >= (key === 'escoffier' ? 3 : key === 'yelan' ? 4 : 5), key + ': include available source-supported set options');
   }
 });
 
-test('Oct 22 source-review batch two follows current Genshin.gg character listings', () => {
+test('Oct 22 legacy profile snapshot two remains available pending Game8 verification', () => {
   const expected = {
     arlecchino: { role: 'Main DPS', weapon: "Crimson Moon's Semblance", artifact: 'Fragment of Harmonic Whimsy 4-piece', sands: 'ATK%' },
     mavuika: { role: 'Main DPS', weapon: 'A Thousand Blazing Suns', artifact: 'Obsidian Codex 4-piece', sands: 'Elemental Mastery', weapons: 4, artifacts: 3 },
@@ -452,14 +495,14 @@ test('Oct 22 source-review batch two follows current Genshin.gg character listin
     assert.equal(profile.artifacts[0]?.name, expectation.artifact, key + ': first visible source artifact is stored correctly');
     assert.equal(profile.stats.sands, expectation.sands, key + ': main stat matches the source');
     if (expectation.goblet) assert.equal(profile.stats.goblet, expectation.goblet, key + ': visible source Goblet is preserved');
-    assert.equal(profile.sourceCheckedAt, expectedReviewDate(key), key + ': individual source review date is recorded');
+    assert.equal(profile.legacySourceCheckedAt, expectedReviewDate(key), key + ': individual source review date is recorded');
     assert.ok(profile.sourceNote.includes('Checked ' + expectedReviewLabel(key)), key + ': review note date matches');
     if (expectation.weapons) assert.equal(profile.weapons.length, expectation.weapons, key + ': store only visible weapon entries');
     if (expectation.artifacts) assert.equal(profile.artifacts.length, expectation.artifacts, key + ': store source-supported artifact count');
   }
 });
 
-test('Oct 22 source-review batch three matches current Genshin.gg build listings', () => {
+test('Oct 22 legacy profile snapshot three remains available pending Game8 verification', () => {
   const expected = {
     baizhu: { role: 'Support', weapon: "Jadefall's Splendor", artifact: 'Deepwood Memories 4-piece', sands: 'HP% / Energy Recharge', goblet: 'HP%', circlet: 'HP', weapons: 5, artifacts: 5 },
     chevreuse: { role: 'Support', weapon: 'Favonius Lance', artifact: 'Noblesse Oblige 4-piece', sands: 'HP%', weapons: 4, artifacts: 5 },
@@ -485,12 +528,12 @@ test('Oct 22 source-review batch three matches current Genshin.gg build listings
     if (expectation.circlet) assert.equal(profile.stats.circlet, expectation.circlet, key + ': Circlet matches source');
     assert.equal(profile.weapons.length, expectation.weapons, key + ': preserve the visible source-listed weapon count');
     assert.equal(profile.artifacts.length, expectation.artifacts, key + ': preserve source-listed artifact count');
-    assert.equal(profile.sourceCheckedAt, expectedReviewDate(key), key + ': per-character source-review date is recorded');
+    assert.equal(profile.legacySourceCheckedAt, expectedReviewDate(key), key + ': per-character source-review date is recorded');
     assert.ok(profile.sourceNote.includes('Checked ' + expectedReviewLabel(key)), key + ': source attribution date matches');
   }
 });
 
-test('Oct 22 source-review batch four matches current Genshin.gg primary listings', () => {
+test('Oct 22 legacy profile snapshot four remains available pending Game8 verification', () => {
   const expected = {
     yanfei: { role: 'Main DPS', weapon: 'Skyward Atlas', artifact: 'Crimson Witch of Flames 4-piece', sands: 'ATK%', goblet: 'Pyro DMG', weapons: 5, artifacts: 5 },
     thoma: { role: 'Support', weapon: 'Favonius Lance', artifact: 'Noblesse Oblige 4-piece', sands: 'Energy Recharge / HP%', goblet: 'HP%', weapons: 5, artifacts: 5 },
@@ -517,13 +560,13 @@ test('Oct 22 source-review batch four matches current Genshin.gg primary listing
     assert.equal(profile.weapons.length, expectation.weapons, key + ': source weapon list count is preserved');
     assert.equal(profile.artifacts.length, expectation.artifacts, key + ': source artifact list count is preserved');
     assert.ok(profile.talentOrder.length > 0, key + ': kit-based talent priority stays available');
-    assert.equal(profile.sourceCheckedAt, '2026-10-22', key + ': source-review date is recorded');
+    assert.equal(profile.legacySourceCheckedAt, '2026-10-22', key + ': source-review date is recorded');
     assert.match(profile.sourceNote, /Checked 22 Oct 2026/i, key + ': source note has matching review date');
   }
 });
 
 
-test('25 additional primary profiles match source-reviewed Genshin.gg role, gear ordering, stats and date', () => {
+test('25 additional primary profiles retain legacy gear ordering and stats pending Game8 review', () => {
   const expected = {
     barbara: { role:'Support', weapon:'Thrilling Tales of Dragon Slayers', artifact:'Maiden Beloved 4-piece', sands:'HP%', goblet:'HP%', circlet:'Healing Bonus', weapons:5, artifacts:5 },
     diona: { role:'Support', weapon:'Favonius Warbow', artifact:'Noblesse Oblige 4-piece', sands:'Energy Recharge / HP%', goblet:'HP%', circlet:'HP% / Healing Bonus', weapons:5, artifacts:5 },
@@ -554,7 +597,7 @@ test('25 additional primary profiles match source-reviewed Genshin.gg role, gear
   for (const [key, item] of Object.entries(expected)) {
     const profile = CHARACTER_BUILD_GUIDES[key];
     assert.ok(profile, key + ': reviewed profile exists');
-    assert.equal(profile.buildCategory, item.role, key + ': primary role agrees with Genshin.gg');
+    assert.equal(profile.buildCategory, item.role, key + ': primary role agrees with legacy source catalog');
     assert.equal(profile.weapons[0]?.name, item.weapon, key + ': first weapon agrees with source order');
     assert.equal(profile.artifacts[0]?.name, item.artifact, key + ': first artifact agrees with source order');
     assert.equal(profile.stats.sands, item.sands, key + ': Sands source stat');
@@ -562,7 +605,7 @@ test('25 additional primary profiles match source-reviewed Genshin.gg role, gear
     assert.equal(profile.stats.circlet, item.circlet, key + ': Circlet source stat');
     assert.equal(profile.weapons.length, item.weapons, key + ': preserve exact number of listed weapon options');
     assert.equal(profile.artifacts.length, item.artifacts, key + ': preserve exact number of listed artifact options');
-    assert.equal(profile.sourceCheckedAt, '2026-10-22', key + ': source review date recorded');
+    assert.equal(profile.legacySourceCheckedAt, '2026-10-22', key + ': source review date recorded');
     assert.match(profile.sourceNote, /Checked 22 Oct 2026/i, key + ': source note includes matching date');
     assert.ok(profile.substats.length >= 2, key + ': substat priority remains provided');
     assert.ok(profile.talentOrder.length > 0, key + ': talent order remains available');
@@ -571,7 +614,7 @@ test('25 additional primary profiles match source-reviewed Genshin.gg role, gear
 });
 
 
-test('source review stores the published ranks instead of renumbering hidden weapon entries', () => {
+test('legacy source snapshot preserves the prior weapon ranks instead of renumbering hidden entries', () => {
   const profile = CHARACTER_BUILD_GUIDES.sigewinne;
   assert.deepEqual(profile.weapons.map(weapon => weapon.name), ['Silvershower Heartstrings', 'Recurve Bow', 'Favonius Warbow', 'Elegy for the End']);
   assert.match(profile.weapons[0].note, /entry #1/);
@@ -580,7 +623,7 @@ test('source review stores the published ranks instead of renumbering hidden wea
   assert.match(profile.weapons[3].note, /entry #5/);
 });
 
-test('Oct 22 source-review batch 2 matches current Genshin.gg weapon, artifact and stat listings', () => {
+test('Oct 22 legacy source snapshot two preserves weapon, artifact and stat fields pending Game8 review', () => {
   const expected = {
   "wanderer": {
     "role": "Main DPS",
@@ -752,12 +795,12 @@ test('Oct 22 source-review batch 2 matches current Genshin.gg weapon, artifact a
     assert.equal(profile.stats.sands, item.sands, key + ': source main stat matches');
     assert.equal(profile.weapons.length, item.weaponCount, key + ': only visible source weapon entries are included');
     assert.equal(profile.artifacts.length, item.artifactCount, key + ': source visible artifact entries are included');
-    assert.equal(profile.sourceCheckedAt, expectedReviewDate(key), key + ': profile has per-character source review date');
+    assert.equal(profile.legacySourceCheckedAt, expectedReviewDate(key), key + ': profile has per-character source review date');
     assert.ok(profile.sourceNote.includes('Checked ' + expectedReviewLabel(key)), key + ': source note has matching date');
   }
 });
 
-test('Oct 22 final primary-source review batch matches current Genshin.gg listings', () => {
+test('Oct 22 final legacy source snapshot remains available pending Game8 review', () => {
   const expected = {
   "yae-miko": {
     "role": "Sub DPS",
@@ -957,16 +1000,16 @@ test('Oct 22 final primary-source review batch matches current Genshin.gg listin
     assert.deepEqual(profile.substats, item.sub, key + ': substats match source');
     assert.equal(profile.weapons.length, item.weaponCount, key + ': preserve source-visible weapons only');
     assert.equal(profile.artifacts.length, item.artifactCount, key + ': preserve source-visible artifacts only');
-    assert.equal(profile.sourceCheckedAt, '2026-10-22', key + ': source review date recorded');
+    assert.equal(profile.legacySourceCheckedAt, '2026-10-22', key + ': source review date recorded');
     assert.match(profile.sourceNote, /Checked 22 Oct 2026/i, key + ': per-character review date in source note');
   }
 });
 
-test('Vesna and Vodyanitsa were checked but remain provisional without ranked gear lists', () => {
+test('Vesna and Vodyanitsa remain provisional pending Game8 source verification', () => {
   for (const [key, role] of [['vesna', 'Main DPS'], ['vodyanitsa', 'Support']]) {
     const profile = CHARACTER_BUILD_GUIDES[key];
     assert.equal(profile.buildCategory, role);
-    assert.equal(profile.sourceCheckedAt, null);
+    assert.equal(profile.legacySourceCheckedAt, null);
     assert.match(profile.sourceNote, /Checked 22 Oct 2026/i);
     assert.match(profile.sourceNote, /does not publish a ranked weapon\/artifact list/i);
     const roleOption = getCharacterBuildRoleOptions(profile).find(option => option.buildCategory === role);
@@ -974,7 +1017,7 @@ test('Vesna and Vodyanitsa were checked but remain provisional without ranked ge
   }
 });
 
-test('Oct 23 current Genshin.gg build review has ranked gear, contextual notes, and role talent priorities', () => {
+test('Oct 23 current legacy source catalog build review has ranked gear, contextual notes, and role talent priorities', () => {
   const expected = {
     fischl: {
       weapons: ['The Daybreak Chronicles', 'Polar Star', 'Aqua Simulacra', 'Thundering Pulse', 'Chain Breaker R5'],
@@ -1028,7 +1071,7 @@ test('Oct 23 current Genshin.gg build review has ranked gear, contextual notes, 
   for (const [key, spec] of Object.entries(expected)) {
     const profile = CHARACTER_BUILD_GUIDES[key];
     assert.ok(profile, key + ': build profile is present');
-    assert.equal(profile.sourceCheckedAt, '2026-10-23', key + ': source review date');
+    assert.equal(profile.legacySourceCheckedAt, '2026-10-23', key + ': source review date');
     assert.match(profile.sourceNote, /Checked 23 Oct 2026/i, key + ': dated source note');
     assert.equal(profile.buildCategory, spec.category, key + ': primary role');
     assert.deepEqual(profile.weapons.map(item => item.name), spec.weapons, key + ': current source-ranked weapon list');
