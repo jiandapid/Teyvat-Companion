@@ -414,6 +414,9 @@ test('build-page goals preserve the chosen role, source, and evidence confidence
   assert.equal(support.buildProfileId, 'independent-support');
   assert.equal(support.buildConfidence, 'adapted');
   assert.notEqual(mainDps.buildProfileId, support.buildProfileId);
+
+  const defaultProfileId = createCharacterBuildGoal(character, { buildCategory: 'Main DPS' }, '', 125);
+  assert.equal(defaultProfileId.buildProfileId, 'primary-main-dps');
 });
 
 test('generic character goals keep the existing Level 90 target and invalid records are ignored', () => {
