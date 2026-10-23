@@ -960,20 +960,28 @@ export default function App() {
       setToast('Could not create a build goal for this character');
       return;
     }
-    let added = false;
+    const isDuplicate = persisted.goals.some(item => !item.done
+      && String(item.character || '') === goal.character
+      && (item.buildRole || '') === (goal.buildRole || '')
+      && (item.buildProfileId || '') === (goal.buildProfileId || ''));
+    if (isDuplicate) {
+      setActiveCharacter(null);
+      setToast(goal.buildRole
+        ? c.name + ' already has this role build in active goals'
+        : c.name + ' already has an active build goal');
+      return;
+    }
     saveState(prev => {
       const duplicate = prev.goals.some(item => !item.done
         && String(item.character || '') === goal.character
         && (item.buildRole || '') === (goal.buildRole || '')
         && (item.buildProfileId || '') === (goal.buildProfileId || ''));
-      if (duplicate) return prev;
-      added = true;
-      return { ...prev, goals: [goal, ...prev.goals] };
+      return duplicate ? prev : { ...prev, goals: [goal, ...prev.goals] };
     });
     setActiveCharacter(null);
-    setToast(added
-      ? (goal.buildRole ? c.name + ' ' + goal.buildRole + ' build added to goals' : c.name + ' added to goals')
-      : (goal.buildRole ? c.name + ' already has this role build in active goals' : c.name + ' already has an active build goal'));
+    setToast(goal.buildRole
+      ? c.name + ' ' + goal.buildRole + ' build added to goals'
+      : c.name + ' added to goals');
   };
   const addCharacterMaterialsToPlan = c => {
     if (!c?.gameData) {
