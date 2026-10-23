@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { BUILD_ROLE_CATEGORIES, CHARACTER_BUILD_ALIASES, CHARACTER_BUILD_GUIDES, CHARACTER_ROLE_BUILDS, getCharacterBuildRoleOptions } from '../src/builds.js';
+import { BUILD_ROLE_CATEGORIES, CHARACTER_BUILD_ALIASES, CHARACTER_BUILD_GUIDES, CHARACTER_ROLE_BUILDS, getCharacterBuildRoleOptions, getGame8SearchUrl } from '../src/builds.js';
 
 const validCategories = new Set(BUILD_ROLE_CATEGORIES);
 const OCT_23_REVIEWED_PRIMARY_BUILDS = new Set(['fischl', 'xiangling', 'yelan', 'zhongli', 'neuvillette', 'sucrose', 'layla', 'wanderer', 'kazuha', 'raiden', 'furina', 'escoffier', 'mona', 'bennett', 'nahida', 'xingqiu']);
@@ -366,6 +366,8 @@ test('build role evidence labels do not imply a character page validates every a
       assert.equal(primaryOption.status, 'provisional', characterKey + ': pages without ranked gear lists must be provisional');
     } else if (profile.sourceCheckedAt == null) {
       assert.equal(primaryOption.status, 'needs-review', characterKey + ': undated profiles need review rather than being called unranked');
+    } else if (/^Game8 —/i.test(profile.sourceName || '') && profile.sourceCheckedAt) {
+      assert.equal(primaryOption.status, 'curated', characterKey + ': explicitly Game8-reviewed primary profiles remain curated');
     } else {
       assert.equal(primaryOption.status, 'needs-review', characterKey + ': legacy review dates must not be mistaken for Game8 verification');
     }
@@ -1147,3 +1149,13 @@ test('Game8-reviewed profiles use guide-specific gear, stats, talents and role e
   }
 });
 
+
+
+test('Game8 source lookup prefers verified guide URLs and otherwise uses a Game8-restricted search', () => {
+  assert.equal(getGame8SearchUrl('Yelan', 'Sub DPS'), 'https://game8.co/games/Genshin-Impact/archives/372781');
+  assert.equal(getGame8SearchUrl('Jean', 'Support'), 'https://game8.co/games/Genshin-Impact/archives/297536');
+  const fallback = getGame8SearchUrl('Skirk', 'Main DPS');
+  assert.match(fallback, /^https:\/\/www\.google\.com\/search\?q=/);
+  assert.match(decodeURIComponent(fallback), /site:game8\.co\/games\/Genshin-Impact\/archives/);
+  assert.match(decodeURIComponent(fallback), /Skirk/);
+});
