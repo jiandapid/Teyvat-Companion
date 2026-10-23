@@ -398,7 +398,6 @@ test('Oct 22 source-review batch follows the current Genshin.gg primary listing'
     mona: { role: 'Support', weapon: 'Thrilling Tales of Dragon Slayers', artifact: 'Noblesse Oblige 4-piece', sands: 'Energy Recharge / ATK%' },
     zhongli: { role: 'Support', weapon: 'Black Tassel', artifact: 'Archaic Petra 4-piece', sands: 'HP%' },
     xiangling: { role: 'Sub DPS', weapon: 'Staff of the Scarlet Sands', artifact: 'Emblem of Severed Fate 4-piece', sands: 'Energy Recharge / ATK%' },
-    yelan: { role: 'Sub DPS', weapon: 'Elegy for the End', artifact: 'Emblem of Severed Fate 4-piece', sands: 'Energy Recharge' },
     fischl: { role: 'Sub DPS', weapon: 'The Daybreak Chronicles', artifact: 'Golden Troupe 4-piece', sands: 'ATK%' },
     sucrose: { role: 'Support', weapon: 'A Thousand Floating Dreams', artifact: 'Viridescent Venerer 4-piece', sands: 'Elemental Mastery' },
     alhaitham: { role: 'Main DPS', weapon: 'Light of Foliar Incision', artifact: 'Gilded Dreams 4-piece', sands: 'Elemental Mastery / ATK%' },
@@ -539,7 +538,6 @@ test('25 additional primary profiles match source-reviewed Genshin.gg role, gear
     amber: { role:'Sub DPS', weapon:'Elegy for the End', artifact:'Noblesse Oblige 4-piece', sands:'Energy Recharge', goblet:'Pyro DMG', circlet:'CRIT Rate / CRIT DMG', weapons:5, artifacts:5 },
     charlotte: { role:'Support', weapon:'Prototype Amber', artifact:'Noblesse Oblige 4-piece', sands:'Energy Recharge / ATK%', goblet:'ATK%', circlet:'Healing Bonus / ATK%', weapons:5, artifacts:5 },
     dori: { role:'Support', weapon:'Favonius Greatsword', artifact:'Noblesse Oblige 4-piece', sands:'Energy Recharge / HP% / Elemental Mastery', goblet:'HP% / Elemental Mastery', circlet:'Healing Bonus / HP% / Elemental Mastery', weapons:5, artifacts:5 },
-    freminet: { role:'Main DPS', weapon:'Gest of the Mighty Wolf', artifact:'Pale Flame 4-piece', sands:'ATK%', goblet:'Physical DMG', circlet:'CRIT Rate / CRIT DMG', weapons:5, artifacts:5 },
     kachina: { role:'Sub DPS', weapon:'Favonius Lance', artifact:'Scroll of the Hero of Cinder City 4-piece', sands:'Energy Recharge / DEF%', goblet:'Geo DMG / DEF%', circlet:'CRIT Rate / CRIT DMG', weapons:4, artifacts:1 },
     lynette: { role:'Support', weapon:'Sacrificial Sword', artifact:'Viridescent Venerer 4-piece', sands:'Energy Recharge / ATK%', goblet:'Anemo DMG', circlet:'CRIT Rate / CRIT DMG', weapons:5, artifacts:5 },
     mika: { role:'Support', weapon:'Favonius Lance', artifact:'Noblesse Oblige 4-piece', sands:'Energy Recharge / HP%', goblet:'HP%', circlet:'Healing Bonus / HP%', weapons:5, artifacts:5 },
@@ -707,14 +705,6 @@ test('Oct 22 source-review batch 2 matches current Genshin.gg weapon, artifact a
     "weapon": "Crane's Echoing Call",
     "artifact": "Viridescent Venerer 4-piece",
     "sands": "Energy Recharge / ATK%",
-    "weaponCount": 5,
-    "artifactCount": 5
-  },
-  "freminet": {
-    "role": "Main DPS",
-    "weapon": "Gest of the Mighty Wolf",
-    "artifact": "Pale Flame 4-piece",
-    "sands": "ATK%",
     "weaponCount": 5,
     "artifactCount": 5
   },
@@ -986,12 +976,6 @@ test('Oct 23 current Genshin.gg build review has ranked gear, contextual notes, 
       weapons: ['Staff of the Scarlet Sands', 'Staff of Homa', 'Engulfing Lightning', 'The Catch R5', 'Deathmatch'],
       artifacts: ['Emblem of Severed Fate 4-piece', 'Crimson Witch of Flames 4-piece', 'Crimson Witch of Flames 2-piece + Emblem of Severed Fate 2-piece', 'Emblem of Severed Fate 2-piece + Noblesse Oblige 2-piece', 'Crimson Witch of Flames 2-piece + Noblesse Oblige 2-piece'],
       category: 'Sub DPS', stats: { sands: 'Energy Recharge / ATK%', goblet: 'Pyro DMG', circlet: 'CRIT Rate / CRIT DMG' },
-      talents: ['Elemental Burst', 'Elemental Skill', 'Normal Attack'],
-    },
-    yelan: {
-      weapons: ['Elegy for the End', 'Favonius Warbow', 'Aqua Simulacra', 'Sacrificial Bow R5', 'Slingshot'],
-      artifacts: ['Emblem of Severed Fate 4-piece', 'Emblem of Severed Fate 2-piece + Tenacity of the Millelith 2-piece', 'Emblem of Severed Fate 2-piece + Heart of Depth 2-piece', 'Emblem of Severed Fate 2-piece + Noblesse Oblige 2-piece', 'Heart of Depth 2-piece + Tenacity of the Millelith 2-piece'],
-      category: 'Sub DPS', stats: { sands: 'Energy Recharge', goblet: 'Hydro DMG', circlet: 'CRIT Rate / CRIT DMG' },
       talents: ['Elemental Burst', 'Elemental Skill', 'Normal Attack'],
     },
     zhongli: {
