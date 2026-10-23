@@ -2067,7 +2067,7 @@ for (const [characterKey, profile] of Object.entries(CHARACTER_BUILD_GUIDES)) {
 // Game8 is the selected build-reference source. Known guide URLs point straight to Game8;
 // other characters use a site-restricted search so we do not guess archive IDs or invent URLs.
 export const GAME8_CHARACTER_GUIDE_URLS = {
-  escoffier: 'https://game8.co/games/Genshin-Impact/archives/385307k12',
+  escoffier: 'https://game8.co/games/Genshin-Impact/archives/385307',
   yelan: 'https://game8.co/games/Genshin-Impact/archives/372781',
 };
 
@@ -2161,6 +2161,56 @@ Object.assign(CHARACTER_BUILD_GUIDES.yelan, {
   talentOrder: ['Elemental Burst', 'Elemental Skill', 'Normal Attack'],
   teamFocus: 'Game8 notes that Yelan typically wants around 170–200% Energy Recharge, with the exact need depending on weapon, teammates, and rotation. Pair her Burst with a normal-attack driver.',
   playstyle: 'Maximize Skill and Burst damage while keeping enough Energy Recharge to use her Burst every rotation; tune HP% and CRIT around actual team energy needs.',
+});
+
+
+Object.assign(CHARACTER_BUILD_GUIDES.xiao, {
+  sourceUrl: GAME8_CHARACTER_GUIDE_URLS.xiao,
+  sourceName: 'Game8 — Xiao Best Builds and Teams',
+  sourceCheckedAt: '2026-10-23',
+  game8Verified: true,
+  sourceNote: 'Checked against Game8’s Xiao Best Builds and Teams guide on 23 Oct 2026; the page was last updated on 4 Aug 2025. Game8 recommends Long Night’s Oath 4-piece, with Vermillion Hereafter as a strong alternative and Marechaussee Hunter as a conditional option for teams with reliable HP changes. The page’s weapon and main-stat recommendations are shown below; because the article is older, check current-patch equipment changes before farming.',
+  artifacts: [
+    { name: 'Long Night’s Oath 4-piece', note: 'Game8 best-in-slot artifact set listed for Xiao’s Plunge DPS build.' },
+    { name: 'Vermillion Hereafter 4-piece', note: 'Game8-listed alternative; still a strong option with good existing substats.' },
+    { name: 'Marechaussee Hunter 4-piece', note: 'Conditional option Game8 discusses for teams, such as Furina teams, that provide reliable HP changes.' },
+  ],
+  stats: { sands: 'ATK% / Energy Recharge', goblet: 'Anemo DMG Bonus', circlet: 'CRIT Rate / CRIT DMG' },
+  substats: ['Energy Recharge', 'CRIT Rate', 'CRIT DMG', 'ATK%'],
+  weapons: [
+    { name: 'Primordial Jade Winged-Spear', note: 'Game8 best weapon listed for Xiao’s Plunge DPS build.' },
+    { name: 'Staff of Homa', note: 'Game8-listed replacement weapon.' },
+    { name: 'Calamity Queller', note: 'Game8-listed replacement weapon.' },
+    { name: 'Deathmatch', note: 'Game8-listed replacement weapon.' },
+    { name: 'Lithic Spear', note: 'Game8-listed replacement weapon; value depends on team composition.' },
+  ],
+  talentOrder: ['Normal Attack', 'Elemental Burst', 'Elemental Skill'],
+  teamFocus: 'Game8 recommends a plunge-focused team. Faruzan and Xianyun support Xiao’s Anemo and plunge damage; Furina can add damage, while Jean or Sucrose can help cover energy needs.',
+  playstyle: 'Build enough Energy Recharge to use the Burst on schedule, then optimize CRIT and ATK. Marechaussee Hunter depends on reliable HP changes and should not be treated as universally best.',
+});
+Object.assign(CHARACTER_BUILD_GUIDES.eula, {
+  sourceUrl: GAME8_CHARACTER_GUIDE_URLS.eula,
+  sourceName: 'Game8 — Eula Rating and Best Builds',
+  sourceCheckedAt: '2026-10-23',
+  game8Verified: true,
+  sourceNote: 'Checked against Game8’s Eula Rating and Best Builds guide on 23 Oct 2026; the page was last updated on 31 Mar 2026. Game8’s main setup is a Physical-damage Main DPS using Pale Flame 4-piece, with a 2-piece Pale Flame + 2-piece Bloodstained Chivalry alternative. Energy Recharge and consistent Burst use matter heavily for her rotation.',
+  artifacts: [
+    { name: 'Pale Flame 4-piece', note: 'Game8’s first-listed artifact set for Eula; its Skill-triggered stacks strengthen Physical damage and ATK.' },
+    { name: 'Pale Flame 2-piece + Bloodstained Chivalry 2-piece', note: 'Game8-listed alternative that provides Physical DMG bonuses from both 2-piece effects.' },
+    { name: 'Pale Flame 2-piece + Emblem of Severed Fate 2-piece', note: 'A ranked mixed-set alternative shown by Game8 for builds that benefit from more Energy Recharge.' },
+  ],
+  stats: { sands: 'ATK%', goblet: 'Physical DMG Bonus', circlet: 'CRIT Rate / CRIT DMG' },
+  substats: ['Energy Recharge', 'CRIT DMG', 'CRIT Rate', 'ATK%'],
+  weapons: [
+    { name: 'Song of Broken Pines', note: 'Game8 best weapon listed for Eula’s Main DPS build.' },
+    { name: 'Beacon of the Reed Sea', note: 'Game8-listed replacement weapon with CRIT Rate and ATK conditions.' },
+    { name: 'Wolf’s Gravestone', note: 'Game8-listed replacement weapon.' },
+    { name: 'Serpent Spine', note: 'Game8-listed replacement; protect its stacks and account for the increased damage taken.' },
+    { name: 'Prototype Archaic', note: 'Game8-listed craftable free-to-play option.' },
+  ],
+  talentOrder: ['Elemental Burst', 'Normal Attack', 'Elemental Skill'],
+  teamFocus: 'Game8’s Superconduct examples pair Eula with frequent Electro application (such as Raiden or Fischl), plus support such as Mika, Diona, Bennett, or Zhongli. Plan around the Burst’s damage window.',
+  playstyle: 'Prioritize enough Energy Recharge to use the expensive Burst reliably. Her Lightfall Sword can lose much of its value if the enemy moves away or the Burst fails to crit.',
 });
 
 export const CHARACTER_BUILD_ALIASES = {
