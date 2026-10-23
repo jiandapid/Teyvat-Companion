@@ -719,3 +719,220 @@ test('Oct 22 source-review batch 2 matches current Genshin.gg weapon, artifact a
     assert.match(profile.sourceNote, /Checked 22 Oct 2026/i, key + ': source note has matching date');
   }
 });
+
+test('Oct 22 final primary-source review batch matches current Genshin.gg listings', () => {
+  const expected = {
+  "yae-miko": {
+    "role": "Sub DPS",
+    "weapon": "Kagura's Verity",
+    "artifact": "Disenchantment in Deep Shadow 4-piece",
+    "stats": {
+      "sands": "ATK% / Elemental Mastery",
+      "goblet": "ATK% / Elemental Mastery",
+      "circlet": "CRIT Rate / CRIT DMG"
+    },
+    "sub": [
+      "CRIT Rate / CRIT DMG",
+      "ATK%",
+      "Elemental Mastery"
+    ],
+    "weaponCount": 5,
+    "artifactCount": 5
+  },
+  "lisa": {
+    "role": "Support",
+    "weapon": "Kagura's Verity",
+    "artifact": "Emblem of Severed Fate 4-piece",
+    "stats": {
+      "sands": "Elemental Mastery / ATK%",
+      "goblet": "Electro DMG",
+      "circlet": "CRIT Rate / CRIT DMG"
+    },
+    "sub": [
+      "CRIT Rate / CRIT DMG",
+      "Elemental Mastery",
+      "ATK%"
+    ],
+    "weaponCount": 5,
+    "artifactCount": 5
+  },
+  "lan-yan": {
+    "role": "Support",
+    "weapon": "Angelos' Heptades",
+    "artifact": "Viridescent Venerer 4-piece",
+    "stats": {
+      "sands": "ATK% / Energy Recharge",
+      "goblet": "ATK%",
+      "circlet": "ATK%"
+    },
+    "sub": [
+      "Energy Recharge",
+      "ATK%",
+      "Elemental Mastery"
+    ],
+    "weaponCount": 5,
+    "artifactCount": 1
+  },
+  "traveler-anemo": {
+    "role": "Sub DPS",
+    "weapon": "Exaiphanes Blade",
+    "artifact": "Viridescent Venerer 4-piece",
+    "stats": {
+      "sands": "ATK% / Energy Recharge",
+      "goblet": "Anemo DMG",
+      "circlet": "CRIT Rate / CRIT DMG"
+    },
+    "sub": [
+      "Energy Recharge",
+      "ATK%",
+      "CRIT Rate / CRIT DMG"
+    ],
+    "weaponCount": 5,
+    "artifactCount": 5
+  },
+  "traveler-dendro": {
+    "role": "Support",
+    "weapon": "Freedom-Sworn",
+    "artifact": "Deepwood Memories 4-piece",
+    "stats": {
+      "sands": "Energy Recharge / ATK%",
+      "goblet": "Dendro DMG",
+      "circlet": "CRIT Rate / CRIT DMG"
+    },
+    "sub": [
+      "Energy Recharge",
+      "CRIT Rate / CRIT DMG",
+      "ATK%"
+    ],
+    "weaponCount": 5,
+    "artifactCount": 5
+  },
+  "traveler-electro": {
+    "role": "Support",
+    "weapon": "Favonius Sword",
+    "artifact": "Noblesse Oblige 4-piece",
+    "stats": {
+      "sands": "Energy Recharge",
+      "goblet": "Electro DMG",
+      "circlet": "CRIT Rate / CRIT DMG"
+    },
+    "sub": [
+      "Energy Recharge",
+      "ATK%",
+      "CRIT Rate / CRIT DMG"
+    ],
+    "weaponCount": 5,
+    "artifactCount": 5
+  },
+  "traveler-geo": {
+    "role": "Sub DPS",
+    "weapon": "Exaiphanes Blade",
+    "artifact": "Nighttime Whispers in the Echoing Woods 4-piece",
+    "stats": {
+      "sands": "Energy Recharge / ATK%",
+      "goblet": "Geo DMG",
+      "circlet": "CRIT Rate / CRIT DMG"
+    },
+    "sub": [
+      "CRIT Rate / CRIT DMG",
+      "ATK%",
+      "Energy Recharge"
+    ],
+    "weaponCount": 5,
+    "artifactCount": 5
+  },
+  "traveler-hydro": {
+    "role": "Support",
+    "weapon": "Favonius Sword",
+    "artifact": "Instructor 4-piece",
+    "stats": {
+      "sands": "Energy Recharge / ATK%",
+      "goblet": "Hydro DMG",
+      "circlet": "CRIT Rate / CRIT DMG"
+    },
+    "sub": [
+      "Energy Recharge",
+      "CRIT Rate / CRIT DMG",
+      "ATK%"
+    ],
+    "weaponCount": 5,
+    "artifactCount": 4
+  },
+  "traveler-pyro": {
+    "role": "Support",
+    "weapon": "Favonius Sword",
+    "artifact": "Scroll of the Hero of Cinder City 4-piece",
+    "stats": {
+      "sands": "Energy Recharge / ATK%",
+      "goblet": "Pyro DMG",
+      "circlet": "CRIT Rate / CRIT DMG"
+    },
+    "sub": [
+      "Energy Recharge",
+      "CRIT Rate / CRIT DMG",
+      "ATK%"
+    ],
+    "weaponCount": 5,
+    "artifactCount": 2
+  },
+  "traveler-cryo": {
+    "role": "Main DPS",
+    "weapon": "Exaiphanes Blade",
+    "artifact": "Disenchantment in Deep Shadow 4-piece",
+    "stats": {
+      "sands": "ATK%",
+      "goblet": "ATK%",
+      "circlet": "CRIT Rate / CRIT DMG"
+    },
+    "sub": [
+      "Energy Recharge",
+      "CRIT Rate",
+      "ATK%"
+    ],
+    "weaponCount": 5,
+    "artifactCount": 5
+  },
+  "ineffa": {
+    "role": "Sub DPS",
+    "weapon": "Fractured Halo",
+    "artifact": "Aubade of Morningstar and Moon 4-piece",
+    "stats": {
+      "sands": "ATK%",
+      "goblet": "ATK%",
+      "circlet": "CRIT Rate / CRIT DMG"
+    },
+    "sub": [
+      "CRIT Rate / CRIT DMG",
+      "ATK%",
+      "Energy Recharge"
+    ],
+    "weaponCount": 5,
+    "artifactCount": 5
+  }
+};
+  for (const [key, item] of Object.entries(expected)) {
+    const profile = CHARACTER_BUILD_GUIDES[key];
+    assert.ok(profile, key + ': source-reviewed profile exists');
+    assert.equal(profile.buildCategory, item.role, key + ': current source role matches');
+    assert.equal(profile.weapons[0]?.name, item.weapon, key + ': first visible weapon matches source');
+    assert.equal(profile.artifacts[0]?.name, item.artifact, key + ': first visible artifact matches source');
+    assert.deepEqual(profile.stats, item.stats, key + ': main stats match source');
+    assert.deepEqual(profile.substats, item.sub, key + ': substats match source');
+    assert.equal(profile.weapons.length, item.weaponCount, key + ': preserve source-visible weapons only');
+    assert.equal(profile.artifacts.length, item.artifactCount, key + ': preserve source-visible artifacts only');
+    assert.equal(profile.sourceCheckedAt, '2026-10-22', key + ': source review date recorded');
+    assert.match(profile.sourceNote, /Checked 22 Oct 2026/i, key + ': per-character review date in source note');
+  }
+});
+
+test('Vesna and Vodyanitsa were checked but remain provisional without ranked gear lists', () => {
+  for (const [key, role] of [['vesna', 'Main DPS'], ['vodyanitsa', 'Support']]) {
+    const profile = CHARACTER_BUILD_GUIDES[key];
+    assert.equal(profile.buildCategory, role);
+    assert.equal(profile.sourceCheckedAt, null);
+    assert.match(profile.sourceNote, /Checked 22 Oct 2026/i);
+    assert.match(profile.sourceNote, /does not publish a ranked weapon\/artifact list/i);
+    const roleOption = getCharacterBuildRoleOptions(profile).find(option => option.buildCategory === role);
+    assert.equal(roleOption.status, 'provisional');
+  }
+});
