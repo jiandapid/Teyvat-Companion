@@ -2098,23 +2098,32 @@ function cleanLegacyBuildValues(value) {
   return value;
 }
 
-function migrateProfileToGame8(profile, characterKey) {
+function migrateProfileToGame8(profile, characterKey, isAlternate = false) {
   if (!profile || typeof profile !== 'object') return;
+  const originalSourceUrl = String(profile.sourceUrl || '');
+  const originalSourceName = String(profile.sourceName || '');
+  const keepCreatorReference = isAlternate && /(?:youtube\\.com|youtu\\.be)/i.test(originalSourceUrl);
   const legacySourceNote = cleanLegacyBuildText(profile.sourceNote || '');
   profile.legacySourceCheckedAt = profile.sourceCheckedAt || null;
   profile.sourceCheckedAt = null;
   profile.game8Verified = false;
   cleanLegacyBuildValues(profile);
   const characterName = titleCaseBuildKey(characterKey);
-  profile.sourceUrl = getGame8CharacterGuideUrl(characterKey, profile.name || characterName);
-  profile.sourceName = 'Game8 guide lookup — ' + characterName;
+  if (keepCreatorReference) {
+    // Preserve directly linked creator research on alternate-role variants; it is not Game8-verified.
+    profile.sourceUrl = originalSourceUrl;
+    profile.sourceName = cleanLegacyBuildText(originalSourceName) || 'YouTube creator reference';
+  } else {
+    profile.sourceUrl = getGame8CharacterGuideUrl(characterKey, profile.name || characterName);
+    profile.sourceName = 'Game8 guide lookup — ' + characterName;
+  }
   profile.sourceNote = (legacySourceNote ? legacySourceNote + ' ' : '')
-    + 'This is legacy build-catalog data and has not yet been checked line-by-line against the linked Game8 guide. Treat weapon and artifact suggestions as provisional; Game8 is the selected reference for verification.';
+    + 'This is legacy build-catalog data and has not yet been checked line-by-line against the linked Game8 guide. Treat weapon and artifact suggestions as provisional; Game8 is the selected reference for verification. The three role sections are kept separate, but alternate roles are not source-ranked by Game8 unless that role is explicitly covered by the linked guide.';
 }
 
 for (const [characterKey, profile] of Object.entries(CHARACTER_BUILD_GUIDES)) {
-  migrateProfileToGame8(profile, characterKey);
-  for (const alternate of profile.alternateBuilds || []) migrateProfileToGame8(alternate, characterKey);
+  migrateProfileToGame8(profile, characterKey, false);
+  for (const alternate of profile.alternateBuilds || []) migrateProfileToGame8(alternate, characterKey, true);
 }
 
 // These two primary profiles have been checked against their Game8 character guides.
@@ -2124,7 +2133,7 @@ Object.assign(CHARACTER_BUILD_GUIDES.escoffier, {
   sourceName: 'Game8 — Escoffier Best Builds and Teams',
   sourceCheckedAt: '2026-10-23',
   game8Verified: true,
-  sourceNote: 'Checked against Game8’s Escoffier Best Builds and Teams guide on 23 Oct 2026; that page was last updated on 7 Apr 2026. Game8 recommends Golden Troupe for Freeze Sub-DPS and identifies Noblesse Oblige or Tenacity of the Millelith as support-focused alternatives. The weapon and stat lists below follow the Game8 role summary. Legacy catalog: Checked 22 Oct 2026; this profile was separately rechecked against Game8 on 23 Oct 2026.',
+  sourceNote: 'Checked 23 Oct 2026 against Game8’s Escoffier Best Builds and Teams guide; that page was last updated on 7 Apr 2026. Game8 recommends Golden Troupe for Freeze Sub-DPS and identifies Noblesse Oblige or Tenacity of the Millelith as support-focused alternatives. The weapon and stat lists below follow the Game8 role summary. Legacy catalog: Checked 22 Oct 2026; this profile was separately rechecked against Game8 on 23 Oct 2026.',
   artifacts: [
     { name: 'Golden Troupe 4-piece', note: 'Game8 recommended set for Freeze Sub-DPS; highest personal Elemental Skill damage in the guide.' },
     { name: 'Noblesse Oblige 4-piece', note: 'Game8-listed team-buff alternative for a more support-focused setup.' },
@@ -2145,7 +2154,7 @@ Object.assign(CHARACTER_BUILD_GUIDES.yelan, {
   sourceName: 'Game8 — Yelan Best Builds and Teams',
   sourceCheckedAt: '2026-10-23',
   game8Verified: true,
-  sourceNote: 'Checked against Game8’s Yelan Best Builds and Teams guide on 23 Oct 2026; that page was last updated on 31 Mar 2026. The guide’s Sub-DPS build recommends 4-piece Emblem of Severed Fate, Aqua Simulacra, Hydro DMG Bonus goblet, CRIT circlet, and about 170–200% Energy Recharge depending on team and weapon. Legacy catalog: Checked 22 Oct 2026; this profile was separately rechecked against Game8 on 23 Oct 2026.',
+  sourceNote: 'Checked 23 Oct 2026 against Game8’s Yelan Best Builds and Teams guide; that page was last updated on 31 Mar 2026. The guide’s Sub-DPS build recommends 4-piece Emblem of Severed Fate, Aqua Simulacra, Hydro DMG Bonus goblet, CRIT circlet, and about 170–200% Energy Recharge depending on team and weapon. Legacy catalog: Checked 22 Oct 2026; this profile was separately rechecked against Game8 on 23 Oct 2026.',
   artifacts: [
     { name: 'Emblem of Severed Fate 4-piece', note: 'Game8 best artifact set for Yelan’s Sub-DPS build.' },
     { name: 'Emblem of Severed Fate 2-piece + Noblesse Oblige 2-piece', note: 'Game8-mentioned alternative when not using 4-piece Emblem.' },
@@ -2172,7 +2181,7 @@ Object.assign(CHARACTER_BUILD_GUIDES.xiao, {
   sourceName: 'Game8 — Xiao Best Builds and Teams',
   sourceCheckedAt: '2026-10-23',
   game8Verified: true,
-  sourceNote: 'Checked against Game8’s Xiao Best Builds and Teams guide on 23 Oct 2026; the page was last updated on 4 Aug 2025. Game8 recommends Long Night’s Oath 4-piece, with Vermillion Hereafter as a strong alternative and Marechaussee Hunter as a conditional option for teams with reliable HP changes. The page’s weapon and main-stat recommendations are shown below; because the article is older, check current-patch equipment changes before farming.',
+  sourceNote: 'Checked 23 Oct 2026 against Game8’s Xiao Best Builds and Teams guide; the page was last updated on 4 Aug 2025. Game8 recommends Long Night’s Oath 4-piece, with Vermillion Hereafter as a strong alternative and Marechaussee Hunter as a conditional option for teams with reliable HP changes. The page’s weapon and main-stat recommendations are shown below; because the article is older, check current-patch equipment changes before farming.',
   artifacts: [
     { name: 'Long Night’s Oath 4-piece', note: 'Game8 best-in-slot artifact set listed for Xiao’s Plunge DPS build.' },
     { name: 'Vermillion Hereafter 4-piece', note: 'Game8-listed alternative; still a strong option with good existing substats.' },
@@ -2196,7 +2205,7 @@ Object.assign(CHARACTER_BUILD_GUIDES.eula, {
   sourceName: 'Game8 — Eula Rating and Best Builds',
   sourceCheckedAt: '2026-10-23',
   game8Verified: true,
-  sourceNote: 'Checked against Game8’s Eula Rating and Best Builds guide on 23 Oct 2026; the page was last updated on 31 Mar 2026. Game8’s main setup is a Physical-damage Main DPS using Pale Flame 4-piece, with a 2-piece Pale Flame + 2-piece Bloodstained Chivalry alternative. Energy Recharge and consistent Burst use matter heavily for her rotation.',
+  sourceNote: 'Checked 23 Oct 2026 against Game8’s Eula Rating and Best Builds guide; the page was last updated on 31 Mar 2026. Game8’s main setup is a Physical-damage Main DPS using Pale Flame 4-piece, with a 2-piece Pale Flame + 2-piece Bloodstained Chivalry alternative. Energy Recharge and consistent Burst use matter heavily for her rotation.',
   artifacts: [
     { name: 'Pale Flame 4-piece', note: 'Game8’s first-listed artifact set for Eula; its Skill-triggered stacks strengthen Physical damage and ATK.' },
     { name: 'Pale Flame 2-piece + Bloodstained Chivalry 2-piece', note: 'Game8-listed alternative that provides Physical DMG bonuses from both 2-piece effects.' },
