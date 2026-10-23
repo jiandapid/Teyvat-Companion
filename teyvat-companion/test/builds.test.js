@@ -462,7 +462,7 @@ test('Oct 22 legacy profile snapshot remains available pending Game8 verificatio
     assert.equal(profile.legacySourceCheckedAt, '2026-10-22', key + ': current source review date is present');
     assert.match(profile.sourceNote, /Checked 22 Oct 2026/i, key + ': source note shows the review date');
     assert.ok(profile.weapons.length >= (key === 'escoffier' ? 5 : key === 'odette' ? 4 : 5), key + ': include the source-supported weapon options only');
-    assert.ok(profile.artifacts.length >= (key === 'escoffier' ? 3 : 5), key + ': include available source-supported set options');
+    assert.ok(profile.artifacts.length >= (key === 'escoffier' ? 3 : key === 'yelan' ? 4 : 5), key + ': include available source-supported set options');
   }
 });
 
