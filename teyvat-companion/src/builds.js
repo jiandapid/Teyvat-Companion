@@ -2183,7 +2183,10 @@ function resolveBuildElement(profile, character) {
   const raw = [profile?.stats?.goblet, profile?.stats?.sands, profile?.teamFocus, profile?.playstyle]
     .filter(Boolean).join(' ');
   for (const [element, damageLabel] of Object.entries(ELEMENT_DAMAGE_STAT)) {
-    if (raw.includes(damageLabel)) return element;
+    // Genshin.gg uses labels such as "Cryo DMG", while some profile notes say
+    // "Cryo DMG Bonus". Recognize both so off-meta role stats stay element-aware.
+    const shortLabel = damageLabel.replace(' Bonus', '');
+    if (raw.includes(damageLabel) || raw.includes(shortLabel)) return element;
   }
   return null;
 }
