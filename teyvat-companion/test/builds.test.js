@@ -1081,3 +1081,86 @@ test('Oct 23 core build review batch three matches current Genshin.gg ranked gea
  assert.match(CHARACTER_BUILD_GUIDES.nahida.teamFocus,/Deepwood/i);
  assert.match(CHARACTER_BUILD_GUIDES.xingqiu.teamFocus,/Normal Attacks/i);
 });
+
+test('Game8-reviewed profiles use guide-specific gear, stats, talents and role evidence', () => {
+  const expected = {
+    jean: {
+      url: 'https://game8.co/games/Genshin-Impact/archives/297536',
+      category: 'Support',
+      artifact: 'Viridescent Venerer 4-piece',
+      weapon: 'Freedom-Sworn',
+      stats: ['ATK% / Energy Recharge', 'Anemo DMG Bonus', 'Healing Bonus / CRIT Rate / CRIT DMG'],
+      talents: ['Elemental Burst', 'Elemental Skill', 'Normal Attack'],
+    },
+    eula: {
+      url: 'https://game8.co/games/Genshin-Impact/archives/328764',
+      category: 'Main DPS',
+      artifact: 'Pale Flame 4-piece',
+      weapon: 'Song of Broken Pines',
+      stats: ['ATK%', 'Physical DMG Bonus', 'CRIT Rate / CRIT DMG'],
+      talents: ['Elemental Burst', 'Normal Attack', 'Elemental Skill'],
+    },
+    freminet: {
+      url: 'https://game8.co/games/Genshin-Impact/archives/417207',
+      category: 'Main DPS',
+      artifact: 'Pale Flame 4-piece',
+      weapon: 'Song of Broken Pines',
+      stats: ['ATK%', 'Physical DMG Bonus / ATK%', 'CRIT Rate / CRIT DMG'],
+      talents: ['Elemental Skill', 'Normal Attack', 'Elemental Burst'],
+    },
+    'hu-tao': {
+      url: 'https://game8.co/games/Genshin-Impact/archives/314347',
+      category: 'Main DPS',
+      artifact: 'Crimson Witch of Flames 4-piece',
+      weapon: 'Staff of Homa',
+      stats: ['HP% / Elemental Mastery', 'Pyro DMG Bonus', 'CRIT Rate / CRIT DMG'],
+      talents: ['Normal Attack', 'Elemental Skill', 'Elemental Burst'],
+    },
+    yelan: {
+      url: 'https://game8.co/games/Genshin-Impact/archives/372781',
+      category: 'Sub DPS',
+      artifact: 'Emblem of Severed Fate 4-piece',
+      weapon: 'Aqua Simulacra',
+      stats: ['HP% / Energy Recharge', 'Hydro DMG Bonus', 'CRIT Rate / CRIT DMG'],
+      talents: ['Elemental Burst', 'Elemental Skill', 'Normal Attack'],
+    },
+    xiao: {
+      url: 'https://game8.co/games/Genshin-Impact/archives/297527',
+      category: 'Main DPS',
+      artifact: 'Long Night\'s Oath 4-piece',
+      weapon: 'Primordial Jade Winged-Spear',
+      stats: ['ATK% / Energy Recharge', 'Anemo DMG Bonus', 'CRIT Rate / CRIT DMG'],
+      talents: ['Normal Attack', 'Elemental Burst', 'Elemental Skill'],
+    },
+  };
+  for (const [key, wanted] of Object.entries(expected)) {
+    const profile = CHARACTER_BUILD_GUIDES[key];
+    assert.ok(profile, key + ': profile exists');
+    assert.equal(profile.sourceUrl, wanted.url, key + ': use the dedicated Game8 build page');
+    assert.match(profile.sourceName, /^Game8 —/i, key + ': label Game8 as the current source');
+    assert.equal(profile.sourceCheckedAt, '2026-10-23', key + ': source review date is recorded');
+    assert.match(profile.sourceNote, /Checked 23 Oct 2026/i, key + ': note should disclose review date');
+    assert.equal(profile.buildCategory, wanted.category, key + ': retain the documented primary role');
+    assert.equal(profile.artifacts[0].name, wanted.artifact, key + ': source-based lead artifact');
+    assert.equal(profile.weapons[0].name, wanted.weapon, key + ': source-based lead weapon');
+    assert.deepEqual([profile.stats.sands, profile.stats.goblet, profile.stats.circlet], wanted.stats, key + ': use source-appropriate main stats');
+    assert.deepEqual(profile.talentOrder, wanted.talents, key + ': talent priority follows the guide');
+    assert.equal(getCharacterBuildRoleOptions(profile).length, 3, key + ': retain all three selectable roles');
+  }
+
+  const game8Variants = [
+    ['jean', 'Sub DPS', 'game8-sub-dps'],
+    ['freminet', 'Main DPS', 'game8-cryo-dps'],
+    ['freminet', 'Main DPS', 'game8-hybrid-dps'],
+    ['hu-tao', 'Main DPS', 'game8-marechaussee-plunge'],
+    ['xiao', 'Main DPS', 'game8-marechaussee-furina'],
+  ];
+  for (const [key, category, id] of game8Variants) {
+    const role = getCharacterBuildRoleOptions(CHARACTER_BUILD_GUIDES[key]).find(option => option.buildCategory === category);
+    const variant = role?.playstyles.find(item => item.id === id);
+    assert.ok(variant, key + '/' + id + ': source-specific playstyle variant must be selectable');
+    assert.equal(variant.status, 'curated', key + '/' + id + ': cited guide explicitly covers the role/playstyle');
+    assert.equal(variant.profile.sourceRoleVerified, true, key + '/' + id + ': role evidence flag is preserved');
+  }
+});
+
