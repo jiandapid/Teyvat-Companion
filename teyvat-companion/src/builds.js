@@ -2121,7 +2121,7 @@ Object.assign(CHARACTER_BUILD_GUIDES.escoffier, {
   sourceName: 'Game8 — Escoffier Best Builds and Teams',
   sourceCheckedAt: '2026-10-23',
   game8Verified: true,
-  sourceNote: 'Checked against Game8’s Escoffier Best Builds and Teams guide on 23 Oct 2026; that page was last updated on 7 Apr 2026. Game8 recommends Golden Troupe for Freeze Sub-DPS and identifies Noblesse Oblige or Tenacity of the Millelith as support-focused alternatives. The weapon and stat lists below follow the Game8 role summary. Legacy catalog checked 22 Oct 2026; this profile was separately rechecked against Game8 on 23 Oct 2026.',
+  sourceNote: 'Checked against Game8’s Escoffier Best Builds and Teams guide on 23 Oct 2026; that page was last updated on 7 Apr 2026. Game8 recommends Golden Troupe for Freeze Sub-DPS and identifies Noblesse Oblige or Tenacity of the Millelith as support-focused alternatives. The weapon and stat lists below follow the Game8 role summary. Legacy catalog: Checked 22 Oct 2026; this profile was separately rechecked against Game8 on 23 Oct 2026.',
   artifacts: [
     { name: 'Golden Troupe 4-piece', note: 'Game8 recommended set for Freeze Sub-DPS; highest personal Elemental Skill damage in the guide.' },
     { name: 'Noblesse Oblige 4-piece', note: 'Game8-listed team-buff alternative for a more support-focused setup.' },
