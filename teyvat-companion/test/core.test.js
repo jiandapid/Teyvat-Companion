@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { analyzeTeamComposition, buildProgressionPlan, enkaTtlSeconds, flattenEnkaSavedBuilds, getCharacterUpgradeMaterialRequirements, isValidGenshinUid, matchGoodCharacterKey, mergeCharacterCatalogue, mergeCharacterSourceRecords, mergeEnkaShowcaseCharacter, MIN_PLAYABLE_CHARACTER_COUNT, normalizeAkashaArtifacts, normalizeAkashaProfiles, normalizeTrackerBackup, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory, validateCharacterCatalogue } from '../src/core.js';
+import { analyzeTeamComposition, buildProgressionPlan, createCharacterBuildGoal, enkaTtlSeconds, flattenEnkaSavedBuilds, getCharacterUpgradeMaterialRequirements, isValidGenshinUid, matchGoodCharacterKey, mergeCharacterCatalogue, mergeCharacterSourceRecords, mergeEnkaShowcaseCharacter, MIN_PLAYABLE_CHARACTER_COUNT, normalizeAkashaArtifacts, normalizeAkashaProfiles, normalizeTrackerBackup, optimizeArtifactLoadout, parseEnkaPublicRoster, parseGoodInventory, validateCharacterCatalogue } from '../src/core.js';
 import { CHARACTER_BUILD_GUIDES } from '../src/builds.js';
 import { MATERIAL_STARTER, NAV_ITEMS, STARTER_CHARACTERS, STARTER_TEAMS } from '../src/data.js';
 
@@ -386,6 +386,42 @@ test('progression plan puts user-set goals and known material shortages ahead of
   assert.equal(plan[1].kind, 'material');
   assert.equal(plan[1].missing, 6);
   assert.equal(plan[2].kind, 'artifacts');
+});
+
+test('build-page goals preserve the chosen role, source, and evidence confidence', () => {
+  const character = { id: 'skirk', name: 'Skirk' };
+  const mainDps = createCharacterBuildGoal(character, {
+    id: 'primary-main-dps',
+    buildCategory: 'Main DPS',
+    sourceUrl: 'https://genshin.gg/characters/skirk/',
+  }, 'curated', 123);
+  assert.equal(mainDps.id, 'goal-123');
+  assert.equal(mainDps.title, 'Build Skirk — Main DPS');
+  assert.equal(mainDps.character, 'skirk');
+  assert.equal(mainDps.target, 'Level 90 + Main DPS build');
+  assert.equal(mainDps.buildRole, 'Main DPS');
+  assert.equal(mainDps.buildProfileId, 'primary-main-dps');
+  assert.equal(mainDps.buildSourceUrl, 'https://genshin.gg/characters/skirk/');
+  assert.equal(mainDps.buildConfidence, 'curated');
+
+  const support = createCharacterBuildGoal(character, {
+    id: 'independent-support',
+    buildCategory: 'Support',
+    sourceUrl: 'https://genshin.gg/characters/skirk/',
+  }, 'adapted', 124);
+  assert.equal(support.title, 'Build Skirk — Support');
+  assert.equal(support.buildRole, 'Support');
+  assert.equal(support.buildProfileId, 'independent-support');
+  assert.equal(support.buildConfidence, 'adapted');
+  assert.notEqual(mainDps.buildProfileId, support.buildProfileId);
+});
+
+test('generic character goals keep the existing Level 90 target and invalid records are ignored', () => {
+  const goal = createCharacterBuildGoal({ id: 'xingqiu', name: 'Xingqiu' }, null, '', 99);
+  assert.equal(goal.title, 'Build Xingqiu');
+  assert.equal(goal.target, 'Level 90');
+  assert.equal(goal.buildRole, undefined);
+  assert.equal(createCharacterBuildGoal(null), null);
 });
 
 const xingqiuBuildProfile = {
