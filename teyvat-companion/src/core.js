@@ -849,7 +849,7 @@ export function createCharacterBuildGoal(character, profile = null, evidenceStat
     : null;
   const profileId = typeof profile?.id === 'string' && profile.id.trim()
     ? profile.id.trim()
-    : (role ? 'primary-' + role.toLowerCase().replace(/\\s+/g, '-') : null);
+    : (role ? 'primary-' + role.toLowerCase().replace(/\s+/g, '-') : null);
   const goal = {
     id: 'goal-' + String(now),
     title: 'Build ' + name + (role ? ' — ' + role : ''),
