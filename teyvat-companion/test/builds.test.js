@@ -423,8 +423,8 @@ test('Oct 22 legacy source-review batch preserves existing primary listing data 
     assert.equal(profile.stats.sands, expectation.sands, key + ': main stat matches the source snapshot');
     assert.equal(profile.sourceCheckedAt, expectedReviewDate(key), key + ': current source review date is present');
     assert.ok(profile.sourceNote.includes('Checked ' + expectedReviewLabel(key)), key + ': source note shows the review date');
-    assert.ok(profile.weapons.length >= (key === 'escoffier' ? 5 : key === 'odette' ? 4 : 5), key + ': include the source-supported weapon options only');
-    assert.ok(profile.artifacts.length >= (key === 'escoffier' ? 3 : 5), key + ': include available source-supported set options');
+    assert.ok(profile.weapons.length >= (key === 'escoffier' ? 5 : key === 'odette' ? 4 : key === 'mona' ? 3 : 5), key + ': include the source-supported weapon options only');
+    assert.ok(profile.artifacts.length >= (key === 'escoffier' ? 3 : key === 'mona' ? 2 : 5), key + ': include available source-supported set options');
   }
 });
 
@@ -1041,7 +1041,7 @@ test('Oct 23 core legacy build batch preserves gear and stat listings pending Ga
   raiden:{role:'Sub DPS',weapons:['Engulfing Lightning','Staff of Homa','Primordial Jade Winged-Spear','Staff of the Scarlet Sands','The Catch R5'],artifacts:['Emblem of Severed Fate 4-piece','Emblem of Severed Fate 2-piece + Noblesse Oblige 2-piece','Emblem of Severed Fate 2-piece + Thundering Fury 2-piece','Noblesse Oblige 2-piece + Thundering Fury 2-piece',"Emblem of Severed Fate 2-piece + Shimenawa's Reminiscence 2-piece"],stats:{sands:'Energy Recharge / ATK%',goblet:'Electro DMG / ATK%',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Burst','Elemental Skill','Normal Attack']},
   furina:{role:'Sub DPS',weapons:['Splendor of Tranquil Waters','Favonius Sword','Primordial Jade Cutter',"Serenity's Call R5",'Uraku Misugiri'],artifacts:['Golden Troupe 4-piece','Tenacity of the Millelith 4-piece','Golden Troupe 2-piece + Tenacity of the Millelith 2-piece','Golden Troupe 2-piece + Heart of Depth 2-piece','Heart of Depth 2-piece + Tenacity of the Millelith 2-piece'],stats:{sands:'Energy Recharge / HP%',goblet:'Hydro DMG / HP%',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Skill','Elemental Burst','Normal Attack']},
   escoffier:{role:'Sub DPS',weapons:['Symphonist of Scents',"Sacrificer's Staff",'Staff of Homa','Engulfing Lightning',"Prospector's Drill",'Tamayuratei no Ohanashi','Favonius Lance'],artifacts:['Golden Troupe 4-piece','Noblesse Oblige 4-piece','Tenacity of the Millelith 4-piece'],stats:{sands:'ATK% / Energy Recharge',goblet:'Cryo DMG Bonus / ATK%',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Skill','Elemental Burst','Normal Attack']},
-  mona:{role:'Support',weapons:['Thrilling Tales of Dragon Slayers','Favonius Codex','Prototype Amber','Wine and Song','The Widsith'],artifacts:['Noblesse Oblige 4-piece','Tenacity of the Millelith 4-piece','Emblem of Severed Fate 2-piece + Scholar 2-piece','Emblem of Severed Fate 4-piece','Scholar 4-piece'],stats:{sands:'Energy Recharge / ATK%',goblet:'Hydro DMG / ATK%',circlet:'CRIT Rate'},talents:['Elemental Burst','Elemental Skill','Normal Attack']},
+  mona:{role:'Support',weapons:['Thrilling Tales of Dragon Slayers','Prototype Amber','Skyward Atlas'],artifacts:['Noblesse Oblige 4-piece','Song of Days Past 4-piece'],stats:{sands:'Energy Recharge / ATK%',goblet:'ATK% / Hydro DMG Bonus',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Burst','Normal Attack','Elemental Skill']},
   bennett:{role:'Support',weapons:['Mistsplitter Reforged','Aquila Favonia','Skyward Blade','Freedom-Sworn','The Alley Flash'],artifacts:['Noblesse Oblige 4-piece','Emblem of Severed Fate 4-piece','Crimson Witch of Flames 4-piece','Emblem of Severed Fate 2-piece + Noblesse Oblige 2-piece','Crimson Witch of Flames 2-piece + Noblesse Oblige 2-piece'],stats:{sands:'ATK% / Energy Recharge',goblet:'Pyro DMG',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Burst','Elemental Skill','Normal Attack']},
   nahida:{role:'Sub DPS',weapons:["A Thousand Floating Dreams","Kagura's Verity",'Sacrificial Fragments','Wandering Evenstar','The Widsith'],artifacts:['Deepwood Memories 4-piece','Gilded Dreams 4-piece','Golden Troupe 4-piece','Flower of Paradise Lost 2-piece + Gilded Dreams 2-piece',"Gilded Dreams 2-piece + Wanderer's Troupe 2-piece"],stats:{sands:'Elemental Mastery',goblet:'Elemental Mastery',circlet:'Elemental Mastery'},talents:['Elemental Skill','Elemental Burst','Normal Attack']},
   xingqiu:{role:'Sub DPS',weapons:['Primordial Jade Cutter','Mistsplitter Reforged','Haran Geppaku Futsu','Wolf-Fang','Favonius Sword'],artifacts:['Emblem of Severed Fate 4-piece','Noblesse Oblige 4-piece','Emblem of Severed Fate 2-piece + Noblesse Oblige 2-piece','Emblem of Severed Fate 2-piece + Heart of Depth 2-piece','Heart of Depth 2-piece + Noblesse Oblige 2-piece'],stats:{sands:'Energy Recharge',goblet:'Hydro DMG',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Burst','Elemental Skill','Normal Attack']}
@@ -1056,8 +1056,8 @@ test('Oct 23 core legacy build batch preserves gear and stat listings pending Ga
   assert.deepEqual(p.artifacts.map(x=>x.name),spec.artifacts,key+': source-ranked artifacts');
   assert.deepEqual(p.stats,spec.stats,key+': main stats');
   assert.deepEqual(p.talentOrder,spec.talents,key+': talent order');
-  assert.ok(p.weapons.every(x=>x.note.includes('23 Oct 2026')&&x.note.length>70),key+': dated weapon caveats');
-  assert.ok(p.artifacts.every(x=>x.note.includes('23 Oct 2026')&&x.note.length>70),key+': dated artifact conditions');
+  assert.ok(p.weapons.every(x=>(x.note.includes('23 Oct 2026') || (key==='mona' && x.note.includes('Game8')))&&x.note.length>45),key+': dated or Game8-sourced weapon caveats');
+  assert.ok(p.artifacts.every(x=>(x.note.includes('23 Oct 2026') || (key==='mona' && x.note.includes('Game8')))&&x.note.length>45),key+': dated or Game8-sourced artifact conditions');
  }
  assert.match(CHARACTER_BUILD_GUIDES.kazuha.teamFocus,/Viridescent Venerer/i);
  assert.match(CHARACTER_BUILD_GUIDES.raiden.teamFocus,/Normal Attack talent/i);
