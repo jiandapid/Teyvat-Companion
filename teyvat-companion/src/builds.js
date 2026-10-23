@@ -2061,6 +2061,108 @@ for (const [characterKey, profile] of Object.entries(CHARACTER_BUILD_GUIDES)) {
   for (const alternate of profile.alternateBuilds || []) ensureBuildSourceAttribution(alternate, characterKey, true);
 }
 
+// Game8 is the selected build-reference source. Known guide URLs point straight to Game8;
+// other characters use a site-restricted search so we do not guess archive IDs or invent URLs.
+export const GAME8_CHARACTER_GUIDE_URLS = {
+  escoffier: 'https://game8.co/games/Genshin-Impact/archives/385307k12',
+  yelan: 'https://game8.co/games/Genshin-Impact/archives/372781',
+  xiao: 'https://game8.co/games/Genshin-Impact/archives/297527',
+  jean: 'https://game8.co/games/Genshin-Impact/archives/297536',
+  eula: 'https://game8.co/games/Genshin-Impact/archives/328764',
+};
+
+export function getGame8CharacterGuideUrl(characterKey, characterName = '') {
+  if (GAME8_CHARACTER_GUIDE_URLS[characterKey]) return GAME8_CHARACTER_GUIDE_URLS[characterKey];
+  const characterLabel = String(characterName || titleCaseBuildKey(characterKey));
+  const query = 'site:game8.co/games/Genshin-Impact/archives "' + characterLabel + '" "Best Builds and Teams"';
+  return 'https://www.google.com/search?q=' + encodeURIComponent(query);
+}
+
+function cleanLegacyBuildText(value) {
+  return String(value || '')
+    .replace(/Genshin\.gg current Best (Weapons|Artifacts) (option|listing) #(\d+) \(checked 22 Oct 2026\)\./gi,
+      (_, category, kind, rank) => 'Legacy imported ' + category.toLowerCase() + ' entry #' + rank + '; not yet verified against Game8.')
+    .replace(/Genshin\.gg's/gi, "the previous catalog's")
+    .replace(/Genshin\.gg/gi, 'the previous build catalog');
+}
+
+function cleanLegacyBuildValues(value) {
+  if (typeof value === 'string') return cleanLegacyBuildText(value);
+  if (Array.isArray(value)) return value.map(cleanLegacyBuildValues);
+  if (value && typeof value === 'object') {
+    for (const key of Object.keys(value)) value[key] = cleanLegacyBuildValues(value[key]);
+  }
+  return value;
+}
+
+function migrateProfileToGame8(profile, characterKey) {
+  if (!profile || typeof profile !== 'object') return;
+  const legacySourceNote = cleanLegacyBuildText(profile.sourceNote || '');
+  profile.legacySourceCheckedAt = profile.sourceCheckedAt || null;
+  profile.sourceCheckedAt = null;
+  profile.game8Verified = false;
+  cleanLegacyBuildValues(profile);
+  const characterName = titleCaseBuildKey(characterKey);
+  profile.sourceUrl = getGame8CharacterGuideUrl(characterKey, profile.name || characterName);
+  profile.sourceName = 'Game8 guide lookup — ' + characterName;
+  profile.sourceNote = (legacySourceNote ? legacySourceNote + ' ' : '')
+    + 'This is legacy build-catalog data and has not yet been checked line-by-line against the linked Game8 guide. Treat weapon and artifact suggestions as provisional; Game8 is the selected reference for verification.';
+}
+
+for (const [characterKey, profile] of Object.entries(CHARACTER_BUILD_GUIDES)) {
+  migrateProfileToGame8(profile, characterKey);
+  for (const alternate of profile.alternateBuilds || []) migrateProfileToGame8(alternate, characterKey);
+}
+
+// These two primary profiles have been checked against their Game8 character guides.
+// Alternate roles remain separately marked for review unless their exact setup is supported.
+Object.assign(CHARACTER_BUILD_GUIDES.escoffier, {
+  sourceUrl: GAME8_CHARACTER_GUIDE_URLS.escoffier,
+  sourceName: 'Game8 — Escoffier Best Builds and Teams',
+  sourceCheckedAt: '2026-10-23',
+  game8Verified: true,
+  sourceNote: 'Checked against Game8’s Escoffier Best Builds and Teams guide on 23 Oct 2026; that page was last updated on 7 Apr 2026. Game8 recommends Golden Troupe for Freeze Sub-DPS and identifies Noblesse Oblige or Tenacity of the Millelith as support-focused alternatives. The weapon and stat lists below follow the Game8 role summary. Legacy snapshot date: 22 Oct 2026.',
+  artifacts: [
+    { name: 'Golden Troupe 4-piece', note: 'Game8 recommended set for Freeze Sub-DPS; highest personal Elemental Skill damage in the guide.' },
+    { name: 'Noblesse Oblige 4-piece', note: 'Game8-listed team-buff alternative for a more support-focused setup.' },
+    { name: 'Tenacity of the Millelith 4-piece', note: 'Game8-listed support alternative for ATK and Shield Strength buffs.' },
+  ],
+  stats: { sands: 'ATK% / Energy Recharge', goblet: 'Cryo DMG Bonus / ATK%', circlet: 'CRIT Rate / CRIT DMG' },
+  substats: ['CRIT Rate / CRIT DMG', 'ATK%', 'Energy Recharge'],
+  weapons: [
+    { name: 'Symphonist of Scents', note: 'Game8 best weapon listed for Escoffier’s Freeze Sub-DPS build.' },
+    { name: "Sacrificer's Staff", note: 'Game8-listed replacement weapon for the Freeze Sub-DPS setup.' },
+    { name: 'Staff of Homa', note: 'Game8-listed CRIT DMG replacement weapon.' },
+    { name: 'Engulfing Lightning', note: 'Game8-listed replacement; consider Energy Recharge needs and passive fit.' },
+    { name: "Prospector's Drill", note: 'Game8-listed replacement weapon in the Freeze Sub-DPS guide.' },
+  ],
+});
+Object.assign(CHARACTER_BUILD_GUIDES.yelan, {
+  sourceUrl: GAME8_CHARACTER_GUIDE_URLS.yelan,
+  sourceName: 'Game8 — Yelan Best Builds and Teams',
+  sourceCheckedAt: '2026-10-23',
+  game8Verified: true,
+  sourceNote: 'Checked against Game8’s Yelan Best Builds and Teams guide on 23 Oct 2026; that page was last updated on 31 Mar 2026. The guide’s Sub-DPS build recommends 4-piece Emblem of Severed Fate, Aqua Simulacra, Hydro DMG Bonus goblet, CRIT circlet, and about 170–200% Energy Recharge depending on team and weapon. Legacy snapshot date: 22 Oct 2026.',
+  artifacts: [
+    { name: 'Emblem of Severed Fate 4-piece', note: 'Game8 best artifact set for Yelan’s Sub-DPS build.' },
+    { name: 'Emblem of Severed Fate 2-piece + Noblesse Oblige 2-piece', note: 'Game8-mentioned alternative when not using 4-piece Emblem.' },
+    { name: 'Emblem of Severed Fate 2-piece + Tenacity of the Millelith 2-piece', note: 'Game8-listed alternative artifact combination.' },
+    { name: 'The Exile 4-piece', note: 'Game8-listed 4-star option that helps provide team Energy.' },
+  ],
+  stats: { sands: 'HP% / Energy Recharge', goblet: 'Hydro DMG Bonus', circlet: 'CRIT Rate / CRIT DMG' },
+  substats: ['Energy Recharge', 'HP%', 'CRIT Rate / CRIT DMG'],
+  weapons: [
+    { name: 'Aqua Simulacra', note: 'Game8 best weapon listed for Yelan’s Sub-DPS build.' },
+    { name: 'Elegy for the End', note: 'Game8-listed replacement that also provides team support.' },
+    { name: 'Favonius Warbow', note: 'Game8-listed replacement; CRIT hits help restore team energy.' },
+    { name: 'Slingshot', note: 'Game8-listed free-to-play weapon option.' },
+    { name: 'Silvershower Heartstrings', note: 'Included in Game8’s list of recommended weapons for Yelan.' },
+  ],
+  talentOrder: ['Elemental Burst', 'Elemental Skill', 'Normal Attack'],
+  teamFocus: 'Game8 notes that Yelan typically wants around 170–200% Energy Recharge, with the exact need depending on weapon, teammates, and rotation. Pair her Burst with a normal-attack driver.',
+  playstyle: 'Maximize Skill and Burst damage while keeping enough Energy Recharge to use her Burst every rotation; tune HP% and CRIT around actual team energy needs.',
+});
+
 export const CHARACTER_BUILD_ALIASES = {
   'raiden-shogun': 'raiden',
   'kaedehara-kazuha': 'kazuha',
@@ -2368,15 +2470,15 @@ function classifyRoleEvidence(candidate, primaryProfile, isPrimary = false) {
   if (isPrimary) {
     const note = String(candidate?.sourceNote || '');
     if (/does not publish a ranked weapon\/artifact list/i.test(note)) return 'provisional';
-    if (candidate?.sourceCheckedAt == null) return 'needs-review';
+    if (candidate?.game8Verified !== true || candidate?.sourceCheckedAt == null) return 'needs-review';
     return 'curated';
   }
+  if (candidate?.game8Verified === false) return 'needs-review';
   const url = String(candidate?.sourceUrl || '');
   if (/youtube\.com|youtu\.be/i.test(url)) return 'creator-reference';
-  if (/genshin\.gg\/characters\//i.test(url)) return 'reference-only';
+  if (/game8\.co|google\.com\/search/i.test(url)) return 'reference-only';
   return 'adapted';
 }
-
 function roleEvidenceLabel(status) {
   if (status === 'curated') return 'recommended role';
   if (status === 'provisional') return 'provisional build candidates';
