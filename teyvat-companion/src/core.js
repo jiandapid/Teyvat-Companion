@@ -837,6 +837,40 @@ export function matchGoodCharacterKey(key, characters) {
 }
 
 /**
+ * Create a farming/progression goal from the character build currently selected.
+ * Role metadata is preserved so the journal explains which build the player is
+ * targeting. Calling this without a profile keeps the existing generic goal flow.
+ */
+export function createCharacterBuildGoal(character, profile = null, evidenceStatus = '', now = Date.now()) {
+  if (!character?.id || !String(character?.name || '').trim()) return null;
+  const name = String(character.name).trim();
+  const role = ['Main DPS', 'Sub DPS', 'Support'].includes(profile?.buildCategory)
+    ? profile.buildCategory
+    : null;
+  const profileId = typeof profile?.id === 'string' && profile.id.trim()
+    ? profile.id.trim()
+    : (role ? 'primary-' + role.toLowerCase().replace(/\s+/g, '-') : null);
+  const goal = {
+    id: 'goal-' + String(now),
+    title: 'Build ' + name + (role ? ' — ' + role : ''),
+    character: String(character.id),
+    target: role ? 'Level 90 + ' + role + ' build' : 'Level 90',
+    done: false,
+  };
+  if (role) {
+    goal.buildRole = role;
+    goal.buildProfileId = profileId;
+    if (typeof profile.sourceUrl === 'string' && profile.sourceUrl.startsWith('https://')) {
+      goal.buildSourceUrl = profile.sourceUrl;
+    }
+    if (typeof evidenceStatus === 'string' && evidenceStatus) {
+      goal.buildConfidence = evidenceStatus;
+    }
+  }
+  return goal;
+}
+
+/**
  * Build a transparent progression plan from user-entered goals and shortages.
  * It deliberately doesn't invent live resin costs or domain drop rates when those aren't sourced.
  */
