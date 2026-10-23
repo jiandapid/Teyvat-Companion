@@ -15,6 +15,14 @@ test('Game8 is the active character-build reference and legacy records are flagg
   assert.equal(CHARACTER_BUILD_GUIDES.escoffier.artifacts[0].name, 'Golden Troupe 4-piece');
   assert.equal(CHARACTER_BUILD_GUIDES.yelan.weapons[0].name, 'Aqua Simulacra');
   assert.equal(CHARACTER_BUILD_GUIDES.yelan.stats.sands, 'HP% / Energy Recharge');
+  assert.equal(CHARACTER_BUILD_GUIDES.xiao.sourceUrl, GAME8_CHARACTER_GUIDE_URLS.xiao);
+  assert.equal(CHARACTER_BUILD_GUIDES.eula.sourceUrl, GAME8_CHARACTER_GUIDE_URLS.eula);
+  assert.equal(CHARACTER_BUILD_GUIDES.xiao.game8Verified, true);
+  assert.equal(CHARACTER_BUILD_GUIDES.eula.game8Verified, true);
+  assert.equal(CHARACTER_BUILD_GUIDES.xiao.artifacts[0].name, 'Long Night’s Oath 4-piece');
+  assert.equal(CHARACTER_BUILD_GUIDES.eula.artifacts[0].name, 'Pale Flame 4-piece');
+  assert.equal(CHARACTER_BUILD_GUIDES.eula.stats.goblet, 'Physical DMG Bonus');
+
 
   const entries = Object.entries(CHARACTER_BUILD_GUIDES);
   assert.ok(entries.length >= 125, 'expected the complete character catalogue');
@@ -41,7 +49,7 @@ test('Game8 is the active character-build reference and legacy records are flagg
       assert.equal(alternate.game8Verified, false, key + ': unreviewed alternates must remain unverified');
     }
   }
-  assert.equal(verifiedCount, 2, 'only profiles actually checked against Game8 should be marked verified');
+  assert.equal(verifiedCount, 4, 'only profiles actually checked against Game8 should be marked verified');
   assert.ok(legacyCount > 100, 'the migration should clearly expose all remaining legacy profiles');
   assert.equal(getGame8CharacterGuideUrl('yelan'), GAME8_CHARACTER_GUIDE_URLS.yelan);
   assert.ok(decodeURIComponent(getGame8CharacterGuideUrl('xianyun')).includes('site:game8.co'));
@@ -448,7 +456,7 @@ test('Oct 22 legacy profile snapshot remains available pending Game8 verificatio
     ganyu: { role: 'Main DPS', weapon: "Hunter's Path", artifact: "Shimenawa's Reminiscence 4-piece", sands: 'ATK%' },
     tighnari: { role: 'Sub DPS', weapon: "Hunter's Path", artifact: "Wanderer's Troupe 4-piece", sands: 'ATK% / Elemental Mastery' },
     venti: { role: 'Sub DPS', weapon: 'The Daybreak Chronicles', artifact: 'Viridescent Venerer 4-piece', sands: 'ATK%' },
-    xiao: { role: 'Main DPS', weapon: 'Primordial Jade Winged-Spear', artifact: 'Vermillion Hereafter 4-piece', sands: 'ATK%' },
+    xiao: { role: 'Main DPS', weapon: 'Primordial Jade Winged-Spear', artifact: 'Long Night’s Oath 4-piece', sands: 'ATK% / Energy Recharge' },
     yoimiya: { role: 'Main DPS', weapon: 'Thundering Pulse', artifact: "Shimenawa's Reminiscence 4-piece", sands: 'ATK% / Elemental Mastery' },
     layla: { role: 'Support', weapon: 'Key of Khaj-Nisut', artifact: 'Tenacity of the Millelith 4-piece', sands: 'HP%' },
     gaming: { role: 'Main DPS', weapon: 'Gest of the Mighty Wolf', artifact: 'Crimson Witch of Flames 4-piece', sands: 'Elemental Mastery' },
