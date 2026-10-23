@@ -2341,7 +2341,7 @@ function roleAdaptedProfile(profile, character, characterKey, role) {
       : ['Elemental Skill', 'Elemental Burst', 'Normal Attack'];
 
   return {
-    id: String(characterKey || 'unknown-character').toLowerCase().replace(/[^a-z0-9-]+/g, '-') + '-independent-' + BUILD_ROLE_IDS[role],
+    id: 'independent-' + BUILD_ROLE_IDS[role],
     role: 'Independent ' + role + ' build (off-meta)',
     buildCategory: role,
     sourceUrl,
