@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { BUILD_ROLE_CATEGORIES, CHARACTER_BUILD_ALIASES, CHARACTER_BUILD_GUIDES, CHARACTER_ROLE_BUILDS, getCharacterBuildRoleOptions } from '../src/builds.js';
 
 const validCategories = new Set(BUILD_ROLE_CATEGORIES);
-const OCT_23_REVIEWED_PRIMARY_BUILDS = new Set(['fischl', 'xiangling', 'yelan', 'zhongli', 'neuvillette', 'sucrose', 'layla', 'wanderer']);
+const OCT_23_REVIEWED_PRIMARY_BUILDS = new Set(['fischl', 'xiangling', 'yelan', 'zhongli', 'neuvillette', 'sucrose', 'layla', 'wanderer', 'kazuha', 'raiden', 'furina', 'escoffier', 'mona', 'bennett', 'nahida', 'xingqiu']);
 const expectedReviewDate = key => OCT_23_REVIEWED_PRIMARY_BUILDS.has(key) ? '2026-10-23' : '2026-10-22';
 const expectedReviewLabel = key => OCT_23_REVIEWED_PRIMARY_BUILDS.has(key) ? '23 Oct 2026' : '22 Oct 2026';
 
@@ -1046,4 +1046,38 @@ test('Oct 23 current Genshin.gg build review has ranked gear, contextual notes, 
   assert.match(CHARACTER_BUILD_GUIDES.sucrose.artifacts[0].note, /resistance/i);
   assert.match(CHARACTER_BUILD_GUIDES.layla.teamFocus, /shield/i);
   assert.match(CHARACTER_BUILD_GUIDES.wanderer.playstyle, /Shimenawa/i);
+});
+
+test('Oct 23 core build review batch three matches current Genshin.gg ranked gear and stat listings', () => {
+ const expected = {
+  kazuha:{role:'Support',weapons:['Freedom-Sworn','Favonius Sword',"Xiphos' Moonlight",'Sacrificial Sword','Skyward Blade'],artifacts:['Viridescent Venerer 4-piece','Instructor 4-piece','Thundering Fury 4-piece',"Gilded Dreams 2-piece + Wanderer's Troupe 2-piece",'Gilded Dreams 2-piece + Viridescent Venerer 2-piece'],stats:{sands:'Elemental Mastery',goblet:'Elemental Mastery',circlet:'Elemental Mastery'},talents:['Elemental Skill','Elemental Burst','Normal Attack']},
+  raiden:{role:'Sub DPS',weapons:['Engulfing Lightning','Staff of Homa','Primordial Jade Winged-Spear','Staff of the Scarlet Sands','The Catch R5'],artifacts:['Emblem of Severed Fate 4-piece','Emblem of Severed Fate 2-piece + Noblesse Oblige 2-piece','Emblem of Severed Fate 2-piece + Thundering Fury 2-piece','Noblesse Oblige 2-piece + Thundering Fury 2-piece',"Emblem of Severed Fate 2-piece + Shimenawa's Reminiscence 2-piece"],stats:{sands:'Energy Recharge / ATK%',goblet:'Electro DMG / ATK%',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Burst','Elemental Skill','Normal Attack']},
+  furina:{role:'Sub DPS',weapons:['Splendor of Tranquil Waters','Favonius Sword','Primordial Jade Cutter',"Serenity's Call R5",'Uraku Misugiri'],artifacts:['Golden Troupe 4-piece','Tenacity of the Millelith 4-piece','Golden Troupe 2-piece + Tenacity of the Millelith 2-piece','Golden Troupe 2-piece + Heart of Depth 2-piece','Heart of Depth 2-piece + Tenacity of the Millelith 2-piece'],stats:{sands:'Energy Recharge / HP%',goblet:'Hydro DMG / HP%',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Skill','Elemental Burst','Normal Attack']},
+  escoffier:{role:'Sub DPS',weapons:['Symphonist of Scents','Engulfing Lightning','Calamity Queller','Staff of Homa','Kitain Cross Spear R5'],artifacts:['Golden Troupe 4-piece','Blizzard Strayer 4-piece','Blizzard Strayer 2-piece + Golden Troupe 2-piece'],stats:{sands:'ATK% / Energy Recharge',goblet:'Cryo DMG',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Skill','Elemental Burst','Normal Attack']},
+  mona:{role:'Support',weapons:['Thrilling Tales of Dragon Slayers','Favonius Codex','Prototype Amber','Wine and Song','The Widsith'],artifacts:['Noblesse Oblige 4-piece','Tenacity of the Millelith 4-piece','Emblem of Severed Fate 2-piece + Scholar 2-piece','Emblem of Severed Fate 4-piece','Scholar 4-piece'],stats:{sands:'Energy Recharge / ATK%',goblet:'Hydro DMG / ATK%',circlet:'CRIT Rate'},talents:['Elemental Burst','Elemental Skill','Normal Attack']},
+  bennett:{role:'Support',weapons:['Mistsplitter Reforged','Aquila Favonia','Skyward Blade','Freedom-Sworn','The Alley Flash'],artifacts:['Noblesse Oblige 4-piece','Emblem of Severed Fate 4-piece','Crimson Witch of Flames 4-piece','Emblem of Severed Fate 2-piece + Noblesse Oblige 2-piece','Crimson Witch of Flames 2-piece + Noblesse Oblige 2-piece'],stats:{sands:'ATK% / Energy Recharge',goblet:'Pyro DMG',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Burst','Elemental Skill','Normal Attack']},
+  nahida:{role:'Sub DPS',weapons:["A Thousand Floating Dreams","Kagura's Verity",'Sacrificial Fragments','Wandering Evenstar','The Widsith'],artifacts:['Deepwood Memories 4-piece','Gilded Dreams 4-piece','Golden Troupe 4-piece','Flower of Paradise Lost 2-piece + Gilded Dreams 2-piece',"Gilded Dreams 2-piece + Wanderer's Troupe 2-piece"],stats:{sands:'Elemental Mastery',goblet:'Elemental Mastery',circlet:'Elemental Mastery'},talents:['Elemental Skill','Elemental Burst','Normal Attack']},
+  xingqiu:{role:'Sub DPS',weapons:['Primordial Jade Cutter','Mistsplitter Reforged','Haran Geppaku Futsu','Wolf-Fang','Favonius Sword'],artifacts:['Emblem of Severed Fate 4-piece','Noblesse Oblige 4-piece','Emblem of Severed Fate 2-piece + Noblesse Oblige 2-piece','Emblem of Severed Fate 2-piece + Heart of Depth 2-piece','Heart of Depth 2-piece + Noblesse Oblige 2-piece'],stats:{sands:'Energy Recharge',goblet:'Hydro DMG',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Burst','Elemental Skill','Normal Attack']}
+ };
+ for(const [key,spec] of Object.entries(expected)){
+  const p=CHARACTER_BUILD_GUIDES[key];
+  assert.ok(p,key+': profile exists');
+  assert.equal(p.sourceCheckedAt,'2026-10-23',key+': source review date');
+  assert.match(p.sourceNote,/Checked 23 Oct 2026/i,key+': dated source note');
+  assert.equal(p.buildCategory,spec.role,key+': primary role');
+  assert.deepEqual(p.weapons.map(x=>x.name),spec.weapons,key+': source-ranked weapons');
+  assert.deepEqual(p.artifacts.map(x=>x.name),spec.artifacts,key+': source-ranked artifacts');
+  assert.deepEqual(p.stats,spec.stats,key+': main stats');
+  assert.deepEqual(p.talentOrder,spec.talents,key+': talent order');
+  assert.ok(p.weapons.every(x=>x.note.includes('23 Oct 2026')&&x.note.length>70),key+': dated weapon caveats');
+  assert.ok(p.artifacts.every(x=>x.note.includes('23 Oct 2026')&&x.note.length>70),key+': dated artifact conditions');
+ }
+ assert.match(CHARACTER_BUILD_GUIDES.kazuha.teamFocus,/Viridescent Venerer/i);
+ assert.match(CHARACTER_BUILD_GUIDES.raiden.teamFocus,/Normal Attack talent/i);
+ assert.match(CHARACTER_BUILD_GUIDES.furina.teamFocus,/healing/i);
+ assert.match(CHARACTER_BUILD_GUIDES.escoffier.teamFocus,/55%/);
+ assert.match(CHARACTER_BUILD_GUIDES.mona.teamFocus,/Omen/i);
+ assert.match(CHARACTER_BUILD_GUIDES.bennett.teamFocus,/Base ATK/i);
+ assert.match(CHARACTER_BUILD_GUIDES.nahida.teamFocus,/Deepwood/i);
+ assert.match(CHARACTER_BUILD_GUIDES.xingqiu.teamFocus,/Normal Attacks/i);
 });
