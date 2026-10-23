@@ -330,8 +330,11 @@ test('current build-source attribution distinguishes reviewed rankings from prov
     assert.ok(profile.sourceName, key + ': primary build must identify its source');
     assert.ok(profile.sourceNote, key + ': primary build must explain evidence scope');
     assert.ok(profile.sourceUrl.startsWith('https://'), key + ': primary build source must be secure');
-    if (profile.legacySourceCheckedAt) {
-      assert.ok(profile.sourceNote.includes('Checked ' + String(Number(profile.legacySourceCheckedAt.slice(8, 10))) + ' Oct ' + profile.legacySourceCheckedAt.slice(0, 4)), key + ': dated review note must match its per-character source check date');
+    if (profile.game8Verified) {
+      assert.equal(profile.sourceCheckedAt, '2026-10-23', key + ': current Game8 check date is recorded');
+      assert.match(profile.sourceNote, /Checked 23 Oct 2026 against Game8/i, key + ': Game8 check is dated clearly');
+    } else if (profile.legacySourceCheckedAt) {
+      assert.ok(profile.sourceNote.includes('Checked ' + String(Number(profile.legacySourceCheckedAt.slice(8, 10))) + ' Oct ' + profile.legacySourceCheckedAt.slice(0, 4)), key + ': historical source note should retain its date');
     }
     for (const alternate of profile.alternateBuilds || []) {
       assert.ok(alternate.sourceName, key + '/' + alternate.id + ': alternate must identify its source');
