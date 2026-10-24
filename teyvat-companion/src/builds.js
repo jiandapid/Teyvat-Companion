@@ -2539,7 +2539,8 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       sourceNote: "Checked 23 Oct 2026 against Game8's Raiden Shogun guide. Game8's core build is 4-piece Emblem of Severed Fate with Engulfing Lightning or The Catch. ER versus ATK sands and ATK versus Electro goblet depend on weapon, buffs, and team rotation.",
       artifacts: [
         { name: "Emblem of Severed Fate 4-piece", note: "Game8's primary set for Burst damage and Energy Recharge scaling." },
-        { name: "Emblem of Severed Fate 2-piece + Noblesse Oblige 2-piece", note: "Mixed-set fallback when a complete Emblem set has substantially worse substats." }
+        { name: "Emblem of Severed Fate 2-piece + Noblesse Oblige 2-piece", note: "Mixed-set fallback when a complete Emblem set has substantially worse substats." },
+        { name: "Emblem of Severed Fate 2-piece + Shimenawa's Reminiscence 2-piece", note: "Mixed-set fallback for Energy Recharge and ATK when the four-piece set is not available." }
       ],
       stats: { sands: "Energy Recharge / ATK%", goblet: "Electro DMG Bonus / ATK%", circlet: "CRIT Rate / CRIT DMG" },
       substats: ["CRIT Rate / CRIT DMG", "Energy Recharge to meet the rotation", "ATK%", "Elemental Mastery only for reaction-focused variants"],
