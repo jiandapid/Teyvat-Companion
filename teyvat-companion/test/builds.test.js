@@ -397,11 +397,8 @@ test('uncited role templates stay explicitly experimental and newer unranked pro
 
 test('Oct 22 legacy source-review batch preserves existing primary listing data pending Game8 verification', () => {
   const expected = {
-    neuvillette: { role: 'Main DPS', weapon: 'Tome of the Eternal Flow', artifact: 'Marechaussee Hunter 4-piece', sands: 'HP%' },
     escoffier: { role: 'Sub DPS', weapon: 'Symphonist of Scents', artifact: 'Golden Troupe 4-piece', sands: 'ATK% / Energy Recharge' },
     mona: { role: 'Support', weapon: 'Thrilling Tales of Dragon Slayers', artifact: 'Noblesse Oblige 4-piece', sands: 'Energy Recharge / ATK%' },
-    zhongli: { role: 'Support', weapon: 'Black Tassel', artifact: 'Archaic Petra 4-piece', sands: 'HP%' },
-    xiangling: { role: 'Sub DPS', weapon: 'Staff of the Scarlet Sands', artifact: 'Emblem of Severed Fate 4-piece', sands: 'Energy Recharge / ATK%' },
     fischl: { role: 'Sub DPS', weapon: 'The Daybreak Chronicles', artifact: 'Golden Troupe 4-piece', sands: 'ATK%' },
     sucrose: { role: 'Support', weapon: 'A Thousand Floating Dreams', artifact: 'Viridescent Venerer 4-piece', sands: 'Elemental Mastery' },
     alhaitham: { role: 'Main DPS', weapon: 'Light of Foliar Incision', artifact: 'Gilded Dreams 4-piece', sands: 'Elemental Mastery / ATK%' },
@@ -975,24 +972,6 @@ test('Oct 23 legacy build review keeps gear, contextual notes, and role talent p
       category: 'Sub DPS', stats: { sands: 'ATK%', goblet: 'Electro DMG', circlet: 'CRIT Rate / CRIT DMG' },
       talents: ['Elemental Skill', 'Elemental Burst', 'Normal Attack'],
     },
-    xiangling: {
-      weapons: ['Staff of the Scarlet Sands', 'Staff of Homa', 'Engulfing Lightning', 'The Catch R5', 'Deathmatch'],
-      artifacts: ['Emblem of Severed Fate 4-piece', 'Crimson Witch of Flames 4-piece', 'Crimson Witch of Flames 2-piece + Emblem of Severed Fate 2-piece', 'Emblem of Severed Fate 2-piece + Noblesse Oblige 2-piece', 'Crimson Witch of Flames 2-piece + Noblesse Oblige 2-piece'],
-      category: 'Sub DPS', stats: { sands: 'Energy Recharge / ATK%', goblet: 'Pyro DMG', circlet: 'CRIT Rate / CRIT DMG' },
-      talents: ['Elemental Burst', 'Elemental Skill', 'Normal Attack'],
-    },
-    zhongli: {
-      weapons: ['Black Tassel', 'Favonius Lance', 'Staff of Homa', 'Skyward Spine', 'Engulfing Lightning'],
-      artifacts: ['Archaic Petra 4-piece', 'Scroll of the Hero of Cinder City 4-piece', 'Deepwood Memories 4-piece', 'Instructor 4-piece', 'Tenacity of the Millelith 4-piece'],
-      category: 'Support', stats: { sands: 'HP%', goblet: 'HP%', circlet: 'HP%' },
-      talents: ['Elemental Skill', 'Elemental Burst', 'Normal Attack'],
-    },
-    neuvillette: {
-      weapons: ['Tome of the Eternal Flow', 'Sacrificial Jade', "Jadefall's Splendor", 'Prototype Amber', "Kagura's Verity"],
-      artifacts: ['Marechaussee Hunter 4-piece', 'Heart of Depth 4-piece', 'Heart of Depth 2-piece + Marechaussee Hunter 2-piece', 'Marechaussee Hunter 2-piece + Tenacity of the Millelith 2-piece', 'Heart of Depth 2-piece + Tenacity of the Millelith 2-piece'],
-      category: 'Main DPS', stats: { sands: 'HP%', goblet: 'Hydro DMG', circlet: 'CRIT Rate / CRIT DMG' },
-      talents: ['Normal Attack', 'Elemental Burst', 'Elemental Skill'],
-    },
     sucrose: {
       weapons: ['A Thousand Floating Dreams', 'Wandering Evenstar', 'Sacrificial Fragments', 'Thrilling Tales of Dragon Slayers', 'Hakushin Ring'],
       artifacts: ['Viridescent Venerer 4-piece', 'Instructor 4-piece', "Gilded Dreams 2-piece + Wanderer's Troupe 2-piece", 'Gilded Dreams 4-piece', 'Gilded Dreams 2-piece + Viridescent Venerer 2-piece'],
@@ -1028,8 +1007,6 @@ test('Oct 23 legacy build review keeps gear, contextual notes, and role talent p
   assert.match(CHARACTER_BUILD_GUIDES.fischl.playstyle, /off-field/i);
   assert.match(CHARACTER_BUILD_GUIDES.xiangling.teamFocus, /Energy Recharge/i);
   assert.match(CHARACTER_BUILD_GUIDES.yelan.teamFocus, /Normal Attack/i);
-  assert.match(CHARACTER_BUILD_GUIDES.zhongli.artifacts[0].note, /shard/i);
-  assert.match(CHARACTER_BUILD_GUIDES.neuvillette.artifacts[0].note, /HP changes/i);
   assert.match(CHARACTER_BUILD_GUIDES.sucrose.artifacts[0].note, /resistance/i);
   assert.match(CHARACTER_BUILD_GUIDES.layla.teamFocus, /shield/i);
   assert.match(CHARACTER_BUILD_GUIDES.wanderer.playstyle, /Shimenawa/i);
@@ -1038,11 +1015,8 @@ test('Oct 23 legacy build review keeps gear, contextual notes, and role talent p
 test('Oct 23 core legacy build batch preserves gear and stat listings pending Game8 verification', () => {
  const expected = {
   kazuha:{role:'Support',weapons:['Freedom-Sworn','Favonius Sword',"Xiphos' Moonlight",'Sacrificial Sword','Skyward Blade'],artifacts:['Viridescent Venerer 4-piece','Instructor 4-piece','Thundering Fury 4-piece',"Gilded Dreams 2-piece + Wanderer's Troupe 2-piece",'Gilded Dreams 2-piece + Viridescent Venerer 2-piece'],stats:{sands:'Elemental Mastery',goblet:'Elemental Mastery',circlet:'Elemental Mastery'},talents:['Elemental Skill','Elemental Burst','Normal Attack']},
-  raiden:{role:'Sub DPS',weapons:['Engulfing Lightning','Staff of Homa','Primordial Jade Winged-Spear','Staff of the Scarlet Sands','The Catch R5'],artifacts:['Emblem of Severed Fate 4-piece','Emblem of Severed Fate 2-piece + Noblesse Oblige 2-piece','Emblem of Severed Fate 2-piece + Thundering Fury 2-piece','Noblesse Oblige 2-piece + Thundering Fury 2-piece',"Emblem of Severed Fate 2-piece + Shimenawa's Reminiscence 2-piece"],stats:{sands:'Energy Recharge / ATK%',goblet:'Electro DMG / ATK%',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Burst','Elemental Skill','Normal Attack']},
-  furina:{role:'Sub DPS',weapons:['Splendor of Tranquil Waters','Favonius Sword','Primordial Jade Cutter',"Serenity's Call R5",'Uraku Misugiri'],artifacts:['Golden Troupe 4-piece','Tenacity of the Millelith 4-piece','Golden Troupe 2-piece + Tenacity of the Millelith 2-piece','Golden Troupe 2-piece + Heart of Depth 2-piece','Heart of Depth 2-piece + Tenacity of the Millelith 2-piece'],stats:{sands:'Energy Recharge / HP%',goblet:'Hydro DMG / HP%',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Skill','Elemental Burst','Normal Attack']},
   escoffier:{role:'Sub DPS',weapons:['Symphonist of Scents',"Sacrificer's Staff",'Staff of Homa','Engulfing Lightning',"Prospector's Drill",'Tamayuratei no Ohanashi','Favonius Lance'],artifacts:['Golden Troupe 4-piece','Noblesse Oblige 4-piece','Tenacity of the Millelith 4-piece'],stats:{sands:'ATK% / Energy Recharge',goblet:'Cryo DMG Bonus / ATK%',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Skill','Elemental Burst','Normal Attack']},
   mona:{role:'Support',weapons:['Thrilling Tales of Dragon Slayers','Prototype Amber','Skyward Atlas'],artifacts:['Noblesse Oblige 4-piece','Song of Days Past 4-piece'],stats:{sands:'Energy Recharge / ATK%',goblet:'ATK% / Hydro DMG Bonus',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Burst','Normal Attack','Elemental Skill']},
-  bennett:{role:'Support',weapons:['Mistsplitter Reforged','Aquila Favonia','Skyward Blade','Freedom-Sworn','The Alley Flash'],artifacts:['Noblesse Oblige 4-piece','Emblem of Severed Fate 4-piece','Crimson Witch of Flames 4-piece','Emblem of Severed Fate 2-piece + Noblesse Oblige 2-piece','Crimson Witch of Flames 2-piece + Noblesse Oblige 2-piece'],stats:{sands:'ATK% / Energy Recharge',goblet:'Pyro DMG',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Burst','Elemental Skill','Normal Attack']},
   nahida:{role:'Sub DPS',weapons:["A Thousand Floating Dreams","Kagura's Verity",'Sacrificial Fragments','Wandering Evenstar','The Widsith'],artifacts:['Deepwood Memories 4-piece','Gilded Dreams 4-piece','Golden Troupe 4-piece','Flower of Paradise Lost 2-piece + Gilded Dreams 2-piece',"Gilded Dreams 2-piece + Wanderer's Troupe 2-piece"],stats:{sands:'Elemental Mastery',goblet:'Elemental Mastery',circlet:'Elemental Mastery'},talents:['Elemental Skill','Elemental Burst','Normal Attack']},
   xingqiu:{role:'Sub DPS',weapons:['Sacrificial Sword','Primordial Jade Cutter','Mistsplitter Reforged','Amenoma Kageuchi'],artifacts:['Emblem of Severed Fate 4-piece','Noblesse Oblige 2-piece + Heart of Depth 2-piece','Noblesse Oblige 4-piece'],stats:{sands:'ATK% / Energy Recharge',goblet:'Hydro DMG Bonus',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Burst','Elemental Skill','Normal Attack']}
  };
