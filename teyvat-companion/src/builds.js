@@ -2475,7 +2475,8 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       sourceNote: "Checked 23 Oct 2026 against Game8's Nahida guide. Game8 lists A Thousand Floating Dreams and 4-piece Deepwood Memories as the standard build core. EM versus Dendro DMG and CRIT main stats depend on whether the team needs a full support build or more personal Spread damage; keep enough ER for the team's Burst rotation.",
       artifacts: [
         { name: "Deepwood Memories 4-piece", note: "Game8's recommended set when the team needs Dendro RES reduction; normally the default unless another teammate already provides reliable Deepwood uptime." },
-        { name: "Gilded Dreams 4-piece", note: "Game8-listed personal-damage alternative when a teammate already carries Deepwood Memories." }
+        { name: "Gilded Dreams 4-piece", note: "Game8-listed personal-damage alternative when a teammate already carries Deepwood Memories." },
+        { name: "Deepwood Memories 2-piece + Gilded Dreams 2-piece", note: "A mixed-set fallback using Dendro DMG and Elemental Mastery bonuses when the complete four-piece sets have weaker substats." }
       ],
       stats: { sands: "Elemental Mastery", goblet: "Elemental Mastery / Dendro DMG Bonus", circlet: "Elemental Mastery / CRIT Rate / CRIT DMG" },
       substats: ["Elemental Mastery to suit team buffs and reaction ownership", "CRIT Rate / CRIT DMG", "Energy Recharge for Burst uptime", "ATK%"],
