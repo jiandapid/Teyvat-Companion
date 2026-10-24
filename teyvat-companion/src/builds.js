@@ -522,7 +522,7 @@ export const CHARACTER_BUILD_GUIDES = {
 const GAME8_PRIMARY_GUIDE_URLS = Object.fromEntries(
   Object.entries(CHARACTER_BUILD_GUIDES)
     .map(([key, profile]) => [key, profile.sourceUrl])
-    .filter(([, url]) => typeof url === 'string' && /^https:\/\/game8\\.co\/games\/Genshin-Impact\/archives\/[A-Za-z0-9]+/.test(url))
+    .filter(([, url]) => typeof url === 'string' && /^https:\/\/game8\.co\/games\/Genshin-Impact\/archives\/[A-Za-z0-9]+/.test(url))
 );
 Object.assign(GAME8_PRIMARY_GUIDE_URLS, {
   // Direct pages verified from Game8 search results; never use a guessed archive ID.
