@@ -2834,6 +2834,334 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       }
     ]
   }
+
+  ayaka: {
+    primary: {
+      role: "Cryo Freeze Main DPS",
+      buildCategory: "Main DPS",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/315215",
+      sourceName: "Game8 — Kamisato Ayaka Rating and Best Builds",
+      game8VerifiedAt: "2026-10-24",
+      sourceRoleVerified: true,
+      sourceNote: "Game8 build details verified 24 Oct 2026 against the Kamisato Ayaka guide. The Freeze-focused baseline uses Mistsplitter Reforged and 4-piece Blizzard Strayer; the exact CRIT Rate target depends on Frozen-enemy uptime, Cryo Resonance and the artifact set bonuses. The earlier legacy catalogue review date is retained separately.",
+      artifacts: [
+        { name: "Blizzard Strayer 4-piece", note: "Game8's Freeze baseline; value relies on Cryo/Frozen enemy uptime and should not be copied unchanged into a non-Freeze team." },
+        { name: "Blizzard Strayer 2-piece + ATK% 2-piece", note: "Practical mixed-set alternative when the four-piece set has much weaker substats." },
+        { name: "Noblesse Oblige 2-piece + Blizzard Strayer 2-piece", note: "Burst-oriented mixed set; compare real substats and team needs before farming." }
+      ],
+      stats: { sands: "ATK%", goblet: "Cryo DMG Bonus", circlet: "CRIT DMG / CRIT Rate" },
+      substats: ["CRIT DMG", "CRIT Rate to the appropriate Freeze/team target", "ATK%", "Energy Recharge for Burst uptime"],
+      weapons: [
+        { name: "Mistsplitter Reforged", note: "Game8's featured Ayaka weapon; its CRIT DMG and elemental-damage bonus suit her infused attacks and Burst." },
+        { name: "Haran Geppaku Futsu", note: "Premium alternative; compare its Normal Attack passive value and CRIT stats with your actual rotation." },
+        { name: "Amenoma Kageuchi", note: "Craftable alternative with energy support for Burst rotations." },
+        { name: "The Black Sword", note: "CRIT Rate alternative; rebalance CRIT Rate if Blizzard Strayer and Cryo Resonance are active." }
+      ],
+      talentOrder: ["Elemental Burst", "Normal Attack", "Elemental Skill"],
+      teamFocus: "Use Cryo and Hydro teammates to sustain Freeze and supply the defensive/energy support Ayaka needs to Burst on schedule.",
+      playstyle: "Freeze crit bonuses can cause CRIT Rate overcap; build around the team's actual aura uptime rather than copying a generic CRIT ratio."
+    }
+  },
+  ayato: {
+    primary: {
+      role: "Hydro On-field Main DPS",
+      buildCategory: "Main DPS",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/345514",
+      sourceName: "Game8 — Kamisato Ayato Rating and Best Builds",
+      game8VerifiedAt: "2026-10-24",
+      sourceRoleVerified: true,
+      sourceNote: "Game8 build details verified 24 Oct 2026 against the Kamisato Ayato guide. Echoes of an Offering is a leading Normal-Attack-focused option when using Haran Geppaku Futsu; Gladiator's Finale remains a practical comparison. Pick the set using the actual attack pattern, ping/trigger reliability, and strongest existing substats. Earlier legacy review date remains separate.",
+      artifacts: [
+        { name: "Echoes of an Offering 4-piece", note: "Game8-highlighted Normal Attack set; compare the effect's trigger reliability and real rotation against Gladiator pieces before investing." },
+        { name: "Gladiator's Finale 4-piece", note: "Strong Normal Attack alternative that is often efficient when good pieces already exist." },
+        { name: "Nymph's Dream 4-piece", note: "Hydro damage alternative; compare full-set stack uptime with Ayato's actual Skill window." }
+      ],
+      stats: { sands: "ATK%", goblet: "Hydro DMG Bonus", circlet: "CRIT Rate / CRIT DMG" },
+      substats: ["CRIT Rate / CRIT DMG", "ATK%", "Energy Recharge as needed for the team's Burst rotation"],
+      weapons: [
+        { name: "Haran Geppaku Futsu", note: "Game8-highlighted signature option for Ayato's Normal Attack damage window." },
+        { name: "Mistsplitter Reforged", note: "Premium elemental-damage option; compare the passive uptime to the team rotation." },
+        { name: "Primordial Jade Cutter", note: "CRIT Rate option; account for its HP-to-ATK conversion." },
+        { name: "The Black Sword", note: "Accessible CRIT Rate alternative for Normal Attack damage." }
+      ],
+      talentOrder: ["Elemental Skill", "Elemental Burst", "Normal Attack"],
+      teamFocus: "Ayato deals much of his on-field damage through the Skill's rapid Normal Attacks; use supports that enable reactions and keep his field window productive.",
+      playstyle: "Build for the Skill window first. Keep enough ER to use Burst when it contributes Hydro application or team utility, but do not assume the same ER need across all teams."
+    }
+  },
+  kazuha: {
+    primary: {
+      role: "Anemo Support / Swirl Buffer",
+      buildCategory: "Support",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/332826",
+      sourceName: "Game8 — Kaedehara Kazuha Rating and Best Builds",
+      game8VerifiedAt: "2026-10-24",
+      sourceRoleVerified: true,
+      sourceNote: "Game8 build details verified 24 Oct 2026 against Kazuha's guide. Viridescent Venerer 4-piece is the standard support set, and Freedom-Sworn is the featured premium support weapon. Elemental Mastery, Swirl consistency and Energy Recharge are the core concerns; a CRIT/Anemo DPS build is a niche alternative rather than his default team role.",
+      artifacts: [
+        { name: "Viridescent Venerer 4-piece", note: "Game8's standard support set; Kazuha must Swirl the element whose resistance the team wants reduced." },
+        { name: "Viridescent Venerer 2-piece + Elemental Mastery 2-piece", note: "Transitional alternative while farming the full set; it does not replace the full-set RES shred." },
+        { name: "Instructor 4-piece", note: "Low-rarity early-game reaction-support option; replace it as account progression allows." }
+      ],
+      stats: { sands: "Elemental Mastery / Energy Recharge", goblet: "Elemental Mastery", circlet: "Elemental Mastery" },
+      substats: ["Energy Recharge until Burst is reliable", "Elemental Mastery", "CRIT Rate when using Favonius Sword"],
+      weapons: [
+        { name: "Freedom-Sworn", note: "Game8's featured support weapon; its team buff rewards reaction-driven rotations." },
+        { name: "Xiphos' Moonlight", note: "Elemental Mastery and team Energy Recharge utility, particularly when the passive is maintained." },
+        { name: "Favonius Sword", note: "Team-energy option; build enough CRIT Rate to trigger its passive reliably." },
+        { name: "Iron Sting", note: "Craftable Elemental Mastery option when the team can meet energy needs without Favonius." }
+      ],
+      talentOrder: ["Elemental Skill", "Elemental Burst", "Normal Attack"],
+      teamFocus: "Swirl the carry's damage element to provide the resistance shred and elemental-damage bonus. Avoid double-counting buffs that another Viridescent holder already maintains.",
+      playstyle: "Prioritize EM and ER for support. A CRIT build changes the trade-off and should be selected only when personal damage is deliberately valued above the usual team buff."
+    }
+  },
+  "hu-tao": {
+    primary: {
+      role: "Pyro Vaporize Main DPS",
+      buildCategory: "Main DPS",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/314347",
+      sourceName: "Game8 — Hu Tao Rating and Best Builds",
+      game8VerifiedAt: "2026-10-24",
+      sourceRoleVerified: true,
+      sourceNote: "Game8 build details verified 24 Oct 2026 against Hu Tao's guide. The standard Vaporize setup uses Staff of Homa and 4-piece Crimson Witch of Flames, with Shimenawa's Reminiscence as an alternative and Marechaussee Hunter in teams using both Furina and Xianyun for plunge Vaporize. This role is not interchangeable with a general off-field build.",
+      artifacts: [
+        { name: "Crimson Witch of Flames 4-piece", note: "Game8's standard reaction-focused baseline; its Pyro and Vaporize/Melt bonuses fit Hu Tao's normal charged-attack Vaporize rotation." },
+        { name: "Shimenawa's Reminiscence 4-piece", note: "Game8-listed Normal/Charged Attack option; Skill consumes Energy, so ensure Burst timing and survivability still work." },
+        { name: "Marechaussee Hunter 4-piece", note: "Game8-listed conditional setup for Furina + Xianyun plunge-Vaporize teams; adjust CRIT Rate for the HP-change bonus." }
+      ],
+      stats: { sands: "HP% / Elemental Mastery", goblet: "Pyro DMG Bonus", circlet: "CRIT Rate / CRIT DMG" },
+      substats: ["CRIT Rate / CRIT DMG", "Elemental Mastery for Vaporize", "HP%", "Energy Recharge as needed"],
+      weapons: [
+        { name: "Staff of Homa", note: "Game8's featured weapon; HP and low-HP ATK bonuses suit Hu Tao's conversion mechanic." },
+        { name: "Staff of the Scarlet Sands", note: "Game8-listed CRIT/Elemental Mastery alternative for reaction-focused builds." },
+        { name: "Ballad of the Fjords", note: "Battle Pass alternative; Elemental Mastery passive requires at least three different elemental types in the party." },
+        { name: "Dragon's Bane", note: "Reaction-focused alternative when Hu Tao consistently triggers Vaporize." },
+        { name: "White Tassel R5", note: "Accessible chest weapon that buffs Normal Attacks; a budget option rather than a universal match for every combo." }
+      ],
+      talentOrder: ["Normal Attack", "Elemental Skill", "Elemental Burst"],
+      teamFocus: "Use consistent Hydro application for Vaporize and consider a shielder because Hu Tao's damage pattern usually stays at low HP.",
+      playstyle: "Game8's guide supports Crimson Witch, Shimenawa, and a Furina/Xianyun-specific Marechaussee setup. Do not choose the latter unless the team and plunge rotation actually activate its conditions."
+    }
+  },
+  "yae-miko": {
+    primary: {
+      role: "Off-field Electro Sub DPS",
+      buildCategory: "Sub DPS",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/327533",
+      sourceName: "Game8 — Yae Miko Rating and Best Builds",
+      game8VerifiedAt: "2026-10-24",
+      sourceRoleVerified: true,
+      sourceNote: "Game8 build details verified 24 Oct 2026 against Yae Miko's guide. Kagura's Verity and Golden Troupe 4-piece are a core personal-damage pairing for off-field Sesshou Sakura. The best set depends on field time and whether the team needs a Deepwood/other reaction support holder; use a reaction-focused stat spread only when Yae is actually triggering reactions.",
+      artifacts: [
+        { name: "Golden Troupe 4-piece", note: "Game8-highlighted off-field Skill set; its bonus changes when Yae spends time on field, so compare it with the intended rotation." },
+        { name: "Gilded Dreams 4-piece", note: "Reaction/EM alternative for teams where Yae's reaction ownership and elemental mix make it competitive." },
+        { name: "Golden Troupe 2-piece + Thundering Fury 2-piece", note: "Mixed Skill damage and Electro DMG option when its substats clearly beat the available four-piece pieces." }
+      ],
+      stats: { sands: "ATK% / Elemental Mastery (reaction teams)", goblet: "Electro DMG Bonus", circlet: "CRIT Rate / CRIT DMG" },
+      substats: ["CRIT Rate / CRIT DMG", "ATK%", "Energy Recharge for Burst rotation", "Elemental Mastery when she triggers reactions"],
+      weapons: [
+        { name: "Kagura's Verity", note: "Game8-highlighted signature for Skill damage and CRIT DMG." },
+        { name: "A Thousand Floating Dreams", note: "Reaction-focused option with Elemental Mastery and team-dependent passive value." },
+        { name: "The Widsith", note: "Strong but variable passive; compare its performance across the actual rotation." },
+        { name: "Lost Prayer to the Sacred Winds", note: "CRIT Rate and elemental-damage option with value depending on Yae's field time." },
+        { name: "Wandering Evenstar", note: "EM/support option when her build and team benefit from its ATK-sharing effect." }
+      ],
+      talentOrder: ["Elemental Skill", "Elemental Burst", "Normal Attack"],
+      teamFocus: "Place all three Sesshou Sakura and refresh them through the rotation; use Dendro teams for Aggravate only if the party supplies reliable Dendro application.",
+      playstyle: "The standard recommendation is off-field Skill damage. On-field/charged-attack Yae is a different niche plan and should not replace this baseline."
+    }
+  },
+  "kuki-shinobu": {
+    primary: {
+      role: "Electro Support / Hyperbloom Trigger",
+      buildCategory: "Support",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/346199",
+      sourceName: "Game8 — Kuki Shinobu Rating and Best Builds",
+      game8VerifiedAt: "2026-10-24",
+      sourceRoleVerified: true,
+      sourceNote: "Game8 build details verified 24 Oct 2026 against Kuki Shinobu's guide. Kuki has two distinct support goals: HP/Healing-focused support and full-EM Hyperbloom triggering. Freedom-Sworn can add team utility; the best artifact set depends on whether Kuki owns the Hyperbloom trigger or is primarily maintaining healing and application.",
+      artifacts: [
+        { name: "Flower of Paradise Lost 4-piece", note: "Reaction set when Kuki is the reliable Hyperbloom trigger; EM and trigger ownership matter more than personal CRIT." },
+        { name: "Gilded Dreams 4-piece", note: "EM alternative for a Hyperbloom trigger, particularly when its substats and domain efficiency are better." },
+        { name: "Tenacity of the Millelith 4-piece", note: "Game8-listed support set for team ATK and HP-oriented healing/support; not the highest personal Hyperbloom damage set." }
+      ],
+      stats: { sands: "Elemental Mastery (Hyperbloom) / HP%", goblet: "Elemental Mastery (Hyperbloom) / HP%", circlet: "Elemental Mastery (Hyperbloom) / Healing Bonus / HP%" },
+      substats: ["Elemental Mastery if she triggers Hyperbloom", "HP% for healing", "Energy Recharge as needed", "CRIT Rate if using Favonius Sword"],
+      weapons: [
+        { name: "Freedom-Sworn", note: "Premium support weapon with Elemental Mastery and a team buff." },
+        { name: "Xiphos' Moonlight", note: "Elemental Mastery and team Energy Recharge utility." },
+        { name: "Iron Sting", note: "Craftable Elemental Mastery option for reaction-trigger builds." },
+        { name: "Favonius Sword", note: "Team-energy option; build CRIT Rate to trigger its passive." },
+        { name: "Toukabou Shigure", note: "Elemental Mastery event weapon if owned; compare passive value against the team and reaction setup." }
+      ],
+      talentOrder: ["Elemental Skill", "Elemental Burst", "Normal Attack"],
+      teamFocus: "In Hyperbloom, ensure Kuki's Electro ring is what hits Dendro Cores; build EM for that trigger. For pure sustain, HP and healing become more important.",
+      playstyle: "Do not blend the two goals into a single mandatory stat line: full EM maximizes Hyperbloom damage, while HP/Healing Bonus raises comfort for teams that need extra sustain."
+    }
+  },
+  "yun-jin": {
+    primary: {
+      role: "Normal Attack Support / Buffer",
+      buildCategory: "Support",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/314345",
+      sourceName: "Game8 — Yun Jin Rating and Best Builds",
+      game8VerifiedAt: "2026-10-24",
+      sourceRoleVerified: true,
+      sourceNote: "Game8 build details verified 24 Oct 2026 against Yun Jin's guide. Favonius Lance and Husk of Opulent Dreams are source-backed support options. Her Burst buffs Normal Attack damage based on DEF, so build DEF while maintaining enough Energy Recharge to use Burst for the carry's rotation.",
+      artifacts: [
+        { name: "Husk of Opulent Dreams 4-piece", note: "Game8-listed DEF-focused support set that improves Yun Jin's scaling." },
+        { name: "Noblesse Oblige 4-piece", note: "Team-buff alternative when another character does not already maintain the set and the team benefits from ATK." },
+        { name: "Husk of Opulent Dreams 2-piece + Energy Recharge 2-piece", note: "Transition option to improve DEF and Burst availability while farming." }
+      ],
+      stats: { sands: "DEF% / Energy Recharge", goblet: "DEF%", circlet: "DEF% / CRIT Rate (Favonius Lance)" },
+      substats: ["Energy Recharge until Burst is available each rotation", "DEF%", "CRIT Rate if using Favonius Lance"],
+      weapons: [
+        { name: "Favonius Lance", note: "Game8-highlighted support weapon; build enough CRIT Rate to trigger team energy generation." },
+        { name: "Engulfing Lightning", note: "Energy-oriented premium alternative if available." },
+        { name: "Prototype Starglitter", note: "Craftable Energy Recharge alternative." },
+        { name: "Kitain Cross Spear", note: "Craftable option to compare when the team benefits from its energy mechanic." }
+      ],
+      talentOrder: ["Elemental Burst", "Elemental Skill", "Normal Attack"],
+      teamFocus: "Pair Yun Jin with a Normal Attack-focused carry. Her Burst's bonus scales with DEF, and the number of different elements in the team can affect her passive bonus.",
+      playstyle: "Prioritize DEF and Burst uptime. The support build is not intended to increase charged attacks or plunges unless a character's damage actually counts as Normal Attack damage."
+    }
+  },
+  "lan-yan": {
+    primary: {
+      role: "Anemo Shielder / Support",
+      buildCategory: "Support",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/486709",
+      sourceName: "Game8 — Lan Yan Rating and Best Builds",
+      game8VerifiedAt: "2026-10-24",
+      sourceRoleVerified: true,
+      sourceNote: "Game8 build details verified 24 Oct 2026 against Lan Yan's guide. Viridescent Venerer 4-piece is the universal resistance-shred option and can reach high uptime; her shield and team utility make a support build the standard. Balance ATK for shield strength with EM when Swirl damage and elemental support are priorities.",
+      artifacts: [
+        { name: "Viridescent Venerer 4-piece", note: "Game8's standard support set for Swirl and resistance reduction; swirl the relevant enemy aura to apply the right shred." },
+        { name: "Viridescent Venerer 2-piece + ATK% 2-piece", note: "Shield/Anemo transition mix when four-piece pieces have weak substats." },
+        { name: "Tenacity of the Millelith 4-piece", note: "Team ATK alternative only if Lan Yan can trigger and maintain the Skill-hit condition with the actual rotation." }
+      ],
+      stats: { sands: "ATK% / Elemental Mastery", goblet: "ATK% / Anemo DMG Bonus", circlet: "ATK% / CRIT Rate / CRIT DMG" },
+      substats: ["ATK% for shield scaling", "Energy Recharge for Burst utility", "Elemental Mastery for Swirl", "CRIT Rate if using Favonius Codex"],
+      weapons: [
+        { name: "Sunny Morning Sleep-In", note: "Premium Elemental Mastery catalyst option for Swirl-oriented support." },
+        { name: "Thrilling Tales of Dragon Slayers", note: "Low-cost ATK buff for a designated ATK-scaling carry; plan the swap order." },
+        { name: "Favonius Codex", note: "Team-energy option; CRIT Rate and reliable hits help trigger its passive." },
+        { name: "Sacrificial Fragments", note: "Elemental Mastery option; check whether the extra Skill cast fits the rotation." }
+      ],
+      talentOrder: ["Elemental Skill", "Elemental Burst", "Normal Attack"],
+      teamFocus: "Keep the shield active and Swirl the carry's element for VV shred. The best goblet/circlet trades off shielding, Swirl, and personal damage instead of having one universal stat spread.",
+      playstyle: "For the conventional support role, the four-piece VV effect usually matters more than maximizing Lan Yan's own damage."
+    }
+  },
+  "traveler-anemo": {
+    primary: {
+      role: "Anemo Support / Swirl Sub DPS",
+      buildCategory: "Support",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/297537",
+      sourceName: "Game8 — Anemo Traveler Rating and Best Builds",
+      game8VerifiedAt: "2026-10-24",
+      sourceNote: "Game8 build details verified 24 Oct 2026 against the Anemo Traveler guide. Viridescent Venerer 4-piece is the support baseline because it combines Swirl damage with resistance reduction. Choose Elemental Mastery for reaction-focused support or ATK/Anemo/CRIT if deliberately prioritizing direct Skill/Burst damage.",
+      artifacts: [
+        { name: "Viridescent Venerer 4-piece", note: "Game8's main support option; it needs a Swirl of the element the team wants to reduce resistance to." },
+        { name: "Viridescent Venerer 2-piece + ATK% 2-piece", note: "Transitional damage mix when four-piece pieces have weaker substats; it loses the full-set resistance shred." },
+        { name: "Noblesse Oblige 4-piece", note: "Burst-support alternative only when the team benefits from its ATK buff and another holder is not already maintaining it." }
+      ],
+      stats: { sands: "Elemental Mastery / Energy Recharge", goblet: "Elemental Mastery / Anemo DMG Bonus", circlet: "Elemental Mastery / CRIT Rate / CRIT DMG" },
+      substats: ["Energy Recharge for Burst uptime", "Elemental Mastery for Swirl", "CRIT Rate / CRIT DMG for direct damage"],
+      weapons: [
+        { name: "Freedom-Sworn", note: "Premium support weapon; its reaction-driven party buff fits a Swirl role." },
+        { name: "Favonius Sword", note: "Team-energy option; build enough CRIT Rate to activate its passive." },
+        { name: "Sacrificial Sword", note: "Skill reset option; value depends on field time and particle needs." },
+        { name: "Iron Sting", note: "Craftable Elemental Mastery option for Swirl damage." }
+      ],
+      talentOrder: ["Elemental Burst", "Elemental Skill", "Normal Attack"],
+      teamFocus: "Swirl the element the carry uses and arrange Burst timing carefully because the traveling tornado can move some enemies away.",
+      playstyle: "Traveler's elements have separate kits. This profile applies only to Anemo; use the matching Traveler element tab and its own talents/build for other elements."
+    }
+  },
+  "traveler-dendro": {
+    primary: {
+      role: "Dendro Support / Reaction Enabler",
+      buildCategory: "Support",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/381807",
+      sourceName: "Game8 — Dendro Traveler Rating and Best Builds",
+      game8VerifiedAt: "2026-10-24",
+      sourceRoleVerified: true,
+      sourceNote: "Game8 build details verified 24 Oct 2026 against the Dendro Traveler guide. Deepwood Memories 4-piece is the default when the team needs Dendro RES reduction; Energy Recharge and consistent Burst application are essential. Freedom-Sworn is listed as a team-support option, but choose weapons around the actual rotation and availability.",
+      artifacts: [
+        { name: "Deepwood Memories 4-piece", note: "Game8's main set when Traveler is responsible for Dendro RES reduction; another teammate can carry it if that gives better uptime." },
+        { name: "Noblesse Oblige 4-piece", note: "Team ATK alternative only if Deepwood is already reliably covered and the team benefits from the buff." },
+        { name: "Emblem of Severed Fate 2-piece + Energy Recharge 2-piece", note: "Energy transition mix for a costly-Burst rotation; keep enough Dendro application for the team." }
+      ],
+      stats: { sands: "Energy Recharge / Elemental Mastery", goblet: "Dendro DMG Bonus / Elemental Mastery", circlet: "CRIT Rate / CRIT DMG / Elemental Mastery" },
+      substats: ["Energy Recharge until Burst is reliably ready", "Elemental Mastery for reaction ownership", "CRIT Rate / CRIT DMG and ATK% for personal damage"],
+      weapons: [
+        { name: "Freedom-Sworn", note: "Game8-listed support option; use its team buff when the reaction rotation can trigger it." },
+        { name: "Favonius Sword", note: "Team-energy option; build CRIT Rate to trigger it reliably." },
+        { name: "Sacrificial Sword", note: "Skill-reset alternative when the extra Skill cast fits the rotation." },
+        { name: "Sapwood Blade", note: "Craftable ER support option that can provide a Dendro-reaction utility effect." }
+      ],
+      talentOrder: ["Elemental Burst", "Elemental Skill", "Normal Attack"],
+      teamFocus: "Keep the Burst active to apply Dendro consistently, and ensure somebody carries Deepwood whenever the team relies on Dendro damage.",
+      playstyle: "Build ER before excess CRIT. Reaction ownership changes the value of EM, so don't automatically assume triple EM is correct for every team."
+    }
+  },
+  "traveler-pyro": {
+    primary: {
+      role: "Pyro Support / Off-field Sub DPS",
+      buildCategory: "Support",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/470309",
+      sourceName: "Game8 — Pyro Traveler Rating and Best Builds",
+      game8VerifiedAt: "2026-10-24",
+      sourceRoleVerified: true,
+      sourceNote: "Game8 build details verified 24 Oct 2026 against the Pyro Traveler guide and Game8's indexed character build table. Scroll of the Hero of Cinder City 4-piece is the team support baseline; Favonius Sword is a practical energy option. Keep enough ER and account for the Traveler's burst/application uptime instead of assuming continuous off-field Pyro.",
+      artifacts: [
+        { name: "Scroll of the Hero of Cinder City 4-piece", note: "Game8's team-buff baseline for reaction teams; trigger the relevant reaction to activate the set effect." },
+        { name: "Noblesse Oblige 4-piece", note: "Burst support alternative if another teammate is not already carrying Noblesse and its buff fits the rotation." },
+        { name: "Emblem of Severed Fate 2-piece + ATK% 2-piece", note: "Energy/personal damage fallback if the support set effect is already covered." }
+      ],
+      stats: { sands: "Energy Recharge / ATK%", goblet: "Pyro DMG Bonus / ATK%", circlet: "CRIT Rate / CRIT DMG" },
+      substats: ["Energy Recharge for Burst/app uptime", "CRIT Rate / CRIT DMG", "ATK%", "Elemental Mastery when reaction ownership benefits"],
+      weapons: [
+        { name: "Favonius Sword", note: "Game8-listed accessible support weapon; build CRIT Rate to trigger team particles." },
+        { name: "Freedom-Sworn", note: "Premium reaction-support option if its passive fits the team's elemental rotation." },
+        { name: "Sapwood Blade", note: "Craftable utility option; check the passive and reaction fit." },
+        { name: "Amenoma Kageuchi", note: "Accessible craftable option to compare for energy comfort." }
+      ],
+      talentOrder: ["Elemental Burst", "Elemental Skill", "Normal Attack"],
+      teamFocus: "Pair Traveler with allies that benefit from Scroll's elemental-damage buff and plan around the actual Pyro application window.",
+      playstyle: "Pyro Traveler is primarily a support/off-field enabler in this profile, not a universally recommended on-field carry."
+    }
+  },
+  "yumemizuki-mizuki": {
+    primary: {
+      role: "On-field Anemo Swirl Main DPS",
+      buildCategory: "Main DPS",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/492414",
+      sourceName: "Game8 — Yumemizuki Mizuki Rating and Best Builds",
+      game8VerifiedAt: "2026-10-24",
+      sourceRoleVerified: true,
+      sourceNote: "Game8 build details verified 24 Oct 2026 against Yumemizuki Mizuki's guide. Sunny Morning Sleep-In and Viridescent Venerer 4-piece are the on-field Swirl baseline. Elemental Mastery is central to her reaction damage and support utility; Energy Recharge depends on the Burst rotation.",
+      artifacts: [
+        { name: "Viridescent Venerer 4-piece", note: "Game8's standard set for Swirl damage and elemental resistance reduction." },
+        { name: "Viridescent Venerer 2-piece + Elemental Mastery 2-piece", note: "Transition option while farming the four-piece set." },
+        { name: "Instructor 4-piece", note: "Early-game reaction-support option before five-star artifacts are accessible." }
+      ],
+      stats: { sands: "Elemental Mastery / Energy Recharge", goblet: "Elemental Mastery", circlet: "Elemental Mastery" },
+      substats: ["Energy Recharge for Burst uptime", "Elemental Mastery", "CRIT Rate if using Favonius Codex"],
+      weapons: [
+        { name: "Sunny Morning Sleep-In", note: "Game8's featured weapon; Elemental Mastery supports the Swirl-focused playstyle." },
+        { name: "A Thousand Floating Dreams", note: "Premium Elemental Mastery alternative with team-dependent passive value." },
+        { name: "Sacrificial Fragments", note: "Elemental Mastery alternative; assess the extra Skill effect against the rotation." },
+        { name: "Wandering Evenstar", note: "Elemental Mastery/support option when the team benefits from the ATK share." },
+        { name: "Favonius Codex", note: "Team-energy option; build enough CRIT Rate and confirm reliable hits for its passive." }
+      ],
+      talentOrder: ["Elemental Skill", "Elemental Burst", "Normal Attack"],
+      teamFocus: "Use Mizuki's on-field window to trigger repeated Swirls, while off-field Hydro/Pyro/Electro/Cryo teammates maintain auras for reactions.",
+      playstyle: "Triple EM is the reaction-oriented baseline; change main stats only when a tested team/weapon setup has different needs."
+    }
+  },
 };
 
 for (const [characterKey, update] of Object.entries(GAME8_REVIEWED_BUILD_OVERRIDES)) {
@@ -2866,10 +3194,11 @@ for (const [characterKey, profile] of Object.entries(CHARACTER_BUILD_GUIDES)) {
   const game8Reviewed = Boolean(
     override &&
     /^Game8 —/i.test(override.sourceName || '') &&
-    override.sourceCheckedAt &&
+    (override.game8VerifiedAt || override.sourceCheckedAt) &&
     /^https:\/\/game8\.co\/games\/Genshin-Impact\/archives\//.test(override.sourceUrl || '')
   );
   profile.game8ReviewStatus = game8Reviewed ? 'reviewed' : 'pending';
+  if (game8Reviewed) profile.game8VerifiedAt = override.game8VerifiedAt || override.sourceCheckedAt;
   if (!game8Reviewed) {
     profile.sourceName = 'Game8 — ' + titleCaseBuildKey(characterKey) + ' guide link (build verification pending)';
     const pendingNote = 'Game8 source-link normalization: build details must be reviewed individually. The direct Game8 guide has been linked, but this profile’s in-app weapon/artifact/stat rankings have not been verified line-by-line against that page and must not be treated as Game8 rankings.';
@@ -2889,7 +3218,6 @@ export const CHARACTER_BUILD_ALIASES = {
   'kaedehara-kazuha': 'kazuha',
   'tartaglia': 'childe',
   'kamirato-ayato': 'ayato',
-  'kamisato-ayato': 'ayato',
   'mizuki': 'yumemizuki-mizuki',
 };
 
