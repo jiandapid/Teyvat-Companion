@@ -2808,10 +2808,14 @@ for (const [characterKey, update] of Object.entries(GAME8_REVIEWED_BUILD_OVERRID
   const profile = CHARACTER_BUILD_GUIDES[characterKey];
   if (!profile) throw new Error("Missing Game8-reviewed character profile: " + characterKey);
   Object.assign(profile, update.primary);
-  for (const variant of update.alternates || []) {
+  if (update.alternates?.length) {
+    // Explicitly source-reviewed Game8 variants should be the default choices ahead of
+    // legacy creator-reference entries for the same role. Preserve other options afterward.
     profile.alternateBuilds = [
-      ...(profile.alternateBuilds || []).filter(existing => existing.id !== variant.id),
-      variant
+      ...update.alternates,
+      ...(profile.alternateBuilds || []).filter(existing =>
+        !update.alternates.some(variant => variant.id === existing.id)
+      )
     ];
   }
 }
