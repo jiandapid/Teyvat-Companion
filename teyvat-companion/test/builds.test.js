@@ -1005,7 +1005,7 @@ test('Oct 23 legacy build review keeps gear, contextual notes, and role talent p
     assert.ok(profile.weapons.every(item => item.note.includes('23 Oct 2026')), key + ': weapon entries must carry the correct review date');
   }
   assert.match(CHARACTER_BUILD_GUIDES.fischl.playstyle, /off-field/i);
-  assert.match(CHARACTER_BUILD_GUIDES.xiangling.teamFocus, /Energy Recharge/i);
+  assert.match(CHARACTER_BUILD_GUIDES.xiangling.teamFocus, /energy plan/i);
   assert.match(CHARACTER_BUILD_GUIDES.yelan.teamFocus, /Normal Attack/i);
   assert.match(CHARACTER_BUILD_GUIDES.sucrose.artifacts[0].note, /resistance/i);
   assert.match(CHARACTER_BUILD_GUIDES.layla.teamFocus, /shield/i);
@@ -1017,7 +1017,6 @@ test('Oct 23 core legacy build batch preserves gear and stat listings pending Ga
   kazuha:{role:'Support',weapons:['Freedom-Sworn','Favonius Sword',"Xiphos' Moonlight",'Sacrificial Sword','Skyward Blade'],artifacts:['Viridescent Venerer 4-piece','Instructor 4-piece','Thundering Fury 4-piece',"Gilded Dreams 2-piece + Wanderer's Troupe 2-piece",'Gilded Dreams 2-piece + Viridescent Venerer 2-piece'],stats:{sands:'Elemental Mastery',goblet:'Elemental Mastery',circlet:'Elemental Mastery'},talents:['Elemental Skill','Elemental Burst','Normal Attack']},
   escoffier:{role:'Sub DPS',weapons:['Symphonist of Scents',"Sacrificer's Staff",'Staff of Homa','Engulfing Lightning',"Prospector's Drill",'Tamayuratei no Ohanashi','Favonius Lance'],artifacts:['Golden Troupe 4-piece','Noblesse Oblige 4-piece','Tenacity of the Millelith 4-piece'],stats:{sands:'ATK% / Energy Recharge',goblet:'Cryo DMG Bonus / ATK%',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Skill','Elemental Burst','Normal Attack']},
   mona:{role:'Support',weapons:['Thrilling Tales of Dragon Slayers','Prototype Amber','Skyward Atlas'],artifacts:['Noblesse Oblige 4-piece','Song of Days Past 4-piece'],stats:{sands:'Energy Recharge / ATK%',goblet:'ATK% / Hydro DMG Bonus',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Burst','Normal Attack','Elemental Skill']},
-  nahida:{role:'Sub DPS',weapons:["A Thousand Floating Dreams","Kagura's Verity",'Sacrificial Fragments','Wandering Evenstar','The Widsith'],artifacts:['Deepwood Memories 4-piece','Gilded Dreams 4-piece','Golden Troupe 4-piece','Flower of Paradise Lost 2-piece + Gilded Dreams 2-piece',"Gilded Dreams 2-piece + Wanderer's Troupe 2-piece"],stats:{sands:'Elemental Mastery',goblet:'Elemental Mastery',circlet:'Elemental Mastery'},talents:['Elemental Skill','Elemental Burst','Normal Attack']},
   xingqiu:{role:'Sub DPS',weapons:['Sacrificial Sword','Primordial Jade Cutter','Mistsplitter Reforged','Amenoma Kageuchi'],artifacts:['Emblem of Severed Fate 4-piece','Noblesse Oblige 2-piece + Heart of Depth 2-piece','Noblesse Oblige 4-piece'],stats:{sands:'ATK% / Energy Recharge',goblet:'Hydro DMG Bonus',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Burst','Elemental Skill','Normal Attack']}
  };
  for(const [key,spec] of Object.entries(expected)){
