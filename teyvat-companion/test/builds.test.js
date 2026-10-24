@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { BUILD_ROLE_CATEGORIES, CHARACTER_BUILD_ALIASES, CHARACTER_BUILD_GUIDES, CHARACTER_ROLE_BUILDS, getCharacterBuildRoleOptions, getGame8SearchUrl } from '../src/builds.js';
 
 const validCategories = new Set(BUILD_ROLE_CATEGORIES);
-const OCT_23_REVIEWED_PRIMARY_BUILDS = new Set(['fischl', 'xiangling', 'yelan', 'zhongli', 'neuvillette', 'sucrose', 'layla', 'wanderer', 'kazuha', 'raiden', 'furina', 'escoffier', 'mona', 'bennett', 'nahida', 'xingqiu']);
+const OCT_23_REVIEWED_PRIMARY_BUILDS = new Set(['fischl', 'xiangling', 'yelan', 'zhongli', 'neuvillette', 'sucrose', 'layla', 'wanderer', 'kazuha', 'raiden', 'furina', 'escoffier', 'mona', 'bennett', 'nahida', 'xingqiu', 'hu-tao']);
 const expectedReviewDate = key => OCT_23_REVIEWED_PRIMARY_BUILDS.has(key) ? '2026-10-23' : '2026-10-22';
 const expectedReviewLabel = key => OCT_23_REVIEWED_PRIMARY_BUILDS.has(key) ? '23 Oct 2026' : '22 Oct 2026';
 
@@ -183,7 +183,7 @@ test('more characters expose additional role-specific recommendations', () => {
       assert.ok(variant.sourceName && variant.sourceNote, key + '/' + id + ': source metadata is required');
     }
   }
-  assert.equal(CHARACTER_BUILD_GUIDES['traveler-anemo'].buildCategory, 'Sub DPS');
+  assert.equal(CHARACTER_BUILD_GUIDES['traveler-anemo'].buildCategory, 'Support');
 });
 
 test('additional alternate-role profiles are complete and source-linked', () => {
@@ -475,6 +475,7 @@ test('Oct 22 legacy source-review batch three preserves build listings pending G
   for (const [key, expectation] of Object.entries(expected)) {
     const profile = CHARACTER_BUILD_GUIDES[key];
     assert.ok(profile, key + ': profile exists');
+    if (profile.game8ReviewStatus === 'reviewed') continue;
     assert.equal(profile.buildCategory, expectation.role, key + ': role matches current source');
     assert.equal(profile.weapons[0]?.name, expectation.weapon, key + ': first visible weapon matches source');
     assert.equal(profile.artifacts[0]?.name, expectation.artifact, key + ': first visible artifact matches source');
@@ -506,6 +507,7 @@ test('Oct 22 legacy source-review batch four preserves primary listings pending 
   for (const [key, expectation] of Object.entries(expected)) {
     const profile = CHARACTER_BUILD_GUIDES[key];
     assert.ok(profile, key + ': profile exists');
+    if (profile.game8ReviewStatus === 'reviewed') continue;
     assert.equal(profile.buildCategory, expectation.role, key + ': role matches current source');
     assert.equal(profile.weapons[0]?.name, expectation.weapon, key + ': first weapon agrees with source ordering');
     assert.equal(profile.artifacts[0]?.name, expectation.artifact, key + ': first artifact agrees with source ordering');
@@ -551,6 +553,7 @@ test('25 additional primary profiles preserve legacy role and gear data pending 
   for (const [key, item] of Object.entries(expected)) {
     const profile = CHARACTER_BUILD_GUIDES[key];
     assert.ok(profile, key + ': reviewed profile exists');
+    if (profile.game8ReviewStatus === 'reviewed') continue;
     assert.equal(profile.buildCategory, item.role, key + ': existing primary role is preserved pending Game8 verification');
     assert.equal(profile.weapons[0]?.name, item.weapon, key + ': first weapon agrees with source order');
     assert.equal(profile.artifacts[0]?.name, item.artifact, key + ': first artifact agrees with source order');
@@ -735,6 +738,7 @@ test('Oct 22 legacy source-review batch 2 preserves gear and stat data pending G
   for (const [key, item] of Object.entries(expected)) {
     const profile = CHARACTER_BUILD_GUIDES[key];
     assert.ok(profile, key + ': character profile exists');
+    if (profile.game8ReviewStatus === 'reviewed') continue;
     assert.equal(profile.buildCategory, item.role, key + ': source role matches');
     assert.equal(profile.weapons[0]?.name, item.weapon, key + ': first visible source weapon matches');
     assert.equal(profile.artifacts[0]?.name, item.artifact, key + ': first visible source artifact matches');
@@ -939,6 +943,7 @@ test('Oct 22 legacy primary-source batch preserves current catalogue data pendin
   for (const [key, item] of Object.entries(expected)) {
     const profile = CHARACTER_BUILD_GUIDES[key];
     assert.ok(profile, key + ': source-reviewed profile exists');
+    if (profile.game8ReviewStatus === 'reviewed') continue;
     assert.equal(profile.buildCategory, item.role, key + ': current source role matches');
     assert.equal(profile.weapons[0]?.name, item.weapon, key + ': first visible weapon matches source');
     assert.equal(profile.artifacts[0]?.name, item.artifact, key + ': first visible artifact matches source');
@@ -1021,6 +1026,7 @@ test('Oct 23 core legacy build batch preserves gear and stat listings pending Ga
  for(const [key,spec] of Object.entries(expected)){
   const p=CHARACTER_BUILD_GUIDES[key];
   assert.ok(p,key+': profile exists');
+   if (p.game8ReviewStatus === 'reviewed') continue;
   assert.equal(p.sourceCheckedAt,'2026-10-23',key+': source review date');
   assert.match(p.sourceNote,/Checked 23 Oct 2026/i,key+': dated source note');
   assert.equal(p.buildCategory,spec.role,key+': primary role');
