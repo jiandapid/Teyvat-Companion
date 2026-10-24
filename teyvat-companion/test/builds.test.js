@@ -402,7 +402,6 @@ test('Oct 22 legacy source-review batch preserves existing primary listing data 
     fischl: { role: 'Sub DPS', weapon: 'The Daybreak Chronicles', artifact: 'Golden Troupe 4-piece', sands: 'ATK%' },
     sucrose: { role: 'Support', weapon: 'A Thousand Floating Dreams', artifact: 'Viridescent Venerer 4-piece', sands: 'Elemental Mastery' },
     alhaitham: { role: 'Main DPS', weapon: 'Light of Foliar Incision', artifact: 'Gilded Dreams 4-piece', sands: 'Elemental Mastery / ATK%' },
-    ganyu: { role: 'Main DPS', weapon: "Hunter's Path", artifact: "Shimenawa's Reminiscence 4-piece", sands: 'ATK%' },
     tighnari: { role: 'Sub DPS', weapon: "Hunter's Path", artifact: "Wanderer's Troupe 4-piece", sands: 'ATK% / Elemental Mastery' },
     venti: { role: 'Sub DPS', weapon: 'The Daybreak Chronicles', artifact: 'Viridescent Venerer 4-piece', sands: 'ATK%' },
     yoimiya: { role: 'Main DPS', weapon: 'Thundering Pulse', artifact: "Shimenawa's Reminiscence 4-piece", sands: 'ATK% / Elemental Mastery' },
@@ -1036,6 +1035,21 @@ test('Oct 23 core legacy build batch preserves gear and stat listings pending Ga
  assert.match(CHARACTER_BUILD_GUIDES.escoffier.teamFocus,/55%/);
  assert.match(CHARACTER_BUILD_GUIDES.mona.teamFocus,/Omen/i);
  assert.match(CHARACTER_BUILD_GUIDES.xingqiu.teamFocus,/Normal Attacks/i);
+});
+
+test('Ganyu Game8 guide covers distinct Freeze/Melt Main DPS and Cryo Sub-DPS builds', () => {
+  const profile = CHARACTER_BUILD_GUIDES.ganyu;
+  assert.equal(profile.sourceUrl, 'https://game8.co/games/Genshin-Impact/archives/312173');
+  assert.equal(profile.sourceCheckedAt, '2026-10-24');
+  assert.equal(profile.buildCategory, 'Main DPS');
+  assert.equal(profile.artifacts[0].name, 'Blizzard Strayer 4-piece');
+  assert.equal(profile.weapons[0].name, 'The First Great Magic');
+  assert.deepEqual(profile.stats, { sands: 'ATK% / Elemental Mastery (Melt)', goblet: 'Cryo DMG Bonus', circlet: 'CRIT DMG / CRIT Rate' });
+  const sub = getCharacterBuildRoleOptions(profile).find(role => role.buildCategory === 'Sub DPS');
+  assert.ok(sub);
+  assert.equal(sub.status, 'curated');
+  assert.equal(sub.profile.artifacts[0].name, 'Noblesse Oblige 2-piece + Blizzard Strayer 2-piece');
+  assert.equal(sub.profile.weapons[0].name, 'Aqua Simulacra');
 });
 
 test('Game8-reviewed profiles use guide-specific gear, stats, talents and role evidence', () => {
