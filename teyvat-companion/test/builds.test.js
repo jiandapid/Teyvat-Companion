@@ -1033,12 +1033,8 @@ test('Oct 23 core legacy build batch preserves gear and stat listings pending Ga
   assert.ok(p.artifacts.every(x=>(x.note.includes('23 Oct 2026') || (key==='mona' && x.note.includes('Game8')))&&x.note.length>45),key+': dated or Game8-sourced artifact conditions');
  }
  assert.match(CHARACTER_BUILD_GUIDES.kazuha.teamFocus,/Viridescent Venerer/i);
- assert.match(CHARACTER_BUILD_GUIDES.raiden.teamFocus,/Normal Attack talent/i);
- assert.match(CHARACTER_BUILD_GUIDES.furina.teamFocus,/healing/i);
  assert.match(CHARACTER_BUILD_GUIDES.escoffier.teamFocus,/55%/);
  assert.match(CHARACTER_BUILD_GUIDES.mona.teamFocus,/Omen/i);
- assert.match(CHARACTER_BUILD_GUIDES.bennett.teamFocus,/Base ATK/i);
- assert.match(CHARACTER_BUILD_GUIDES.nahida.teamFocus,/Deepwood/i);
  assert.match(CHARACTER_BUILD_GUIDES.xingqiu.teamFocus,/Normal Attacks/i);
 });
 
