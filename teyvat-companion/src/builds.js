@@ -2629,7 +2629,8 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       sourceNote: "Checked 23 Oct 2026 against Game8's Bennett guide. For the standard support build, prioritize Burst uptime and a high-base-ATK weapon; the Burst's ATK buff scales with Bennett's base ATK, not his artifact ATK%.",
       artifacts: [
         { name: "Noblesse Oblige 4-piece", note: "Game8's standard support set when another teammate is not already using its 4-piece effect." },
-        { name: "Emblem of Severed Fate 4-piece", note: "Alternative when personal Burst damage and ER are more important than providing the Noblesse team buff." }
+        { name: "Emblem of Severed Fate 4-piece", note: "Alternative when personal Burst damage and ER are more important than providing the Noblesse team buff." },
+        { name: "Noblesse Oblige 2-piece + Emblem of Severed Fate 2-piece", note: "Mixed-set fallback for Burst damage and Energy Recharge while farming; this is a practical fallback, not a Game8-ranked top set." }
       ],
       stats: { sands: "Energy Recharge / HP%", goblet: "HP%", circlet: "Healing Bonus / HP%" },
       substats: ["Energy Recharge until Burst is reliable", "HP% for more healing", "CRIT Rate when using Favonius Sword"],
