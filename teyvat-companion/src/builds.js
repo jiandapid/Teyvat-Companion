@@ -2861,7 +2861,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
         { name: "Iron Sting", note: "Craftable Elemental Mastery option when the team can meet energy needs without Favonius." }
       ],
       talentOrder: ["Elemental Skill", "Elemental Burst", "Normal Attack"],
-      teamFocus: "Swirl the carry's damage element to provide the resistance shred and elemental-damage bonus. Avoid double-counting buffs that another Viridescent holder already maintains.",
+      teamFocus: "Use Viridescent Venerer to Swirl the carry's damage element and provide resistance shred plus the elemental-damage bonus. Avoid double-counting buffs that another Viridescent holder already maintains.",
       playstyle: "Prioritize EM and ER for support. A CRIT build changes the trade-off and should be selected only when personal damage is deliberately valued above the usual team buff."
     }
   },
