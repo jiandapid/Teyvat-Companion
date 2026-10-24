@@ -3342,6 +3342,19 @@ for (const [characterKey, profile] of Object.entries(CHARACTER_BUILD_GUIDES)) {
     profile.sourceNote = String(profile.sourceNote || 'Primary build details are a starting point only.') +
       (String(profile.sourceNote || '').includes('Game8 verification pending') ? '' : ' Game8 verification pending. ' + pendingNote);
   }
+
+  // Replace search-result source links on alternate role templates with the same
+  // character-specific Game8 guide, while explicitly preserving their unverified role status.
+  for (const alternate of profile.alternateBuilds || []) {
+    if (/^https:\/\/www\.google\.com\/search\?q=.*site%3Agame8\.co/i.test(String(alternate.sourceUrl || ''))) {
+      alternate.sourceUrl = profile.sourceUrl;
+      alternate.sourceName = 'Game8 — ' + titleCaseBuildKey(characterKey) + ' guide (alternate-role verification pending)';
+      alternate.game8RoleReviewStatus = 'pending';
+      const roleCaveat = ' Game8 has not been checked for this exact alternate role/build. This linked character guide is a baseline reference only; the alternate remains experimental/reference-only and is not presented as a Game8-ranked role.';
+      alternate.sourceNote = String(alternate.sourceNote || 'Alternate build source details need review.') +
+        (String(alternate.sourceNote || '').includes('alternate-role verification pending') ? '' : roleCaveat);
+    }
+  }
 }
 
 export const CHARACTER_BUILD_ALIASES = {
