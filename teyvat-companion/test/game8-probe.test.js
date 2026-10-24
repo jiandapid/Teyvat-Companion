@@ -8,8 +8,8 @@ test('temporary Game8 public-page probe (remove after source audit)', async () =
     });
     const html = await response.text();
     const clean = html
-      .replace(/<script\\b[^>]*>[\\s\\S]*?<\\/script>/gi, ' ')
-      .replace(/<style\\b[^>]*>[\\s\\S]*?<\\/style>/gi, ' ')
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
       .replace(/<[^>]+>/g, ' ')
       .replace(/&nbsp;|&#160;/gi, ' ')
       .replace(/&amp;/gi, '&')
@@ -17,8 +17,8 @@ test('temporary Game8 public-page probe (remove after source audit)', async () =
       .replace(/&#39;|&#x27;/gi, "'")
       .replace(/&lt;/gi, '<')
       .replace(/&gt;/gi, '>')
-      .replace(/\\s+/g, ' ');
-    const title = html.match(/<title[^>]*>([\\s\\S]*?)<\\/title>/i)?.[1]?.replace(/&amp;/g, '&') || '';
+      .replace(/\s+/g, ' ');
+    const title = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.replace(/&amp;/g, '&') || '';
     const at = clean.toLowerCase().indexOf('best builds');
     console.log('GAME8_PROBE_RESULT ' + JSON.stringify({
       status: response.status,
