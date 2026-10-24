@@ -10,9 +10,11 @@ export function getGame8SearchUrl(characterName, role = '') {
   const normalized = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   const key = CHARACTER_BUILD_ALIASES?.[normalized] || normalized;
   const reviewedGuide = GAME8_REVIEWED_BUILD_OVERRIDES?.[key]?.primary;
-  if (reviewedGuide?.sourceUrl && /^Game8 —/i.test(reviewedGuide.sourceName || '')) return reviewedGuide.sourceUrl;
+  const isDirectGame8Guide = url => /^https:\/\/game8\.co\/games\/Genshin-Impact\/archives\/[A-Za-z0-9]+(?:[?#].*)?$/.test(String(url || ''));
+  if (isDirectGame8Guide(reviewedGuide?.sourceUrl)) return reviewedGuide.sourceUrl;
   const profile = CHARACTER_BUILD_GUIDES?.[key];
-  if (profile?.sourceUrl && /^Game8 —/i.test(profile.sourceName || '')) return profile.sourceUrl;
+  if (isDirectGame8Guide(profile?.sourceUrl)) return profile.sourceUrl;
+  if (isDirectGame8Guide(GAME8_PRIMARY_GUIDE_URLS?.[key])) return GAME8_PRIMARY_GUIDE_URLS[key];
   const query = ['site:game8.co/games/Genshin-Impact/archives', name || 'Genshin Impact character', role, 'best builds teams artifacts weapons']
     .filter(Boolean).join(' ');
   return 'https://www.google.com/search?q=' + encodeURIComponent(query);
@@ -514,6 +516,36 @@ export const CHARACTER_BUILD_GUIDES = {
 };
 
 
+
+// Canonical Game8 character guides are snapshotted before legacy profile overlays run.
+// The URL map is for navigation only; it does not mark build details as Game8-verified.
+const GAME8_PRIMARY_GUIDE_URLS = Object.fromEntries(
+  Object.entries(CHARACTER_BUILD_GUIDES)
+    .map(([key, profile]) => [key, profile.sourceUrl])
+    .filter(([, url]) => typeof url === 'string' && /^https:\/\/game8\\.co\/games\/Genshin-Impact\/archives\/[A-Za-z0-9]+/.test(url))
+);
+Object.assign(GAME8_PRIMARY_GUIDE_URLS, {
+  // Direct pages verified from Game8 search results; never use a guessed archive ID.
+  kazuha: 'https://game8.co/games/Genshin-Impact/archives/332826',
+  ayaka: 'https://game8.co/games/Genshin-Impact/archives/315215',
+  ayato: 'https://game8.co/games/Genshin-Impact/archives/345514',
+  alyosha: 'https://game8.co/games/Genshin-Impact/archives/606884',
+  'hu-tao': 'https://game8.co/games/Genshin-Impact/archives/314347',
+  'yae-miko': 'https://game8.co/games/Genshin-Impact/archives/327533',
+  'kuki-shinobu': 'https://game8.co/games/Genshin-Impact/archives/346199',
+  'yun-jin': 'https://game8.co/games/Genshin-Impact/archives/314345',
+  'lan-yan': 'https://game8.co/games/Genshin-Impact/archives/486709',
+  'traveler-anemo': 'https://game8.co/games/Genshin-Impact/archives/297537',
+  'traveler-dendro': 'https://game8.co/games/Genshin-Impact/archives/381807',
+  'traveler-electro': 'https://game8.co/games/Genshin-Impact/archives/336865',
+  'traveler-geo': 'https://game8.co/games/Genshin-Impact/archives/297538',
+  'traveler-hydro': 'https://game8.co/games/Genshin-Impact/archives/416602',
+  'traveler-pyro': 'https://game8.co/games/Genshin-Impact/archives/470309',
+  'traveler-cryo': 'https://game8.co/games/Genshin-Impact/archives/613906',
+  ineffa: 'https://game8.co/games/Genshin-Impact/archives/531360',
+  iansan: 'https://game8.co/games/Genshin-Impact/archives/345881',
+  'yumemizuki-mizuki': 'https://game8.co/games/Genshin-Impact/archives/492414',
+});
 const ADDITIONAL_ROLE_VARIANTS = {
   ningguang: [
     {
@@ -2056,17 +2088,17 @@ function ensureBuildSourceAttribution(profile, characterKey, isAlternate = false
   if (!profile || typeof profile !== 'object') return;
   const sourceUrl = String(profile.sourceUrl || '');
   if (!profile.sourceName) {
-    profile.sourceName = sourceUrl.includes('genshin.gg/characters/')
-      ? 'legacy catalogue — ' + titleCaseBuildKey(characterKey) + ' build page'
-      : sourceUrl.includes('youtube.com')
-        ? 'YouTube creator reference' + (profile.role ? ' — ' + profile.role : '')
+    profile.sourceName = sourceUrl.includes('youtube.com')
+      ? 'YouTube creator reference' + (profile.role ? ' — ' + profile.role : '')
+      : sourceUrl.includes('game8.co/games/Genshin-Impact/archives/')
+        ? 'Game8 character guide reference'
         : sourceUrl ? 'Linked build reference' : 'Teyvat Companion reference';
   }
   if (!profile.sourceNote) {
-    profile.sourceNote = sourceUrl.includes('genshin.gg/characters/')
-      ? 'Source-linked quick reference, not an independent damage simulation. The live character page may list alternatives or ranking changes; check team-specific Energy Recharge, artifact-holder assignment, weapon passives, and rotations before farming.'
-      : sourceUrl.includes('youtube.com')
-        ? 'Creator video reference. Check its publication date and verify the latest weapons, artifact sets, characters, and rotations against a current character page before investing resources.'
+    profile.sourceNote = sourceUrl.includes('youtube.com')
+      ? 'Creator video reference. Check its publication date and verify the latest weapons, artifact sets, characters, and rotations against a current character page before investing resources.'
+      : sourceUrl.includes('game8.co/games/Genshin-Impact/archives/')
+        ? 'Game8 guide link. Verify the listed gear and priorities against the live guide before farming; a link alone does not certify this exact role build.'
         : 'Reference-only build guidance. Verify current game mechanics, role viability, weapon conditions, and team rotation before farming.';
   }
   if (!isAlternate && CURRENTLY_REVIEWED_PRIMARY_BUILDS.has(characterKey)) {
@@ -2820,11 +2852,44 @@ for (const [characterKey, update] of Object.entries(GAME8_REVIEWED_BUILD_OVERRID
   }
 }
 
+ 
+// Normalize every primary profile to a direct character-specific Game8 guide where one exists.
+// Linking to Game8 is separate from verifying the listed weapons, artifact sets and stat priorities.
+for (const [characterKey, profile] of Object.entries(CHARACTER_BUILD_GUIDES)) {
+  const override = GAME8_REVIEWED_BUILD_OVERRIDES[characterKey]?.primary;
+  const overrideUrl = override?.sourceUrl;
+  const isDirectGame8Guide = url => /^https:\/\/game8\.co\/games\/Genshin-Impact\/archives\/[A-Za-z0-9]+(?:[?#].*)?$/.test(String(url || ''));
+  const canonicalUrl = isDirectGame8Guide(overrideUrl)
+    ? overrideUrl
+    : GAME8_PRIMARY_GUIDE_URLS[characterKey] || (isDirectGame8Guide(profile.sourceUrl) ? profile.sourceUrl : null);
+  profile.sourceUrl = canonicalUrl || getGame8SearchUrl(titleCaseBuildKey(characterKey), profile.buildCategory || profile.role || '');
+  const game8Reviewed = Boolean(
+    override &&
+    /^Game8 —/i.test(override.sourceName || '') &&
+    override.sourceCheckedAt &&
+    /^https:\/\/game8\.co\/games\/Genshin-Impact\/archives\//.test(override.sourceUrl || '')
+  );
+  profile.game8ReviewStatus = game8Reviewed ? 'reviewed' : 'pending';
+  if (!game8Reviewed) {
+    profile.sourceName = 'Game8 — ' + titleCaseBuildKey(characterKey) + ' guide link (build verification pending)';
+    const pendingNote = 'Game8 source-link normalization: build details must be reviewed individually. The direct Game8 guide has been linked, but this profile’s in-app weapon/artifact/stat rankings have not been verified line-by-line against that page and must not be treated as Game8 rankings.';
+    profile.sourceNote = String(profile.sourceNote || 'Primary build details are a starting point only.') +
+      (String(profile.sourceNote || '').includes('Game8 verification pending') ? '' : ' Game8 verification pending. ' + pendingNote);
+  }
+}
+
 export const CHARACTER_BUILD_ALIASES = {
   'raiden-shogun': 'raiden',
+  'shikanoin-heizou': 'heizou',
+  'sangonomiya-kokomi': 'kokomi',
+  'kamisato-ayaka': 'ayaka',
+  'kamisato-ayato': 'ayato',
+  'kujou-sara': 'sara',
+  'arataki-itto': 'itto',
   'kaedehara-kazuha': 'kazuha',
   'tartaglia': 'childe',
   'kamirato-ayato': 'ayato',
+  'kamisato-ayato': 'ayato',
   'mizuki': 'yumemizuki-mizuki',
 };
 
@@ -3129,7 +3194,7 @@ function classifyRoleEvidence(candidate, primaryProfile, isPrimary = false) {
     if (/does not publish a ranked weapon\/artifact list/i.test(note)) return 'provisional';
     // Previous dates describe the old source review, not a Game8 verification.
     // Do not label any primary profile curated until it has explicit Game8 review metadata.
-    if (candidate?.game8VerifiedAt || candidate?.sourceRoleVerified === true || (/^Game8 —/i.test(candidate?.sourceName || '') && candidate?.sourceCheckedAt)) return 'curated';
+    if (candidate?.game8ReviewStatus === 'reviewed' || candidate?.game8VerifiedAt || candidate?.sourceRoleVerified === true) return 'curated';
     return 'needs-review';
   }
   // Only mark an alternate as role-curated when its cited guide directly covers that role.
