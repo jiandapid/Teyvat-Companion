@@ -1172,3 +1172,14 @@ test('every primary character profile links directly to a character-specific Gam
     }
   }
 });
+
+test('alternate character role variants do not link to generic search results', () => {
+  for (const [characterKey, profile] of Object.entries(CHARACTER_BUILD_GUIDES)) {
+    for (const alternate of profile.alternateBuilds || []) {
+      assert.doesNotMatch(String(alternate.sourceUrl || ''), /^https:\/\/www\.google\.com\/search/i, characterKey + '/' + alternate.id + ': alternate roles must point to a character guide or creator source, not a search page');
+      if (alternate.game8RoleReviewStatus === 'pending') {
+        assert.match(alternate.sourceNote || '', /alternate-role verification pending/i, characterKey + '/' + alternate.id + ': alternate role must be clearly marked unverified');
+      }
+    }
+  }
+});
