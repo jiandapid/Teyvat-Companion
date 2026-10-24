@@ -2843,7 +2843,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       sourceName: "Game8 — Kamisato Ayaka Rating and Best Builds",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
-      sourceNote: "Game8 build details verified 24 Oct 2026 against the Kamisato Ayaka guide. The Freeze-focused baseline uses Mistsplitter Reforged and 4-piece Blizzard Strayer; the exact CRIT Rate target depends on Frozen-enemy uptime, Cryo Resonance and the artifact set bonuses. The earlier legacy catalogue review date is retained separately.",
+      sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against the Kamisato Ayaka guide. The Freeze-focused baseline uses Mistsplitter Reforged and 4-piece Blizzard Strayer; the exact CRIT Rate target depends on Frozen-enemy uptime, Cryo Resonance and the artifact set bonuses. The earlier legacy catalogue review date is retained separately.",
       artifacts: [
         { name: "Blizzard Strayer 4-piece", note: "Game8's Freeze baseline; value relies on Cryo/Frozen enemy uptime and should not be copied unchanged into a non-Freeze team." },
         { name: "Blizzard Strayer 2-piece + ATK% 2-piece", note: "Practical mixed-set alternative when the four-piece set has much weaker substats." },
@@ -2870,7 +2870,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       sourceName: "Game8 — Kamisato Ayato Rating and Best Builds",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
-      sourceNote: "Game8 build details verified 24 Oct 2026 against the Kamisato Ayato guide. Echoes of an Offering is a leading Normal-Attack-focused option when using Haran Geppaku Futsu; Gladiator's Finale remains a practical comparison. Pick the set using the actual attack pattern, ping/trigger reliability, and strongest existing substats. Earlier legacy review date remains separate.",
+      sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against the Kamisato Ayato guide. Echoes of an Offering is a leading Normal-Attack-focused option when using Haran Geppaku Futsu; Gladiator's Finale remains a practical comparison. Pick the set using the actual attack pattern, ping/trigger reliability, and strongest existing substats. Earlier legacy review date remains separate.",
       artifacts: [
         { name: "Echoes of an Offering 4-piece", note: "Game8-highlighted Normal Attack set; compare the effect's trigger reliability and real rotation against Gladiator pieces before investing." },
         { name: "Gladiator's Finale 4-piece", note: "Strong Normal Attack alternative that is often efficient when good pieces already exist." },
@@ -2897,7 +2897,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       sourceName: "Game8 — Kaedehara Kazuha Rating and Best Builds",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
-      sourceNote: "Game8 build details verified 24 Oct 2026 against Kazuha's guide. Viridescent Venerer 4-piece is the standard support set, and Freedom-Sworn is the featured premium support weapon. Elemental Mastery, Swirl consistency and Energy Recharge are the core concerns; a CRIT/Anemo DPS build is a niche alternative rather than his default team role.",
+      sourceNote: "Checked 23 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against Kazuha's guide. Viridescent Venerer 4-piece is the standard support set, and Freedom-Sworn is the featured premium support weapon. Elemental Mastery, Swirl consistency and Energy Recharge are the core concerns; a CRIT/Anemo DPS build is a niche alternative rather than his default team role.",
       artifacts: [
         { name: "Viridescent Venerer 4-piece", note: "Game8's standard support set; Kazuha must Swirl the element whose resistance the team wants reduced." },
         { name: "Viridescent Venerer 2-piece + Elemental Mastery 2-piece", note: "Transitional alternative while farming the full set; it does not replace the full-set RES shred." },
@@ -2924,7 +2924,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       sourceName: "Game8 — Hu Tao Rating and Best Builds",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
-      sourceNote: "Game8 build details verified 24 Oct 2026 against Hu Tao's guide. The standard Vaporize setup uses Staff of Homa and 4-piece Crimson Witch of Flames, with Shimenawa's Reminiscence as an alternative and Marechaussee Hunter in teams using both Furina and Xianyun for plunge Vaporize. This role is not interchangeable with a general off-field build.",
+      sourceNote: "Checked 23 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against Hu Tao's guide. The standard Vaporize setup uses Staff of Homa and 4-piece Crimson Witch of Flames, with Shimenawa's Reminiscence as an alternative and Marechaussee Hunter in teams using both Furina and Xianyun for plunge Vaporize. This role is not interchangeable with a general off-field build.",
       artifacts: [
         { name: "Crimson Witch of Flames 4-piece", note: "Game8's standard reaction-focused baseline; its Pyro and Vaporize/Melt bonuses fit Hu Tao's normal charged-attack Vaporize rotation." },
         { name: "Shimenawa's Reminiscence 4-piece", note: "Game8-listed Normal/Charged Attack option; Skill consumes Energy, so ensure Burst timing and survivability still work." },
@@ -2952,7 +2952,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       sourceName: "Game8 — Yae Miko Rating and Best Builds",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
-      sourceNote: "Game8 build details verified 24 Oct 2026 against Yae Miko's guide. Kagura's Verity and Golden Troupe 4-piece are a core personal-damage pairing for off-field Sesshou Sakura. The best set depends on field time and whether the team needs a Deepwood/other reaction support holder; use a reaction-focused stat spread only when Yae is actually triggering reactions.",
+      sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against Yae Miko's guide. Kagura's Verity and Golden Troupe 4-piece are a core personal-damage pairing for off-field Sesshou Sakura. The best set depends on field time and whether the team needs a Deepwood/other reaction support holder; use a reaction-focused stat spread only when Yae is actually triggering reactions.",
       artifacts: [
         { name: "Golden Troupe 4-piece", note: "Game8-highlighted off-field Skill set; its bonus changes when Yae spends time on field, so compare it with the intended rotation." },
         { name: "Gilded Dreams 4-piece", note: "Reaction/EM alternative for teams where Yae's reaction ownership and elemental mix make it competitive." },
@@ -2980,7 +2980,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       sourceName: "Game8 — Kuki Shinobu Rating and Best Builds",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
-      sourceNote: "Game8 build details verified 24 Oct 2026 against Kuki Shinobu's guide. Kuki has two distinct support goals: HP/Healing-focused support and full-EM Hyperbloom triggering. Freedom-Sworn can add team utility; the best artifact set depends on whether Kuki owns the Hyperbloom trigger or is primarily maintaining healing and application.",
+      sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against Kuki Shinobu's guide. Kuki has two distinct support goals: HP/Healing-focused support and full-EM Hyperbloom triggering. Freedom-Sworn can add team utility; the best artifact set depends on whether Kuki owns the Hyperbloom trigger or is primarily maintaining healing and application.",
       artifacts: [
         { name: "Flower of Paradise Lost 4-piece", note: "Reaction set when Kuki is the reliable Hyperbloom trigger; EM and trigger ownership matter more than personal CRIT." },
         { name: "Gilded Dreams 4-piece", note: "EM alternative for a Hyperbloom trigger, particularly when its substats and domain efficiency are better." },
@@ -3008,7 +3008,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       sourceName: "Game8 — Yun Jin Rating and Best Builds",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
-      sourceNote: "Game8 build details verified 24 Oct 2026 against Yun Jin's guide. Favonius Lance and Husk of Opulent Dreams are source-backed support options. Her Burst buffs Normal Attack damage based on DEF, so build DEF while maintaining enough Energy Recharge to use Burst for the carry's rotation.",
+      sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against Yun Jin's guide. Favonius Lance and Husk of Opulent Dreams are source-backed support options. Her Burst buffs Normal Attack damage based on DEF, so build DEF while maintaining enough Energy Recharge to use Burst for the carry's rotation.",
       artifacts: [
         { name: "Husk of Opulent Dreams 4-piece", note: "Game8-listed DEF-focused support set that improves Yun Jin's scaling." },
         { name: "Noblesse Oblige 4-piece", note: "Team-buff alternative when another character does not already maintain the set and the team benefits from ATK." },
@@ -3035,7 +3035,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       sourceName: "Game8 — Lan Yan Rating and Best Builds",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
-      sourceNote: "Game8 build details verified 24 Oct 2026 against Lan Yan's guide. Viridescent Venerer 4-piece is the universal resistance-shred option and can reach high uptime; her shield and team utility make a support build the standard. Balance ATK for shield strength with EM when Swirl damage and elemental support are priorities.",
+      sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against Lan Yan's guide. Viridescent Venerer 4-piece is the universal resistance-shred option and can reach high uptime; her shield and team utility make a support build the standard. Balance ATK for shield strength with EM when Swirl damage and elemental support are priorities.",
       artifacts: [
         { name: "Viridescent Venerer 4-piece", note: "Game8's standard support set for Swirl and resistance reduction; swirl the relevant enemy aura to apply the right shred." },
         { name: "Viridescent Venerer 2-piece + ATK% 2-piece", note: "Shield/Anemo transition mix when four-piece pieces have weak substats." },
@@ -3061,7 +3061,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       sourceUrl: "https://game8.co/games/Genshin-Impact/archives/297537",
       sourceName: "Game8 — Anemo Traveler Rating and Best Builds",
       game8VerifiedAt: "2026-10-24",
-      sourceNote: "Game8 build details verified 24 Oct 2026 against the Anemo Traveler guide. Viridescent Venerer 4-piece is the support baseline because it combines Swirl damage with resistance reduction. Choose Elemental Mastery for reaction-focused support or ATK/Anemo/CRIT if deliberately prioritizing direct Skill/Burst damage.",
+      sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against the Anemo Traveler guide. Viridescent Venerer 4-piece is the support baseline because it combines Swirl damage with resistance reduction. Choose Elemental Mastery for reaction-focused support or ATK/Anemo/CRIT if deliberately prioritizing direct Skill/Burst damage.",
       artifacts: [
         { name: "Viridescent Venerer 4-piece", note: "Game8's main support option; it needs a Swirl of the element the team wants to reduce resistance to." },
         { name: "Viridescent Venerer 2-piece + ATK% 2-piece", note: "Transitional damage mix when four-piece pieces have weaker substats; it loses the full-set resistance shred." },
@@ -3088,7 +3088,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       sourceName: "Game8 — Dendro Traveler Rating and Best Builds",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
-      sourceNote: "Game8 build details verified 24 Oct 2026 against the Dendro Traveler guide. Deepwood Memories 4-piece is the default when the team needs Dendro RES reduction; Energy Recharge and consistent Burst application are essential. Freedom-Sworn is listed as a team-support option, but choose weapons around the actual rotation and availability.",
+      sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against the Dendro Traveler guide. Deepwood Memories 4-piece is the default when the team needs Dendro RES reduction; Energy Recharge and consistent Burst application are essential. Freedom-Sworn is listed as a team-support option, but choose weapons around the actual rotation and availability.",
       artifacts: [
         { name: "Deepwood Memories 4-piece", note: "Game8's main set when Traveler is responsible for Dendro RES reduction; another teammate can carry it if that gives better uptime." },
         { name: "Noblesse Oblige 4-piece", note: "Team ATK alternative only if Deepwood is already reliably covered and the team benefits from the buff." },
@@ -3115,7 +3115,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       sourceName: "Game8 — Pyro Traveler Rating and Best Builds",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
-      sourceNote: "Game8 build details verified 24 Oct 2026 against the Pyro Traveler guide and Game8's indexed character build table. Scroll of the Hero of Cinder City 4-piece is the team support baseline; Favonius Sword is a practical energy option. Keep enough ER and account for the Traveler's burst/application uptime instead of assuming continuous off-field Pyro.",
+      sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against the Pyro Traveler guide and Game8's indexed character build table. Scroll of the Hero of Cinder City 4-piece is the team support baseline; Favonius Sword is a practical energy option. Keep enough ER and account for the Traveler's burst/application uptime instead of assuming continuous off-field Pyro.",
       artifacts: [
         { name: "Scroll of the Hero of Cinder City 4-piece", note: "Game8's team-buff baseline for reaction teams; trigger the relevant reaction to activate the set effect." },
         { name: "Noblesse Oblige 4-piece", note: "Burst support alternative if another teammate is not already carrying Noblesse and its buff fits the rotation." },
@@ -3142,7 +3142,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       sourceName: "Game8 — Yumemizuki Mizuki Rating and Best Builds",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
-      sourceNote: "Game8 build details verified 24 Oct 2026 against Yumemizuki Mizuki's guide. Sunny Morning Sleep-In and Viridescent Venerer 4-piece are the on-field Swirl baseline. Elemental Mastery is central to her reaction damage and support utility; Energy Recharge depends on the Burst rotation.",
+      sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against Yumemizuki Mizuki's guide. Sunny Morning Sleep-In and Viridescent Venerer 4-piece are the on-field Swirl baseline. Elemental Mastery is central to her reaction damage and support utility; Energy Recharge depends on the Burst rotation.",
       artifacts: [
         { name: "Viridescent Venerer 4-piece", note: "Game8's standard set for Swirl damage and elemental resistance reduction." },
         { name: "Viridescent Venerer 2-piece + Elemental Mastery 2-piece", note: "Transition option while farming the four-piece set." },
@@ -3171,7 +3171,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       sourceName: "Game8 — Arataki Itto Rating and Best Builds",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
-      sourceNote: "Game8 build details verified 24 Oct 2026 against Itto's character build guide and Game8's indexed build table. Redhorn Stonethresher and Husk of Opulent Dreams 4-piece are the main damage pairing. DEF scaling and Burst uptime matter because swapping out ends his Burst window; build a Geo-focused team to support that window.",
+      sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against Itto's character build guide and Game8's indexed build table. Redhorn Stonethresher and Husk of Opulent Dreams 4-piece are the main damage pairing. DEF scaling and Burst uptime matter because swapping out ends his Burst window; build a Geo-focused team to support that window.",
       artifacts: [
         { name: "Husk of Opulent Dreams 4-piece", note: "Game8's standard DEF/Geo damage set for Itto; maintain stacks in the planned rotation." },
         { name: "Husk of Opulent Dreams 2-piece + Archaic Petra 2-piece", note: "Geo/DEF transition mix when the full set has weaker substats." },
@@ -3198,7 +3198,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       sourceName: "Game8 — Sangonomiya Kokomi Rating and Best Builds",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
-      sourceNote: "Game8 build details verified 24 Oct 2026 against Kokomi's guide and Game8's indexed build table. Everlasting Moonglow with Ocean-Hued Clam 4-piece is a source-listed healing/personal-damage pairing. Healing, Hydro application and the party's rotation determine whether this or a team-buffing weapon/set is better.",
+      sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against Kokomi's guide and Game8's indexed build table. Everlasting Moonglow with Ocean-Hued Clam 4-piece is a source-listed healing/personal-damage pairing. Healing, Hydro application and the party's rotation determine whether this or a team-buffing weapon/set is better.",
       artifacts: [
         { name: "Ocean-Hued Clam 4-piece", note: "Game8's standard healing-to-damage set; use consistent healing to build its bubble damage." },
         { name: "Tenacity of the Millelith 4-piece", note: "Team ATK support alternative when Kokomi's Skill can maintain the effect and the party benefits from ATK." },
@@ -3225,7 +3225,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       sourceName: "Game8 — Beidou Rating and Best Builds",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
-      sourceNote: "Game8 build details verified 24 Oct 2026 against Beidou's guide and Game8's indexed build table. Serpent Spine with 4-piece Emblem of Severed Fate is a highlighted damage pairing. Burst uptime is critical; the guide's off-field value depends on using her Burst with a Normal-Attack driver and targets that allow its lightning to bounce.",
+      sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against Beidou's guide and Game8's indexed build table. Serpent Spine with 4-piece Emblem of Severed Fate is a highlighted damage pairing. Burst uptime is critical; the guide's off-field value depends on using her Burst with a Normal-Attack driver and targets that allow its lightning to bounce.",
       artifacts: [
         { name: "Emblem of Severed Fate 4-piece", note: "Game8's highlighted Burst set; improves her major off-field damage source and rewards Energy Recharge." },
         { name: "Thundering Fury 2-piece + Noblesse Oblige 2-piece", note: "Electro/Burst mix when its substats beat the full set and ER remains sufficient." },
@@ -3253,7 +3253,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       sourceName: "Game8 — Collei Rating and Best Builds",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
-      sourceNote: "Game8 build details verified 24 Oct 2026 against Collei's guide and Game8's indexed build table. Elegy for the End and Deepwood Memories 4-piece are the referenced support/off-field pairing. Keep her Burst available for Dendro application and use Deepwood only when she can maintain its resistance reduction better than another Dendro teammate.",
+      sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against Collei's guide and Game8's indexed build table. Elegy for the End and Deepwood Memories 4-piece are the referenced support/off-field pairing. Keep her Burst available for Dendro application and use Deepwood only when she can maintain its resistance reduction better than another Dendro teammate.",
       artifacts: [
         { name: "Deepwood Memories 4-piece", note: "Game8-highlighted Dendro support set; maintain its resistance reduction when the team relies on Dendro damage." },
         { name: "Noblesse Oblige 4-piece", note: "Team ATK option if Deepwood is already covered and another party member is not carrying Noblesse." },
@@ -3280,7 +3280,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       sourceName: "Game8 — Lynette Rating and Best Builds",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
-      sourceNote: "Game8 build details verified 24 Oct 2026 against Lynette's guide and Game8's indexed build table. Viridescent Venerer 4-piece is the standard Anemo support baseline; Freedom-Sworn is a listed premium support weapon. Keep enough ER for Burst and choose EM or direct-damage stats according to her field time and the team's reaction plan.",
+      sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against Lynette's guide and Game8's indexed build table. Viridescent Venerer 4-piece is the standard Anemo support baseline; Freedom-Sworn is a listed premium support weapon. Keep enough ER for Burst and choose EM or direct-damage stats according to her field time and the team's reaction plan.",
       artifacts: [
         { name: "Viridescent Venerer 4-piece", note: "Game8's support set for Swirl and elemental resistance reduction; use it only when Lynette can Swirl the desired aura." },
         { name: "Viridescent Venerer 2-piece + Elemental Mastery 2-piece", note: "Transitional Swirl mix before a strong four-piece set is available." },
