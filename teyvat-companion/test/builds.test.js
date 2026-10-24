@@ -364,12 +364,12 @@ test('build role evidence labels do not imply a character page validates every a
     assert.ok(primaryOption, characterKey + ': primary role option exists');
     if (/does not publish a ranked weapon\/artifact list/i.test(profile.sourceNote || '')) {
       assert.equal(primaryOption.status, 'provisional', characterKey + ': pages without ranked gear lists must be provisional');
+    } else if (profile.game8ReviewStatus === 'reviewed') {
+      assert.equal(primaryOption.status, 'curated', characterKey + ': only explicitly Game8-reviewed primary profiles are curated');
     } else if (profile.sourceCheckedAt == null) {
       assert.equal(primaryOption.status, 'needs-review', characterKey + ': undated profiles need review rather than being called unranked');
-    } else if (/^Game8 —/i.test(profile.sourceName || '') && profile.sourceCheckedAt) {
-      assert.equal(primaryOption.status, 'curated', characterKey + ': explicitly Game8-reviewed primary profiles remain curated');
     } else {
-      assert.equal(primaryOption.status, 'needs-review', characterKey + ': legacy review dates must not be mistaken for Game8 verification');
+      assert.equal(primaryOption.status, 'needs-review', characterKey + ': legacy review dates and direct links must not be mistaken for Game8 verification');
     }
     for (const variant of profile.alternateBuilds || []) {
       const roleOption = options.find(option => option.buildCategory === variant.buildCategory);
@@ -1144,11 +1144,25 @@ test('Game8-reviewed profiles use guide-specific gear, stats, talents and role e
 
 
 
-test('Game8 source lookup prefers verified guide URLs and otherwise uses a Game8-restricted search', () => {
+test('Game8 source lookup returns direct character-specific guide URLs after the migration', () => {
   assert.equal(getGame8SearchUrl('Yelan', 'Sub DPS'), 'https://game8.co/games/Genshin-Impact/archives/372781');
   assert.equal(getGame8SearchUrl('Jean', 'Support'), 'https://game8.co/games/Genshin-Impact/archives/297536');
-  const fallback = getGame8SearchUrl('Skirk', 'Main DPS');
-  assert.match(fallback, /^https:\/\/www\.google\.com\/search\?q=/);
-  assert.match(decodeURIComponent(fallback), /site:game8\.co\/games\/Genshin-Impact\/archives/);
-  assert.match(decodeURIComponent(fallback), /Skirk/);
+  assert.equal(getGame8SearchUrl('Skirk', 'Main DPS'), 'https://game8.co/games/Genshin-Impact/archives/333140');
+  assert.equal(getGame8SearchUrl('Kamisato Ayaka', 'Main DPS'), 'https://game8.co/games/Genshin-Impact/archives/315215');
+  assert.equal(getGame8SearchUrl('Kamisato Ayato', 'Main DPS'), 'https://game8.co/games/Genshin-Impact/archives/345514');
+});
+
+test('every primary character profile links directly to a character-specific Game8 guide without overstating review status', () => {
+  for (const [characterKey, profile] of Object.entries(CHARACTER_BUILD_GUIDES)) {
+    assert.match(profile.sourceUrl, /^https:\/\/game8\.co\/games\/Genshin-Impact\/archives\/[A-Za-z0-9]+(?:[?#].*)?$/, characterKey + ': primary guide link must be a direct Game8 character page');
+    assert.equal(getGame8SearchUrl(characterKey, profile.buildCategory), profile.sourceUrl, characterKey + ': search helper should use the canonical guide URL');
+    assert.ok(['reviewed', 'pending'].includes(profile.game8ReviewStatus), characterKey + ': Game8 detail-review status must be explicit');
+    if (profile.game8ReviewStatus === 'pending' && !/does not publish a ranked weapon\/artifact list/i.test(profile.sourceNote || '')) {
+      assert.match(profile.sourceNote, /Game8 verification pending/i, characterKey + ': linked-but-unreviewed data must be identified honestly');
+    }
+    if (profile.game8ReviewStatus === 'reviewed') {
+      assert.match(profile.sourceName, /^Game8 —/i, characterKey + ': reviewed build should identify Game8');
+      assert.ok(profile.sourceCheckedAt, characterKey + ': reviewed build needs a review date');
+    }
+  }
 });
