@@ -2746,6 +2746,61 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       teamFocus: "Use his Skill and Burst to generate Sourcewater Droplets, then consume them with charged attacks. Include varied elemental teammates to gain his passive's damage bonuses.",
       playstyle: "Prioritize charged-attack uptime and HP/CRIT balance. Don't overcap CRIT Rate when Marechaussee Hunter is active."
     }
+  },
+  ganyu: {
+    primary: {
+      role: "Cryo Main DPS",
+      buildCategory: "Main DPS",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/312173",
+      sourceName: "Game8 — Ganyu Rating and Best Builds",
+      sourceCheckedAt: "2026-10-24",
+      sourceRoleVerified: true,
+      sourceNote: "Checked 24 Oct 2026 against Game8's Ganyu guide. Game8 presents separate Freeze, Melt, and Furina/Marechaussee DPS variants. This primary profile uses the general Freeze baseline; Melt teams can prefer Elemental Mastery sands and Unfinished Reverie. CRIT Rate targets change substantially with Freeze, Cryo Resonance, and set bonuses.",
+      artifacts: [
+        { name: "Blizzard Strayer 4-piece", note: "Game8's general Freeze DPS set; strongest when Cryo/Frozen uptime is maintained." },
+        { name: "Unfinished Reverie 4-piece", note: "Game8-listed Melt alternative when the team maintains the Burning condition needed by the set." },
+        { name: "Marechaussee Hunter 4-piece", note: "Game8-listed alternative for teams using Furina and frequent HP changes; adjust CRIT Rate for its set bonus." }
+      ],
+      stats: { sands: "ATK% / Elemental Mastery (Melt)", goblet: "Cryo DMG Bonus", circlet: "CRIT DMG / CRIT Rate" },
+      substats: ["CRIT Rate / CRIT DMG", "ATK%", "Elemental Mastery for Melt", "Energy Recharge as needed"],
+      weapons: [
+        { name: "The First Great Magic", note: "Game8's featured Freeze option; CRIT DMG and its passive suit charged-shot damage." },
+        { name: "Astral Vulture's Crimson Plumage", note: "Game8-listed option, particularly relevant to reaction-focused builds." },
+        { name: "Aqua Simulacra", note: "Game8-listed CRIT DMG alternative." },
+        { name: "Amos' Bow", note: "Game8-listed charged-attack option." },
+        { name: "Prototype Crescent", note: "Craftable alternative when its weak-point passive can be activated reliably." }
+      ],
+      talentOrder: ["Normal Attack", "Elemental Burst", "Elemental Skill"],
+      teamFocus: "For Freeze, maintain Hydro/Cryo application and use charged shots for sustained damage. For Melt, build around reliable Pyro/Burning setup and consider Elemental Mastery; her Burst also supplies a Cryo DMG bonus inside its field.",
+      playstyle: "Choose Blizzard Strayer for Freeze, Unfinished Reverie for the appropriate Melt setup, or Marechaussee Hunter with Furina. Do not copy the same CRIT target across all three setups."
+    },
+    alternates: [
+      {
+        id: "game8-ganyu-cryo-subdps",
+        role: "Cryo Burst Sub-DPS",
+        buildCategory: "Sub DPS",
+        sourceUrl: "https://game8.co/games/Genshin-Impact/archives/312173",
+        sourceName: "Game8 — Ganyu Cryo Sub-DPS Build",
+        sourceCheckedAt: "2026-10-24",
+        sourceRoleVerified: true,
+        sourceNote: "Game8 explicitly lists a Cryo Sub-DPS build centered on Ganyu's off-field Burst, including a 2-piece Noblesse Oblige + 2-piece Blizzard Strayer combination. Checked 24 Oct 2026.",
+        artifacts: [
+          { name: "Noblesse Oblige 2-piece + Blizzard Strayer 2-piece", note: "Game8's listed Cryo Sub-DPS set combination for Burst damage and Cryo DMG." },
+          { name: "Noblesse Oblige 4-piece", note: "Use only if the party needs the ATK buff and another character is not already maintaining it." }
+        ],
+        stats: { sands: "ATK%", goblet: "Cryo DMG Bonus", circlet: "CRIT Rate / CRIT DMG" },
+        substats: ["CRIT Rate / CRIT DMG", "ATK%", "Energy Recharge for Burst uptime"],
+        weapons: [
+          { name: "Aqua Simulacra", note: "Game8's featured Sub-DPS weapon." },
+          { name: "Elegy for the End", note: "Game8-listed team-support alternative." },
+          { name: "Mouun's Moon", note: "Game8-listed Burst-damage alternative; value depends on team Burst costs and refinement." },
+          { name: "Favonius Warbow", note: "Energy support alternative; build enough CRIT Rate to trigger its passive." }
+        ],
+        talentOrder: ["Elemental Burst", "Normal Attack", "Elemental Skill"],
+        teamFocus: "Use Burst for persistent off-field Cryo damage and its Cryo DMG bonus field, then swap to the on-field carry. Maintain enough ER to cast the Burst every intended rotation.",
+        playstyle: "Unlike charged-shot Main DPS, this build prioritizes Burst uptime and off-field team value. It is not a separate on-field hypercarry setup."
+      }
+    ]
   }
 };
 
