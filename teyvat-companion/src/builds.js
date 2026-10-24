@@ -2833,8 +2833,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
         playstyle: "Unlike charged-shot Main DPS, this build prioritizes Burst uptime and off-field team value. It is not a separate on-field hypercarry setup."
       }
     ]
-  }
-
+  },
   ayaka: {
     primary: {
       role: "Cryo Freeze Main DPS",
