@@ -2362,59 +2362,6 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       }
     ]
   },
-  "hu-tao": {
-    primary: {
-      role: "Pyro Main DPS",
-      buildCategory: "Main DPS",
-      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/314347",
-      sourceName: "Game8 — Hu Tao Rating and Best Builds",
-      sourceCheckedAt: "2026-10-23",
-      sourceNote: "Checked 23 Oct 2026 against Game8's Hu Tao guide. The indexed result is older than the March 2026 guides, so treat new-set coverage as an additional caveat. Game8 explicitly limits Marechaussee Hunter to teams with both Furina and Xianyun using Plunging Attack Vaporize; do not apply that variant to every Hu Tao team.",
-      artifacts: [
-        { name: "Crimson Witch of Flames 4-piece", note: "Standard Vaporize/reaction-oriented option; maintain consistent Hydro application and make use of its reaction bonuses." },
-        { name: "Shimenawa's Reminiscence 4-piece", note: "Charged Attack damage alternative; the Energy drain can affect Burst timing and healing." },
-        { name: "Marechaussee Hunter 4-piece", note: "Game8's specific option for Furina + Xianyun Plunging Attack Vaporize teams; its CRIT Rate bonus needs reliable HP changes." },
-        { name: "Crimson Witch of Flames 2-piece + Elemental Mastery 2-piece", note: "Mixed reaction-stat option while farming; compare substats to complete sets." },
-        { name: "Crimson Witch of Flames 2-piece + Tenacity of the Millelith 2-piece", note: "HP/Pyro hybrid comparison when substats are better; not a source-ranked best-in-slot recommendation." }
-      ],
-      stats: { sands: "HP% / Elemental Mastery", goblet: "Pyro DMG Bonus", circlet: "CRIT Rate / CRIT DMG" },
-      substats: ["CRIT Rate / CRIT DMG", "Elemental Mastery", "HP%", "Energy Recharge only when needed"],
-      weapons: [
-        { name: "Staff of Homa", note: "Game8's featured weapon." },
-        { name: "Staff of the Scarlet Sands", note: "Game8-listed replacement; scales with Elemental Mastery and CRIT needs." },
-        { name: "Ballad of the Fjords", note: "Game8-listed Battle Pass option; value depends on meeting its team-element condition." },
-        { name: "Dragon's Bane", note: "Game8-listed reaction weapon; powerful in Vaporize teams with adequate ER/HP/CRIT." },
-        { name: "Deathmatch", note: "Game8-listed CRIT Rate option." }
-      ],
-      talentOrder: ["Normal Attack", "Elemental Skill", "Elemental Burst"],
-      teamFocus: "Reliable Hydro application enables Vaporize. Keep Hu Tao's Skill window active and do not choose Marechaussee Hunter unless the team reliably activates its HP-change condition.",
-      playstyle: "Level Normal Attack and Skill together; Burst is the next priority for extra damage and self-healing."
-    },
-    alternates: [
-      {
-        id: "game8-marechaussee-plunge",
-        role: "Plunge Vaporize Main DPS (Furina + Xianyun)",
-        buildCategory: "Main DPS",
-        sourceUrl: "https://game8.co/games/Genshin-Impact/archives/314347",
-        sourceName: "Game8 — Hu Tao Marechaussee Plunge build section",
-        sourceCheckedAt: "2026-10-23",
-        sourceRoleVerified: true,
-        sourceNote: "Checked 23 Oct 2026. Game8 specifically describes Marechaussee Hunter for Plunging Attack Vaporize when Furina and Xianyun are both on the team. The guide's indexed article is older, so verify any newer set/weapon options before farming.",
-        artifacts: [{ name: "Marechaussee Hunter 4-piece", note: "Game8's conditional set for the Furina + Xianyun plunge team; outside that setup, prefer a set suited to Hu Tao's actual reaction/attack rotation." }],
-        stats: { sands: "HP% / Elemental Mastery", goblet: "Pyro DMG Bonus", circlet: "CRIT Rate / CRIT DMG" },
-        substats: ["CRIT DMG", "CRIT Rate", "HP%", "Elemental Mastery"],
-        weapons: [
-          { name: "Staff of Homa", note: "Game8's featured weapon for the Hu Tao build." },
-          { name: "Staff of the Scarlet Sands", note: "Game8-listed alternative." },
-          { name: "Ballad of the Fjords", note: "Game8-listed alternative." },
-          { name: "Dragon's Bane", note: "Game8-listed alternative." }
-        ],
-        talentOrder: ["Normal Attack", "Elemental Skill", "Elemental Burst"],
-        teamFocus: "Build around Furina's Hydro application and Xianyun's plunge buff/healing; retain a second Hydro applier if Vaporize consistency requires it.",
-        playstyle: "A team-conditional Main DPS variant, not the default Hu Tao artifact set for every composition."
-      }
-    ]
-  },
   yelan: {
     primary: {
       role: "Off-field Hydro Sub DPS",
@@ -2840,6 +2787,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       buildCategory: "Main DPS",
       sourceUrl: "https://game8.co/games/Genshin-Impact/archives/315215",
       sourceName: "Game8 — Kamisato Ayaka Rating and Best Builds",
+      sourceCheckedAt: "2026-10-22",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
       sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against the Kamisato Ayaka guide. The Freeze-focused baseline uses Mistsplitter Reforged and 4-piece Blizzard Strayer; the exact CRIT Rate target depends on Frozen-enemy uptime, Cryo Resonance and the artifact set bonuses. The earlier legacy catalogue review date is retained separately.",
@@ -2867,6 +2815,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       buildCategory: "Main DPS",
       sourceUrl: "https://game8.co/games/Genshin-Impact/archives/345514",
       sourceName: "Game8 — Kamisato Ayato Rating and Best Builds",
+      sourceCheckedAt: "2026-10-22",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
       sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against the Kamisato Ayato guide. Echoes of an Offering is a leading Normal-Attack-focused option when using Haran Geppaku Futsu; Gladiator's Finale remains a practical comparison. Pick the set using the actual attack pattern, ping/trigger reliability, and strongest existing substats. Earlier legacy review date remains separate.",
@@ -2894,6 +2843,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       buildCategory: "Support",
       sourceUrl: "https://game8.co/games/Genshin-Impact/archives/332826",
       sourceName: "Game8 — Kaedehara Kazuha Rating and Best Builds",
+      sourceCheckedAt: "2026-10-23",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
       sourceNote: "Checked 23 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against Kazuha's guide. Viridescent Venerer 4-piece is the standard support set, and Freedom-Sworn is the featured premium support weapon. Elemental Mastery, Swirl consistency and Energy Recharge are the core concerns; a CRIT/Anemo DPS build is a niche alternative rather than his default team role.",
@@ -2921,6 +2871,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       buildCategory: "Main DPS",
       sourceUrl: "https://game8.co/games/Genshin-Impact/archives/314347",
       sourceName: "Game8 — Hu Tao Rating and Best Builds",
+      sourceCheckedAt: "2026-10-23",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
       sourceNote: "Checked 23 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against Hu Tao's guide. The standard Vaporize setup uses Staff of Homa and 4-piece Crimson Witch of Flames, with Shimenawa's Reminiscence as an alternative and Marechaussee Hunter in teams using both Furina and Xianyun for plunge Vaporize. This role is not interchangeable with a general off-field build.",
@@ -2941,7 +2892,31 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       talentOrder: ["Normal Attack", "Elemental Skill", "Elemental Burst"],
       teamFocus: "Use consistent Hydro application for Vaporize and consider a shielder because Hu Tao's damage pattern usually stays at low HP.",
       playstyle: "Game8's guide supports Crimson Witch, Shimenawa, and a Furina/Xianyun-specific Marechaussee setup. Do not choose the latter unless the team and plunge rotation actually activate its conditions."
-    }
+    },
+    alternates: [
+      {
+        id: "game8-marechaussee-plunge",
+        role: "Plunge Vaporize Main DPS (Furina + Xianyun)",
+        buildCategory: "Main DPS",
+        sourceUrl: "https://game8.co/games/Genshin-Impact/archives/314347",
+        sourceName: "Game8 — Hu Tao Marechaussee Plunge build section",
+        sourceCheckedAt: "2026-10-23",
+        sourceRoleVerified: true,
+        sourceNote: "Checked 23 Oct 2026. Game8 specifically describes Marechaussee Hunter for Plunging Attack Vaporize when Furina and Xianyun are both on the team. The guide's indexed article is older, so verify any newer set/weapon options before farming.",
+        artifacts: [{ name: "Marechaussee Hunter 4-piece", note: "Game8's conditional set for the Furina + Xianyun plunge team; outside that setup, prefer a set suited to Hu Tao's actual reaction/attack rotation." }],
+        stats: { sands: "HP% / Elemental Mastery", goblet: "Pyro DMG Bonus", circlet: "CRIT Rate / CRIT DMG" },
+        substats: ["CRIT DMG", "CRIT Rate", "HP%", "Elemental Mastery"],
+        weapons: [
+          { name: "Staff of Homa", note: "Game8's featured weapon for the Hu Tao build." },
+          { name: "Staff of the Scarlet Sands", note: "Game8-listed alternative." },
+          { name: "Ballad of the Fjords", note: "Game8-listed alternative." },
+          { name: "Dragon's Bane", note: "Game8-listed alternative." }
+        ],
+        talentOrder: ["Normal Attack", "Elemental Skill", "Elemental Burst"],
+        teamFocus: "Build around Furina's Hydro application and Xianyun's plunge buff/healing; retain a second Hydro applier if Vaporize consistency requires it.",
+        playstyle: "A team-conditional Main DPS variant, not the default Hu Tao artifact set for every composition."
+      }
+    ]
   },
   "yae-miko": {
     primary: {
@@ -2949,6 +2924,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       buildCategory: "Sub DPS",
       sourceUrl: "https://game8.co/games/Genshin-Impact/archives/327533",
       sourceName: "Game8 — Yae Miko Rating and Best Builds",
+      sourceCheckedAt: "2026-10-22",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
       sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against Yae Miko's guide. Kagura's Verity and Golden Troupe 4-piece are a core personal-damage pairing for off-field Sesshou Sakura. The best set depends on field time and whether the team needs a Deepwood/other reaction support holder; use a reaction-focused stat spread only when Yae is actually triggering reactions.",
@@ -2977,6 +2953,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       buildCategory: "Support",
       sourceUrl: "https://game8.co/games/Genshin-Impact/archives/346199",
       sourceName: "Game8 — Kuki Shinobu Rating and Best Builds",
+      sourceCheckedAt: "2026-10-22",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
       sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against Kuki Shinobu's guide. Kuki has two distinct support goals: HP/Healing-focused support and full-EM Hyperbloom triggering. Freedom-Sworn can add team utility; the best artifact set depends on whether Kuki owns the Hyperbloom trigger or is primarily maintaining healing and application.",
@@ -3005,6 +2982,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       buildCategory: "Support",
       sourceUrl: "https://game8.co/games/Genshin-Impact/archives/314345",
       sourceName: "Game8 — Yun Jin Rating and Best Builds",
+      sourceCheckedAt: "2026-10-22",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
       sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against Yun Jin's guide. Favonius Lance and Husk of Opulent Dreams are source-backed support options. Her Burst buffs Normal Attack damage based on DEF, so build DEF while maintaining enough Energy Recharge to use Burst for the carry's rotation.",
@@ -3032,6 +3010,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       buildCategory: "Support",
       sourceUrl: "https://game8.co/games/Genshin-Impact/archives/486709",
       sourceName: "Game8 — Lan Yan Rating and Best Builds",
+      sourceCheckedAt: "2026-10-22",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
       sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against Lan Yan's guide. Viridescent Venerer 4-piece is the universal resistance-shred option and can reach high uptime; her shield and team utility make a support build the standard. Balance ATK for shield strength with EM when Swirl damage and elemental support are priorities.",
@@ -3059,6 +3038,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       buildCategory: "Support",
       sourceUrl: "https://game8.co/games/Genshin-Impact/archives/297537",
       sourceName: "Game8 — Anemo Traveler Rating and Best Builds",
+      sourceCheckedAt: "2026-10-22",
       game8VerifiedAt: "2026-10-24",
       sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against the Anemo Traveler guide. Viridescent Venerer 4-piece is the support baseline because it combines Swirl damage with resistance reduction. Choose Elemental Mastery for reaction-focused support or ATK/Anemo/CRIT if deliberately prioritizing direct Skill/Burst damage.",
       artifacts: [
@@ -3085,6 +3065,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       buildCategory: "Support",
       sourceUrl: "https://game8.co/games/Genshin-Impact/archives/381807",
       sourceName: "Game8 — Dendro Traveler Rating and Best Builds",
+      sourceCheckedAt: "2026-10-22",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
       sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against the Dendro Traveler guide. Deepwood Memories 4-piece is the default when the team needs Dendro RES reduction; Energy Recharge and consistent Burst application are essential. Freedom-Sworn is listed as a team-support option, but choose weapons around the actual rotation and availability.",
@@ -3112,6 +3093,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       buildCategory: "Support",
       sourceUrl: "https://game8.co/games/Genshin-Impact/archives/470309",
       sourceName: "Game8 — Pyro Traveler Rating and Best Builds",
+      sourceCheckedAt: "2026-10-22",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
       sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against the Pyro Traveler guide and Game8's indexed character build table. Scroll of the Hero of Cinder City 4-piece is the team support baseline; Favonius Sword is a practical energy option. Keep enough ER and account for the Traveler's burst/application uptime instead of assuming continuous off-field Pyro.",
@@ -3139,6 +3121,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       buildCategory: "Main DPS",
       sourceUrl: "https://game8.co/games/Genshin-Impact/archives/492414",
       sourceName: "Game8 — Yumemizuki Mizuki Rating and Best Builds",
+      sourceCheckedAt: "2026-10-22",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
       sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against Yumemizuki Mizuki's guide. Sunny Morning Sleep-In and Viridescent Venerer 4-piece are the on-field Swirl baseline. Elemental Mastery is central to her reaction damage and support utility; Energy Recharge depends on the Burst rotation.",
@@ -3168,6 +3151,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       buildCategory: "Main DPS",
       sourceUrl: "https://game8.co/games/Genshin-Impact/archives/345461",
       sourceName: "Game8 — Arataki Itto Rating and Best Builds",
+      sourceCheckedAt: "2026-10-22",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
       sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against Itto's character build guide and Game8's indexed build table. Redhorn Stonethresher and Husk of Opulent Dreams 4-piece are the main damage pairing. DEF scaling and Burst uptime matter because swapping out ends his Burst window; build a Geo-focused team to support that window.",
@@ -3195,6 +3179,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       buildCategory: "Support",
       sourceUrl: "https://game8.co/games/Genshin-Impact/archives/337140",
       sourceName: "Game8 — Sangonomiya Kokomi Rating and Best Builds",
+      sourceCheckedAt: "2026-10-22",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
       sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against Kokomi's guide and Game8's indexed build table. Everlasting Moonglow with Ocean-Hued Clam 4-piece is a source-listed healing/personal-damage pairing. Healing, Hydro application and the party's rotation determine whether this or a team-buffing weapon/set is better.",
@@ -3222,6 +3207,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       buildCategory: "Sub DPS",
       sourceUrl: "https://game8.co/games/Genshin-Impact/archives/297528",
       sourceName: "Game8 — Beidou Rating and Best Builds",
+      sourceCheckedAt: "2026-10-22",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
       sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against Beidou's guide and Game8's indexed build table. Serpent Spine with 4-piece Emblem of Severed Fate is a highlighted damage pairing. Burst uptime is critical; the guide's off-field value depends on using her Burst with a Normal-Attack driver and targets that allow its lightning to bounce.",
@@ -3250,6 +3236,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       buildCategory: "Sub DPS",
       sourceUrl: "https://game8.co/games/Genshin-Impact/archives/382079",
       sourceName: "Game8 — Collei Rating and Best Builds",
+      sourceCheckedAt: "2026-10-22",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
       sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against Collei's guide and Game8's indexed build table. Elegy for the End and Deepwood Memories 4-piece are the referenced support/off-field pairing. Keep her Burst available for Dendro application and use Deepwood only when she can maintain its resistance reduction better than another Dendro teammate.",
@@ -3277,6 +3264,7 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       buildCategory: "Support",
       sourceUrl: "https://game8.co/games/Genshin-Impact/archives/345879",
       sourceName: "Game8 — Lynette Rating and Best Builds",
+      sourceCheckedAt: "2026-10-22",
       game8VerifiedAt: "2026-10-24",
       sourceRoleVerified: true,
       sourceNote: "Checked 22 Oct 2026 in the prior source-catalogue review; Game8 build details verified 24 Oct 2026 against Lynette's guide and Game8's indexed build table. Viridescent Venerer 4-piece is the standard Anemo support baseline; Freedom-Sworn is a listed premium support weapon. Keep enough ER for Burst and choose EM or direct-damage stats according to her field time and the team's reaction plan.",
