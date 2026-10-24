@@ -2463,6 +2463,286 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
         playstyle: "A Game8-supported artifact variant inside the Main DPS role, not a separate Sub DPS recommendation."
       }
     ]
+  },
+  nahida: {
+    primary: {
+      role: "Dendro Support / Sub-DPS",
+      buildCategory: "Sub DPS",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/383713",
+      sourceName: "Game8 — Nahida Best Builds and Teams",
+      sourceCheckedAt: "2026-10-23",
+      sourceRoleVerified: true,
+      sourceNote: "Checked 23 Oct 2026 against Game8's Nahida guide. Game8 lists A Thousand Floating Dreams and 4-piece Deepwood Memories as the standard build core. EM versus Dendro DMG and CRIT main stats depend on whether the team needs a full support build or more personal Spread damage; keep enough ER for the team's Burst rotation.",
+      artifacts: [
+        { name: "Deepwood Memories 4-piece", note: "Game8's recommended set when the team needs Dendro RES reduction; normally the default unless another teammate already provides reliable Deepwood uptime." },
+        { name: "Gilded Dreams 4-piece", note: "Game8-listed personal-damage alternative when a teammate already carries Deepwood Memories." }
+      ],
+      stats: { sands: "Elemental Mastery", goblet: "Elemental Mastery / Dendro DMG Bonus", circlet: "Elemental Mastery / CRIT Rate / CRIT DMG" },
+      substats: ["Elemental Mastery to suit team buffs and reaction ownership", "CRIT Rate / CRIT DMG", "Energy Recharge for Burst uptime", "ATK%"],
+      weapons: [
+        { name: "A Thousand Floating Dreams", note: "Game8's featured weapon; adds Elemental Mastery and team utility." },
+        { name: "Sacrificial Fragments", note: "Game8-listed Elemental Mastery alternative." },
+        { name: "Wandering Evenstar", note: "Game8-listed support-oriented alternative." },
+        { name: "The Widsith", note: "Game8-listed damage option; its random passive makes performance vary by rotation." },
+        { name: "Magic Guide", note: "Accessible low-rarity option when its passive condition is maintained." }
+      ],
+      talentOrder: ["Elemental Skill", "Elemental Burst", "Normal Attack"],
+      teamFocus: "Pair Nahida with teammates that trigger Dendro reactions. Her Burst buffs the active character's Elemental Mastery; her Skill is the main source of off-field Dendro application and damage.",
+      playstyle: "Choose triple EM for a support-focused build or trade some EM for Dendro DMG/CRIT when personal damage matters. Do not equip Gilded Dreams if the team then loses its only reliable Deepwood holder."
+    },
+    alternates: [
+      {
+        id: "game8-support-triple-em",
+        role: "Elemental Mastery Support",
+        buildCategory: "Support",
+        sourceUrl: "https://game8.co/games/Genshin-Impact/archives/383713",
+        sourceName: "Game8 — Nahida Support Build",
+        sourceCheckedAt: "2026-10-23",
+        sourceRoleVerified: true,
+        sourceNote: "Game8 explicitly presents a Support build focused on reaching up to 1,000 Elemental Mastery to maximize the active character's Burst-based EM buff. Checked 23 Oct 2026.",
+        artifacts: [{ name: "Deepwood Memories 4-piece", note: "Game8's recommended team set; keep this effect on the party if Nahida swaps to another set." }],
+        stats: { sands: "Elemental Mastery", goblet: "Elemental Mastery", circlet: "Elemental Mastery" },
+        substats: ["Elemental Mastery toward the 1,000 EM cap", "Energy Recharge as needed", "CRIT Rate if using Favonius Codex"],
+        weapons: [{ name: "A Thousand Floating Dreams", note: "Game8's featured option." }, { name: "Sacrificial Fragments", note: "Elemental Mastery alternative." }, { name: "Magic Guide", note: "Accessible option for reaction teams." }],
+        talentOrder: ["Elemental Skill", "Elemental Burst", "Normal Attack"],
+        teamFocus: "Use the Burst before the on-field reaction driver takes their turn; keep Deepwood RES reduction active on enemies.",
+        playstyle: "This is the dedicated buffing variant. It is not the highest-personal-damage setup in every team."
+      },
+      {
+        id: "game8-on-field-dendro-driver",
+        role: "On-field Dendro Driver",
+        buildCategory: "Main DPS",
+        sourceUrl: "https://game8.co/games/Genshin-Impact/archives/383713",
+        sourceName: "Game8 — Nahida On-Field Playstyle",
+        sourceCheckedAt: "2026-10-23",
+        sourceRoleVerified: true,
+        sourceNote: "Game8's guide covers on-field and off-field playstyles; this variant uses Nahida's Normal Attacks to drive Dendro application while maintaining Skill damage. It is team-dependent, not a universal hypercarry ranking.",
+        artifacts: [{ name: "Deepwood Memories 4-piece", note: "Use when the team needs Nahida to provide Dendro RES reduction." }, { name: "Gilded Dreams 4-piece", note: "Use when another teammate reliably carries Deepwood Memories." }],
+        stats: { sands: "Elemental Mastery", goblet: "Dendro DMG Bonus / Elemental Mastery", circlet: "CRIT Rate / CRIT DMG / Elemental Mastery" },
+        substats: ["CRIT Rate / CRIT DMG", "Elemental Mastery", "Energy Recharge as needed", "ATK%"],
+        weapons: [{ name: "A Thousand Floating Dreams", note: "Signature option." }, { name: "The Widsith", note: "Personal-damage alternative." }, { name: "Sacrificial Fragments", note: "Elemental Mastery alternative." }],
+        talentOrder: ["Elemental Skill", "Normal Attack", "Elemental Burst"],
+        teamFocus: "Use Normal Attacks to drive off-field effects and reaction teammates; prioritize team reaction synergy over forcing a solo-carry setup.",
+        playstyle: "A viable on-field driver variant. The role is not automatically optimal in teams where another character needs field time."
+      }
+    ]
+  },
+  raiden: {
+    primary: {
+      role: "Electro Burst Sub-DPS / Battery",
+      buildCategory: "Sub DPS",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/337161",
+      sourceName: "Game8 — Raiden Shogun Best Builds and Teams",
+      sourceCheckedAt: "2026-10-23",
+      sourceRoleVerified: true,
+      sourceNote: "Checked 23 Oct 2026 against Game8's Raiden Shogun guide. Game8's core build is 4-piece Emblem of Severed Fate with Engulfing Lightning or The Catch. ER versus ATK sands and ATK versus Electro goblet depend on weapon, buffs, and team rotation.",
+      artifacts: [
+        { name: "Emblem of Severed Fate 4-piece", note: "Game8's primary set for Burst damage and Energy Recharge scaling." },
+        { name: "Emblem of Severed Fate 2-piece + Noblesse Oblige 2-piece", note: "Mixed-set fallback when a complete Emblem set has substantially worse substats." }
+      ],
+      stats: { sands: "Energy Recharge / ATK%", goblet: "Electro DMG Bonus / ATK%", circlet: "CRIT Rate / CRIT DMG" },
+      substats: ["CRIT Rate / CRIT DMG", "Energy Recharge to meet the rotation", "ATK%", "Elemental Mastery only for reaction-focused variants"],
+      weapons: [
+        { name: "Engulfing Lightning", note: "Game8's signature weapon; its ER scaling supports Burst uptime and damage." },
+        { name: "The Catch R5", note: "Strong accessible free option for Burst damage and CRIT Rate." },
+        { name: "Wavebreaker's Fin", note: "Game8-listed damage alternative; value depends on refinement and total team Burst cost." },
+        { name: "Staff of Homa", note: "Offensive alternative; check that the build still has sufficient ER." }
+      ],
+      talentOrder: ["Elemental Burst", "Elemental Skill", "Normal Attack"],
+      teamFocus: "Use Skill before teammates' damage windows to apply Electro and boost Burst damage, then use Raiden's Burst after the team has spent its Bursts. Build around the team's energy needs.",
+      playstyle: "Her most broadly recommended role is Burst Sub-DPS and battery. A dedicated Main DPS section remains role-adapted unless a specific on-field carry setup is chosen."
+    },
+    alternates: [
+      {
+        id: "game8-on-field-burst-carry",
+        role: "On-field Burst Carry",
+        buildCategory: "Main DPS",
+        sourceUrl: "https://game8.co/games/Genshin-Impact/archives/337161",
+        sourceName: "Game8 — Raiden Shogun On-field Burst Build",
+        sourceCheckedAt: "2026-10-23",
+        sourceRoleVerified: true,
+        sourceNote: "Game8's guide supports Raiden's on-field Burst damage window. This is a field-time/rotation distinction from Sub-DPS, not a claim that her artifact set should change.",
+        artifacts: [{ name: "Emblem of Severed Fate 4-piece", note: "The same core set supports Burst damage in her on-field window." }],
+        stats: { sands: "Energy Recharge / ATK%", goblet: "Electro DMG Bonus / ATK%", circlet: "CRIT Rate / CRIT DMG" },
+        substats: ["CRIT Rate / CRIT DMG", "Energy Recharge for the full rotation", "ATK%"],
+        weapons: [{ name: "Engulfing Lightning", note: "Signature option." }, { name: "The Catch R5", note: "Accessible free option." }, { name: "Staff of Homa", note: "Damage alternative; check Energy Recharge." }],
+        talentOrder: ["Elemental Burst", "Elemental Skill", "Normal Attack"],
+        teamFocus: "Build Resolve stacks, use teammate Bursts first, then keep Raiden on-field for her Burst window and energy restoration.",
+        playstyle: "The gear overlaps with Sub-DPS because her Burst is still the damage source; the role change is the rotation and field time."
+      }
+    ]
+  },
+  zhongli: {
+    primary: {
+      role: "Geo Shielder / Support",
+      buildCategory: "Support",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/305858",
+      sourceName: "Game8 — Zhongli Best Builds and Teams",
+      sourceCheckedAt: "2026-10-23",
+      sourceRoleVerified: true,
+      sourceNote: "Checked 23 Oct 2026 against Game8's Zhongli guide and build summary. Game8 recommends Black Tassel and 4-piece Tenacity of the Millelith for a shield-focused support. HP stacking is the safe baseline; offensive Burst variants should be treated separately from this support build.",
+      artifacts: [
+        { name: "Tenacity of the Millelith 4-piece", note: "Game8's recommended support set; its party ATK and shield-strength effects require reliable Skill hits." },
+        { name: "Archaic Petra 4-piece", note: "Situational elemental-damage support option; the holder must collect the correct Crystallize shard to provide the intended buff." }
+      ],
+      stats: { sands: "HP%", goblet: "HP%", circlet: "HP%" },
+      substats: ["HP%", "HP", "Energy Recharge", "CRIT Rate if using Favonius Lance"],
+      weapons: [
+        { name: "Black Tassel", note: "Game8's featured shield-focused weapon; its HP secondary stat improves shield durability." },
+        { name: "Favonius Lance", note: "Team-energy option; build enough CRIT Rate to trigger its passive reliably." },
+        { name: "Staff of Homa", note: "Premium offensive option that also provides HP; not required for a strong shield." }
+      ],
+      talentOrder: ["Elemental Skill", "Elemental Burst", "Normal Attack"],
+      teamFocus: "Hold Skill to create the shield and apply universal RES reduction. Place the pillar carefully so it does not interfere with the team's positioning or reactions.",
+      playstyle: "Prioritize shield uptime and durability. If the shield is already comfortable, consider ER or offensive stats instead of blindly stacking more HP."
+    },
+    alternates: [
+      {
+        id: "game8-burst-damage",
+        role: "Burst Damage / Quickswap",
+        buildCategory: "Sub DPS",
+        sourceUrl: "https://game8.co/games/Genshin-Impact/archives/305858",
+        sourceName: "Game8 — Zhongli Burst Damage Variant",
+        sourceCheckedAt: "2026-10-23",
+        sourceRoleVerified: true,
+        sourceNote: "Game8's character guide covers offensive alternatives, but this is a secondary playstyle rather than the shield-first default. Choose it only if the team can afford less shield investment and the Burst animation is worth its field time.",
+        artifacts: [{ name: "Archaic Petra 2-piece + Noblesse Oblige 2-piece", note: "Geo DMG and Burst DMG combination for a personal-damage variant." }, { name: "Tenacity of the Millelith 4-piece", note: "Retain the support set when the team buff is worth more than Zhongli's personal damage." }],
+        stats: { sands: "HP% / ATK%", goblet: "Geo DMG Bonus", circlet: "CRIT Rate / CRIT DMG" },
+        substats: ["CRIT Rate / CRIT DMG", "HP%", "ATK%", "Energy Recharge as needed"],
+        weapons: [{ name: "Staff of Homa", note: "Offensive option with HP synergy." }, { name: "Primordial Jade Winged-Spear", note: "Personal-damage alternative." }, { name: "Favonius Lance", note: "Utility option if the team needs particles." }],
+        talentOrder: ["Elemental Burst", "Elemental Skill", "Normal Attack"],
+        teamFocus: "Use the Burst only when its damage or petrification contributes more than the field time it consumes; keep enough shield strength for the content.",
+        playstyle: "A lower-priority build compared with shield support. The role is explicitly secondary and should not be assumed to outperform the support setup."
+      }
+    ]
+  },
+  bennett: {
+    primary: {
+      role: "Pyro Support / Healer / ATK Buffer",
+      buildCategory: "Support",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/297522",
+      sourceName: "Game8 — Bennett Best Builds and Teams",
+      sourceCheckedAt: "2026-10-23",
+      sourceRoleVerified: true,
+      sourceNote: "Checked 23 Oct 2026 against Game8's Bennett guide. For the standard support build, prioritize Burst uptime and a high-base-ATK weapon; the Burst's ATK buff scales with Bennett's base ATK, not his artifact ATK%.",
+      artifacts: [
+        { name: "Noblesse Oblige 4-piece", note: "Game8's standard support set when another teammate is not already using its 4-piece effect." },
+        { name: "Emblem of Severed Fate 4-piece", note: "Alternative when personal Burst damage and ER are more important than providing the Noblesse team buff." }
+      ],
+      stats: { sands: "Energy Recharge / HP%", goblet: "HP%", circlet: "Healing Bonus / HP%" },
+      substats: ["Energy Recharge until Burst is reliable", "HP% for more healing", "CRIT Rate when using Favonius Sword"],
+      weapons: [
+        { name: "Mistsplitter Reforged", note: "High base ATK increases Bennett's Burst buff; the offensive passive is secondary for a support build." },
+        { name: "Aquila Favonia", note: "High-base-ATK option for a stronger buff." },
+        { name: "Sapwood Blade", note: "Accessible craftable option with useful ER." },
+        { name: "Favonius Sword", note: "Team-energy option; build CRIT Rate to trigger its passive." },
+        { name: "Skyward Blade", note: "High-base-ATK option with ER utility." }
+      ],
+      talentOrder: ["Elemental Burst", "Elemental Skill", "Normal Attack"],
+      teamFocus: "Use Burst before the carry's damage window. A high-base-ATK sword increases the buff; ER determines whether the Burst is ready again.",
+      playstyle: "Do not spend resources chasing ATK% artifacts to improve his buff. Level his character and weapon base ATK, then meet the team's ER requirement."
+    }
+  },
+  furina: {
+    primary: {
+      role: "Off-field Hydro Sub-DPS / Buffer",
+      buildCategory: "Sub DPS",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/417212",
+      sourceName: "Game8 — Furina Best Builds and Teams",
+      sourceCheckedAt: "2026-10-23",
+      sourceRoleVerified: true,
+      sourceNote: "Checked 23 Oct 2026 against Game8's Furina guide. Golden Troupe is the standard off-field Skill-damage set; HP, CRIT, and Energy Recharge balance depends on weapon, team energy, and whether her Burst is available every rotation. Teamwide healing is important for maximizing Fanfare.",
+      artifacts: [
+        { name: "Golden Troupe 4-piece", note: "Game8's recommended set for off-field Skill damage; the off-field bonus is the main reason to use it." },
+        { name: "Golden Troupe 2-piece + HP% 2-piece", note: "Practical fallback when the complete set has substantially worse substats." },
+        { name: "Tenacity of the Millelith 4-piece", note: "Situational team-buff alternative; personal damage is generally lower than with Golden Troupe." }
+      ],
+      stats: { sands: "HP% / Energy Recharge", goblet: "HP% / Hydro DMG Bonus", circlet: "CRIT Rate / CRIT DMG" },
+      substats: ["Energy Recharge to meet the team's rotation", "CRIT Rate / CRIT DMG", "HP%", "Elemental Mastery only for relevant reaction ownership"],
+      weapons: [
+        { name: "Splendor of Tranquil Waters", note: "Signature weapon for personal Skill damage; check whether the team can meet ER needs." },
+        { name: "Festering Desire", note: "Strong event-weapon alternative if owned." },
+        { name: "Fleuve Cendre Ferryman", note: "Accessible ER and Skill-CRIT option." },
+        { name: "Favonius Sword", note: "Team-energy option; build enough CRIT Rate to trigger it." }
+      ],
+      talentOrder: ["Elemental Skill", "Elemental Burst", "Normal Attack"],
+      teamFocus: "Use Skill for off-field Hydro damage, then Burst to buff the team's damage through Fanfare. Pair her with teamwide healing to offset the Salon Members' HP drain.",
+      playstyle: "Balance HP and CRIT after meeting ER needs. Do not assume HP% goblet always wins over Hydro DMG; compare substats and team buffs."
+    },
+    alternates: [
+      {
+        id: "game8-support-buffer",
+        role: "Hydro Support / Fanfare Buffer",
+        buildCategory: "Support",
+        sourceUrl: "https://game8.co/games/Genshin-Impact/archives/417212",
+        sourceName: "Game8 — Furina Support Build",
+        sourceCheckedAt: "2026-10-23",
+        sourceRoleVerified: true,
+        sourceNote: "Game8's guide describes Furina's teamwide Burst buff and healing-dependent Fanfare mechanic. This support-oriented variant prioritizes reliable Burst uptime and team healing rather than maximum personal damage.",
+        artifacts: [{ name: "Golden Troupe 4-piece", note: "Retains strong Skill damage while Furina supports the team." }, { name: "Tenacity of the Millelith 4-piece", note: "Consider only if team-buff uptime is reliable and valued over personal damage." }],
+        stats: { sands: "Energy Recharge / HP%", goblet: "HP% / Hydro DMG Bonus", circlet: "CRIT Rate / CRIT DMG / HP%" },
+        substats: ["Energy Recharge for reliable Burst uptime", "HP%", "CRIT Rate / CRIT DMG"],
+        weapons: [{ name: "Fleuve Cendre Ferryman", note: "Accessible ER option." }, { name: "Favonius Sword", note: "Team-energy option." }, { name: "Splendor of Tranquil Waters", note: "Personal-damage option if ER is sufficient." }],
+        talentOrder: ["Elemental Burst", "Elemental Skill", "Normal Attack"],
+        teamFocus: "Pair Furina with a healer that can restore multiple teammates' HP so the party can build Fanfare stacks efficiently.",
+        playstyle: "The support distinction is team-buff uptime and party healing; her Skill remains a major source of personal damage."
+      }
+    ]
+  },
+  xiangling: {
+    primary: {
+      role: "Off-field Pyro Sub-DPS",
+      buildCategory: "Sub DPS",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/297530",
+      sourceName: "Game8 — Xiangling Best Builds and Teams",
+      sourceCheckedAt: "2026-10-23",
+      sourceRoleVerified: true,
+      sourceNote: "Checked 23 Oct 2026 against Game8's Xiangling guide. Emblem of Severed Fate is the standard Burst-focused set; Energy Recharge is a real damage and usability stat because Pyronado is expensive and most of her damage comes from her Burst.",
+      artifacts: [
+        { name: "Emblem of Severed Fate 4-piece", note: "Game8's main Burst set, improving Burst damage based on Energy Recharge." },
+        { name: "Crimson Witch of Flames 4-piece", note: "Reaction-focused alternative when the team and substats suit it." },
+        { name: "Emblem of Severed Fate 2-piece + Noblesse Oblige 2-piece", note: "Mixed-set alternative while farming a complete set." }
+      ],
+      stats: { sands: "Energy Recharge / ATK%", goblet: "Pyro DMG Bonus", circlet: "CRIT Rate / CRIT DMG" },
+      substats: ["Energy Recharge for Burst uptime", "CRIT Rate / CRIT DMG", "ATK%", "Elemental Mastery in reaction teams"],
+      weapons: [
+        { name: "Engulfing Lightning", note: "Premium option that converts Energy Recharge into offensive value." },
+        { name: "The Catch R5", note: "Accessible free option for Burst damage and CRIT Rate." },
+        { name: "Dragon's Bane", note: "Strong reaction-focused option when Xiangling reliably triggers Vaporize." },
+        { name: "Wavebreaker's Fin", note: "Burst-damage alternative whose value depends on refinement and team Burst costs." },
+        { name: "Favonius Lance", note: "Team-energy option when the rotation needs particles." }
+      ],
+      talentOrder: ["Elemental Burst", "Elemental Skill", "Normal Attack"],
+      teamFocus: "Pair Xiangling with reliable Hydro application for Vaporize and an energy plan, often including Bennett. Snapshotting and rotation order matter for Pyronado uptime.",
+      playstyle: "Meet the rotation's ER requirement before maximizing CRIT. The best sands and weapon depend on how much energy the team supplies."
+    }
+  },
+  neuvillette: {
+    primary: {
+      role: "On-field Hydro Main DPS",
+      buildCategory: "Main DPS",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/393054",
+      sourceName: "Game8 — Neuvillette Best Builds and Teams",
+      sourceCheckedAt: "2026-10-23",
+      sourceRoleVerified: true,
+      sourceNote: "Checked 23 Oct 2026 against Game8's Neuvillette guide. Marechaussee Hunter is the standard charged-attack set, and HP% is central to his damage scaling. Rebalance CRIT Rate around the 4-piece set bonus and the weapon rather than overcapping.",
+      artifacts: [
+        { name: "Marechaussee Hunter 4-piece", note: "Game8's standard set for his charged-attack damage and CRIT Rate from HP changes." },
+        { name: "Heart of Depth 4-piece", note: "Hydro damage alternative when the team/available pieces make it preferable." },
+        { name: "Marechaussee Hunter 2-piece + Heart of Depth 2-piece", note: "Mixed-set fallback while farming a complete set." }
+      ],
+      stats: { sands: "HP%", goblet: "Hydro DMG Bonus / HP%", circlet: "CRIT DMG / CRIT Rate" },
+      substats: ["CRIT DMG", "CRIT Rate to the needed target after set bonuses", "HP%", "Energy Recharge as needed"],
+      weapons: [
+        { name: "Tome of the Eternal Flow", note: "Signature weapon with CRIT DMG and charged-attack/HP synergy." },
+        { name: "Sacrificial Jade", note: "Strong Battle Pass option when its HP and CRIT effects fit the build." },
+        { name: "Prototype Amber", note: "Craftable option with HP, energy, and team healing utility." },
+        { name: "Lost Prayer to the Sacred Winds", note: "CRIT Rate option; avoid overcapping CRIT with Marechaussee Hunter." }
+      ],
+      talentOrder: ["Normal Attack", "Elemental Skill", "Elemental Burst"],
+      teamFocus: "Use his Skill and Burst to generate Sourcewater Droplets, then consume them with charged attacks. Include varied elemental teammates to gain his passive's damage bonuses.",
+      playstyle: "Prioritize charged-attack uptime and HP/CRIT balance. Don't overcap CRIT Rate when Marechaussee Hunter is active."
+    }
   }
 };
 
