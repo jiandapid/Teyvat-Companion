@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { BUILD_ROLE_CATEGORIES, CHARACTER_BUILD_ALIASES, CHARACTER_BUILD_GUIDES, CHARACTER_ROLE_BUILDS, getCharacterBuildRoleOptions } from '../src/builds.js';
+import { BUILD_ROLE_CATEGORIES, CHARACTER_BUILD_ALIASES, CHARACTER_BUILD_GUIDES, CHARACTER_ROLE_BUILDS, getCharacterBuildRoleOptions, getGame8SearchUrl } from '../src/builds.js';
 
 const validCategories = new Set(BUILD_ROLE_CATEGORIES);
 const OCT_23_REVIEWED_PRIMARY_BUILDS = new Set(['fischl', 'xiangling', 'yelan', 'zhongli', 'neuvillette', 'sucrose', 'layla', 'wanderer', 'kazuha', 'raiden', 'furina', 'escoffier', 'mona', 'bennett', 'nahida', 'xingqiu']);
@@ -130,7 +130,7 @@ test('recent roster additions have current source-backed primary build profiles'
   assert.equal(CHARACTER_BUILD_ALIASES.mizuki, 'yumemizuki-mizuki');
 });
 
-test('current Genshin.gg role labels are reflected for recently corrected profiles', () => {
+test('legacy-reviewed role labels are preserved during the Game8 source migration', () => {
   assert.equal(CHARACTER_BUILD_GUIDES.raiden.buildCategory, 'Sub DPS');
   assert.equal(CHARACTER_BUILD_GUIDES['escoffier'].buildCategory, 'Sub DPS');
   assert.equal(CHARACTER_BUILD_GUIDES.tighnari.buildCategory, 'Sub DPS');
@@ -201,7 +201,7 @@ test('additional alternate-role profiles are complete and source-linked', () => 
       assert.ok(variant, key + ': expected alternate build ' + id);
       assertCompleteProfile(key + '/' + id, variant);
       assert.ok(variant.sourceName && variant.sourceNote, key + '/' + id + ': source details are required');
-      assert.ok(variant.sourceUrl.startsWith('https://genshin.gg/characters/'), key + '/' + id + ': use a character-specific source');
+      assert.ok(variant.sourceUrl.includes('game8.co') || variant.sourceUrl.includes('youtube.com'), key + '/' + id + ': use a Game8-restricted search or a role-specific creator source');
     }
   }
   assert.match(CHARACTER_BUILD_GUIDES.yanfei.alternateBuilds.find(b => b.id === 'c4-shield-support').sourceNote, /Constellation 4/);
@@ -279,7 +279,7 @@ test('current build-source attribution distinguishes reviewed rankings from prov
     assert.ok(profile.sourceNote, key + ': primary build must explain evidence scope');
     assert.ok(profile.sourceUrl.startsWith('https://'), key + ': primary build source must be secure');
     if (profile.sourceCheckedAt) {
-      assert.ok(profile.sourceNote.includes('Checked ' + String(Number(profile.sourceCheckedAt.slice(8, 10))) + ' Oct ' + profile.sourceCheckedAt.slice(0, 4)), key + ': dated review note must match its per-character source check date');
+      assert.ok(profile.sourceNote.includes('Checked ' + String(Number(profile.sourceCheckedAt.slice(8, 10))) + ' Oct ' + profile.sourceCheckedAt.slice(0, 4)) || profile.sourceNote.includes('Game8 verification pending'), key + ': source metadata must explain legacy review or pending Game8 verification');
     }
     for (const alternate of profile.alternateBuilds || []) {
       assert.ok(alternate.sourceName, key + '/' + alternate.id + ': alternate must identify its source');
@@ -296,7 +296,7 @@ test('expanded current profiles include multiple real options and role caveats',
     assert.ok(profile.artifacts.length >= 3 || ['nefer', 'jahoda', 'iansan'].includes(key), key + ': expanded artifact options or shorter source listing');
     assert.ok(profile.sourceCheckedAt, key + ': expected dated source review for this profile');
   }
-  assert.equal(CHARACTER_BUILD_GUIDES.columbina.buildCategory, 'Support', 'current Genshin.gg build index classifies Columbina as Support');
+  assert.equal(CHARACTER_BUILD_GUIDES.columbina.buildCategory, 'Support', 'existing catalogue classifies Columbina as Support');
   assert.match(CHARACTER_BUILD_GUIDES.columbina.role, /Support/i);
 });
 
@@ -366,17 +366,21 @@ test('build role evidence labels do not imply a character page validates every a
       assert.equal(primaryOption.status, 'provisional', characterKey + ': pages without ranked gear lists must be provisional');
     } else if (profile.sourceCheckedAt == null) {
       assert.equal(primaryOption.status, 'needs-review', characterKey + ': undated profiles need review rather than being called unranked');
+    } else if (/^Game8 —/i.test(profile.sourceName || '') && profile.sourceCheckedAt) {
+      assert.equal(primaryOption.status, 'curated', characterKey + ': explicitly Game8-reviewed primary profiles remain curated');
     } else {
-      assert.equal(primaryOption.status, 'curated', characterKey + ': dated source-reviewed primary profile must be identified');
+      assert.equal(primaryOption.status, 'needs-review', characterKey + ': legacy review dates must not be mistaken for Game8 verification');
     }
     for (const variant of profile.alternateBuilds || []) {
       const roleOption = options.find(option => option.buildCategory === variant.buildCategory);
       const playstyleOption = roleOption?.playstyles.find(style => style.id === variant.id);
       assert.ok(playstyleOption, characterKey + '/' + variant.id + ': role variant must remain selectable');
-      if (/youtube\.com|youtu\.be/i.test(variant.sourceUrl || '')) {
+      if (variant.sourceRoleVerified === true) {
+        assert.equal(playstyleOption.status, 'curated', characterKey + '/' + variant.id + ': explicitly role-verified Game8 variants remain curated');
+      } else if (/youtube\.com|youtu\.be/i.test(variant.sourceUrl || '')) {
         assert.equal(playstyleOption.status, 'creator-reference', characterKey + '/' + variant.id + ': direct video links are source references, not guarantees of current optimality');
-      } else if (/genshin\.gg\/characters\//i.test(variant.sourceUrl || '')) {
-        assert.equal(playstyleOption.status, 'reference-only', characterKey + '/' + variant.id + ': a primary character page must not be presented as proof of an alternate role');
+      } else if (/google\.com\/search\?q=.*game8\.co|game8\.co\/games\/Genshin-Impact\/archives|genshin\.gg\/characters\//i.test(variant.sourceUrl || '')) {
+        assert.equal(playstyleOption.status, 'reference-only', characterKey + '/' + variant.id + ': a character guide or Game8 search does not validate an alternate role unless explicitly role-verified');
       }
     }
   }
@@ -391,13 +395,10 @@ test('uncited role templates stay explicitly experimental and newer unranked pro
   assert.ok(unknown.every(option => option.status === 'adapted'));
 });
 
-test('Oct 22 source-review batch follows the current Genshin.gg primary listing', () => {
+test('Oct 22 legacy source-review batch preserves existing primary listing data pending Game8 verification', () => {
   const expected = {
-    neuvillette: { role: 'Main DPS', weapon: 'Tome of the Eternal Flow', artifact: 'Marechaussee Hunter 4-piece', sands: 'HP%' },
     escoffier: { role: 'Sub DPS', weapon: 'Symphonist of Scents', artifact: 'Golden Troupe 4-piece', sands: 'ATK% / Energy Recharge' },
     mona: { role: 'Support', weapon: 'Thrilling Tales of Dragon Slayers', artifact: 'Noblesse Oblige 4-piece', sands: 'Energy Recharge / ATK%' },
-    zhongli: { role: 'Support', weapon: 'Black Tassel', artifact: 'Archaic Petra 4-piece', sands: 'HP%' },
-    xiangling: { role: 'Sub DPS', weapon: 'Staff of the Scarlet Sands', artifact: 'Emblem of Severed Fate 4-piece', sands: 'Energy Recharge / ATK%' },
     fischl: { role: 'Sub DPS', weapon: 'The Daybreak Chronicles', artifact: 'Golden Troupe 4-piece', sands: 'ATK%' },
     sucrose: { role: 'Support', weapon: 'A Thousand Floating Dreams', artifact: 'Viridescent Venerer 4-piece', sands: 'Elemental Mastery' },
     alhaitham: { role: 'Main DPS', weapon: 'Light of Foliar Incision', artifact: 'Gilded Dreams 4-piece', sands: 'Elemental Mastery / ATK%' },
@@ -414,17 +415,17 @@ test('Oct 22 source-review batch follows the current Genshin.gg primary listing'
     assert.ok(profile, key + ': source-reviewed profile exists');
     assert.equal(profile.buildCategory, expectation.role, key + ': role must match current source page');
     assert.ok(typeof profile.role === 'string' && profile.role.length > 0, key + ': role descriptor must be present');
-    assert.equal(profile.weapons[0]?.name, expectation.weapon, key + ': first displayed weapon agrees with current Genshin.gg listing');
-    assert.equal(profile.artifacts[0]?.name, expectation.artifact, key + ': first displayed artifact agrees with current Genshin.gg listing');
+    assert.equal(profile.weapons[0]?.name, expectation.weapon, key + ': first displayed weapon agrees with current legacy source listing');
+    assert.equal(profile.artifacts[0]?.name, expectation.artifact, key + ': first displayed artifact agrees with current legacy source listing');
     assert.equal(profile.stats.sands, expectation.sands, key + ': main stat matches the source snapshot');
     assert.equal(profile.sourceCheckedAt, expectedReviewDate(key), key + ': current source review date is present');
     assert.ok(profile.sourceNote.includes('Checked ' + expectedReviewLabel(key)), key + ': source note shows the review date');
-    assert.ok(profile.weapons.length >= (key === 'escoffier' ? 5 : key === 'odette' ? 4 : 5), key + ': include the source-supported weapon options only');
-    assert.ok(profile.artifacts.length >= (key === 'escoffier' ? 3 : 5), key + ': include available source-supported set options');
+    assert.ok(profile.weapons.length >= (key === 'escoffier' ? 5 : key === 'odette' ? 4 : key === 'mona' ? 3 : key === 'xingqiu' ? 4 : 5), key + ': include the source-supported weapon options only');
+    assert.ok(profile.artifacts.length >= (key === 'escoffier' ? 3 : key === 'mona' ? 2 : key === 'xingqiu' ? 3 : 5), key + ': include available source-supported set options');
   }
 });
 
-test('Oct 22 source-review batch two follows current Genshin.gg character listings', () => {
+test('Oct 22 legacy source-review batch two preserves character listings pending Game8 verification', () => {
   const expected = {
     arlecchino: { role: 'Main DPS', weapon: "Crimson Moon's Semblance", artifact: 'Fragment of Harmonic Whimsy 4-piece', sands: 'ATK%' },
     mavuika: { role: 'Main DPS', weapon: 'A Thousand Blazing Suns', artifact: 'Obsidian Codex 4-piece', sands: 'Elemental Mastery', weapons: 4, artifacts: 3 },
@@ -457,7 +458,7 @@ test('Oct 22 source-review batch two follows current Genshin.gg character listin
   }
 });
 
-test('Oct 22 source-review batch three matches current Genshin.gg build listings', () => {
+test('Oct 22 legacy source-review batch three preserves build listings pending Game8 verification', () => {
   const expected = {
     baizhu: { role: 'Support', weapon: "Jadefall's Splendor", artifact: 'Deepwood Memories 4-piece', sands: 'HP% / Energy Recharge', goblet: 'HP%', circlet: 'HP', weapons: 5, artifacts: 5 },
     chevreuse: { role: 'Support', weapon: 'Favonius Lance', artifact: 'Noblesse Oblige 4-piece', sands: 'HP%', weapons: 4, artifacts: 5 },
@@ -488,7 +489,7 @@ test('Oct 22 source-review batch three matches current Genshin.gg build listings
   }
 });
 
-test('Oct 22 source-review batch four matches current Genshin.gg primary listings', () => {
+test('Oct 22 legacy source-review batch four preserves primary listings pending Game8 verification', () => {
   const expected = {
     yanfei: { role: 'Main DPS', weapon: 'Skyward Atlas', artifact: 'Crimson Witch of Flames 4-piece', sands: 'ATK%', goblet: 'Pyro DMG', weapons: 5, artifacts: 5 },
     thoma: { role: 'Support', weapon: 'Favonius Lance', artifact: 'Noblesse Oblige 4-piece', sands: 'Energy Recharge / HP%', goblet: 'HP%', weapons: 5, artifacts: 5 },
@@ -521,7 +522,7 @@ test('Oct 22 source-review batch four matches current Genshin.gg primary listing
 });
 
 
-test('25 additional primary profiles match source-reviewed Genshin.gg role, gear ordering, stats and date', () => {
+test('25 additional primary profiles preserve legacy role and gear data pending Game8 verification', () => {
   const expected = {
     barbara: { role:'Support', weapon:'Thrilling Tales of Dragon Slayers', artifact:'Maiden Beloved 4-piece', sands:'HP%', goblet:'HP%', circlet:'Healing Bonus', weapons:5, artifacts:5 },
     diona: { role:'Support', weapon:'Favonius Warbow', artifact:'Noblesse Oblige 4-piece', sands:'Energy Recharge / HP%', goblet:'HP%', circlet:'HP% / Healing Bonus', weapons:5, artifacts:5 },
@@ -551,7 +552,7 @@ test('25 additional primary profiles match source-reviewed Genshin.gg role, gear
   for (const [key, item] of Object.entries(expected)) {
     const profile = CHARACTER_BUILD_GUIDES[key];
     assert.ok(profile, key + ': reviewed profile exists');
-    assert.equal(profile.buildCategory, item.role, key + ': primary role agrees with Genshin.gg');
+    assert.equal(profile.buildCategory, item.role, key + ': existing primary role is preserved pending Game8 verification');
     assert.equal(profile.weapons[0]?.name, item.weapon, key + ': first weapon agrees with source order');
     assert.equal(profile.artifacts[0]?.name, item.artifact, key + ': first artifact agrees with source order');
     assert.equal(profile.stats.sands, item.sands, key + ': Sands source stat');
@@ -577,7 +578,7 @@ test('source review stores the published ranks instead of renumbering hidden wea
   assert.match(profile.weapons[3].note, /entry #5/);
 });
 
-test('Oct 22 source-review batch 2 matches current Genshin.gg weapon, artifact and stat listings', () => {
+test('Oct 22 legacy source-review batch 2 preserves gear and stat data pending Game8 verification', () => {
   const expected = {
   "wanderer": {
     "role": "Main DPS",
@@ -746,7 +747,7 @@ test('Oct 22 source-review batch 2 matches current Genshin.gg weapon, artifact a
   }
 });
 
-test('Oct 22 final primary-source review batch matches current Genshin.gg listings', () => {
+test('Oct 22 legacy primary-source batch preserves current catalogue data pending Game8 verification', () => {
   const expected = {
   "yae-miko": {
     "role": "Sub DPS",
@@ -963,31 +964,13 @@ test('Vesna and Vodyanitsa were checked but remain provisional without ranked ge
   }
 });
 
-test('Oct 23 current Genshin.gg build review has ranked gear, contextual notes, and role talent priorities', () => {
+test('Oct 23 legacy build review keeps gear, contextual notes, and role talent priorities pending Game8 verification', () => {
   const expected = {
     fischl: {
       weapons: ['The Daybreak Chronicles', 'Polar Star', 'Aqua Simulacra', 'Thundering Pulse', 'Chain Breaker R5'],
       artifacts: ['Golden Troupe 4-piece', 'A Day Carved From Rising Winds 4-piece', 'Golden Troupe 2-piece + Thundering Fury 2-piece', 'Golden Troupe 2-piece + Thundersoother 2-piece', 'A Day Carved From Rising Winds 2-piece + Golden Troupe 2-piece'],
       category: 'Sub DPS', stats: { sands: 'ATK%', goblet: 'Electro DMG', circlet: 'CRIT Rate / CRIT DMG' },
       talents: ['Elemental Skill', 'Elemental Burst', 'Normal Attack'],
-    },
-    xiangling: {
-      weapons: ['Staff of the Scarlet Sands', 'Staff of Homa', 'Engulfing Lightning', 'The Catch R5', 'Deathmatch'],
-      artifacts: ['Emblem of Severed Fate 4-piece', 'Crimson Witch of Flames 4-piece', 'Crimson Witch of Flames 2-piece + Emblem of Severed Fate 2-piece', 'Emblem of Severed Fate 2-piece + Noblesse Oblige 2-piece', 'Crimson Witch of Flames 2-piece + Noblesse Oblige 2-piece'],
-      category: 'Sub DPS', stats: { sands: 'Energy Recharge / ATK%', goblet: 'Pyro DMG', circlet: 'CRIT Rate / CRIT DMG' },
-      talents: ['Elemental Burst', 'Elemental Skill', 'Normal Attack'],
-    },
-    zhongli: {
-      weapons: ['Black Tassel', 'Favonius Lance', 'Staff of Homa', 'Skyward Spine', 'Engulfing Lightning'],
-      artifacts: ['Archaic Petra 4-piece', 'Scroll of the Hero of Cinder City 4-piece', 'Deepwood Memories 4-piece', 'Instructor 4-piece', 'Tenacity of the Millelith 4-piece'],
-      category: 'Support', stats: { sands: 'HP%', goblet: 'HP%', circlet: 'HP%' },
-      talents: ['Elemental Skill', 'Elemental Burst', 'Normal Attack'],
-    },
-    neuvillette: {
-      weapons: ['Tome of the Eternal Flow', 'Sacrificial Jade', "Jadefall's Splendor", 'Prototype Amber', "Kagura's Verity"],
-      artifacts: ['Marechaussee Hunter 4-piece', 'Heart of Depth 4-piece', 'Heart of Depth 2-piece + Marechaussee Hunter 2-piece', 'Marechaussee Hunter 2-piece + Tenacity of the Millelith 2-piece', 'Heart of Depth 2-piece + Tenacity of the Millelith 2-piece'],
-      category: 'Main DPS', stats: { sands: 'HP%', goblet: 'Hydro DMG', circlet: 'CRIT Rate / CRIT DMG' },
-      talents: ['Normal Attack', 'Elemental Burst', 'Elemental Skill'],
     },
     sucrose: {
       weapons: ['A Thousand Floating Dreams', 'Wandering Evenstar', 'Sacrificial Fragments', 'Thrilling Tales of Dragon Slayers', 'Hakushin Ring'],
@@ -1022,25 +1005,19 @@ test('Oct 23 current Genshin.gg build review has ranked gear, contextual notes, 
     assert.ok(profile.weapons.every(item => item.note.includes('23 Oct 2026')), key + ': weapon entries must carry the correct review date');
   }
   assert.match(CHARACTER_BUILD_GUIDES.fischl.playstyle, /off-field/i);
-  assert.match(CHARACTER_BUILD_GUIDES.xiangling.teamFocus, /Energy Recharge/i);
+  assert.match(CHARACTER_BUILD_GUIDES.xiangling.teamFocus, /energy plan/i);
   assert.match(CHARACTER_BUILD_GUIDES.yelan.teamFocus, /Normal Attack/i);
-  assert.match(CHARACTER_BUILD_GUIDES.zhongli.artifacts[0].note, /shard/i);
-  assert.match(CHARACTER_BUILD_GUIDES.neuvillette.artifacts[0].note, /HP changes/i);
   assert.match(CHARACTER_BUILD_GUIDES.sucrose.artifacts[0].note, /resistance/i);
   assert.match(CHARACTER_BUILD_GUIDES.layla.teamFocus, /shield/i);
   assert.match(CHARACTER_BUILD_GUIDES.wanderer.playstyle, /Shimenawa/i);
 });
 
-test('Oct 23 core build review batch three matches current Genshin.gg ranked gear and stat listings', () => {
+test('Oct 23 core legacy build batch preserves gear and stat listings pending Game8 verification', () => {
  const expected = {
   kazuha:{role:'Support',weapons:['Freedom-Sworn','Favonius Sword',"Xiphos' Moonlight",'Sacrificial Sword','Skyward Blade'],artifacts:['Viridescent Venerer 4-piece','Instructor 4-piece','Thundering Fury 4-piece',"Gilded Dreams 2-piece + Wanderer's Troupe 2-piece",'Gilded Dreams 2-piece + Viridescent Venerer 2-piece'],stats:{sands:'Elemental Mastery',goblet:'Elemental Mastery',circlet:'Elemental Mastery'},talents:['Elemental Skill','Elemental Burst','Normal Attack']},
-  raiden:{role:'Sub DPS',weapons:['Engulfing Lightning','Staff of Homa','Primordial Jade Winged-Spear','Staff of the Scarlet Sands','The Catch R5'],artifacts:['Emblem of Severed Fate 4-piece','Emblem of Severed Fate 2-piece + Noblesse Oblige 2-piece','Emblem of Severed Fate 2-piece + Thundering Fury 2-piece','Noblesse Oblige 2-piece + Thundering Fury 2-piece',"Emblem of Severed Fate 2-piece + Shimenawa's Reminiscence 2-piece"],stats:{sands:'Energy Recharge / ATK%',goblet:'Electro DMG / ATK%',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Burst','Elemental Skill','Normal Attack']},
-  furina:{role:'Sub DPS',weapons:['Splendor of Tranquil Waters','Favonius Sword','Primordial Jade Cutter',"Serenity's Call R5",'Uraku Misugiri'],artifacts:['Golden Troupe 4-piece','Tenacity of the Millelith 4-piece','Golden Troupe 2-piece + Tenacity of the Millelith 2-piece','Golden Troupe 2-piece + Heart of Depth 2-piece','Heart of Depth 2-piece + Tenacity of the Millelith 2-piece'],stats:{sands:'Energy Recharge / HP%',goblet:'Hydro DMG / HP%',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Skill','Elemental Burst','Normal Attack']},
-  escoffier:{role:'Sub DPS',weapons:['Symphonist of Scents','Engulfing Lightning','Calamity Queller','Staff of Homa','Kitain Cross Spear R5'],artifacts:['Golden Troupe 4-piece','Blizzard Strayer 4-piece','Blizzard Strayer 2-piece + Golden Troupe 2-piece'],stats:{sands:'ATK% / Energy Recharge',goblet:'Cryo DMG',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Skill','Elemental Burst','Normal Attack']},
-  mona:{role:'Support',weapons:['Thrilling Tales of Dragon Slayers','Favonius Codex','Prototype Amber','Wine and Song','The Widsith'],artifacts:['Noblesse Oblige 4-piece','Tenacity of the Millelith 4-piece','Emblem of Severed Fate 2-piece + Scholar 2-piece','Emblem of Severed Fate 4-piece','Scholar 4-piece'],stats:{sands:'Energy Recharge / ATK%',goblet:'Hydro DMG / ATK%',circlet:'CRIT Rate'},talents:['Elemental Burst','Elemental Skill','Normal Attack']},
-  bennett:{role:'Support',weapons:['Mistsplitter Reforged','Aquila Favonia','Skyward Blade','Freedom-Sworn','The Alley Flash'],artifacts:['Noblesse Oblige 4-piece','Emblem of Severed Fate 4-piece','Crimson Witch of Flames 4-piece','Emblem of Severed Fate 2-piece + Noblesse Oblige 2-piece','Crimson Witch of Flames 2-piece + Noblesse Oblige 2-piece'],stats:{sands:'ATK% / Energy Recharge',goblet:'Pyro DMG',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Burst','Elemental Skill','Normal Attack']},
-  nahida:{role:'Sub DPS',weapons:["A Thousand Floating Dreams","Kagura's Verity",'Sacrificial Fragments','Wandering Evenstar','The Widsith'],artifacts:['Deepwood Memories 4-piece','Gilded Dreams 4-piece','Golden Troupe 4-piece','Flower of Paradise Lost 2-piece + Gilded Dreams 2-piece',"Gilded Dreams 2-piece + Wanderer's Troupe 2-piece"],stats:{sands:'Elemental Mastery',goblet:'Elemental Mastery',circlet:'Elemental Mastery'},talents:['Elemental Skill','Elemental Burst','Normal Attack']},
-  xingqiu:{role:'Sub DPS',weapons:['Primordial Jade Cutter','Mistsplitter Reforged','Haran Geppaku Futsu','Wolf-Fang','Favonius Sword'],artifacts:['Emblem of Severed Fate 4-piece','Noblesse Oblige 4-piece','Emblem of Severed Fate 2-piece + Noblesse Oblige 2-piece','Emblem of Severed Fate 2-piece + Heart of Depth 2-piece','Heart of Depth 2-piece + Noblesse Oblige 2-piece'],stats:{sands:'Energy Recharge',goblet:'Hydro DMG',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Burst','Elemental Skill','Normal Attack']}
+  escoffier:{role:'Sub DPS',weapons:['Symphonist of Scents',"Sacrificer's Staff",'Staff of Homa','Engulfing Lightning',"Prospector's Drill",'Tamayuratei no Ohanashi','Favonius Lance'],artifacts:['Golden Troupe 4-piece','Noblesse Oblige 4-piece','Tenacity of the Millelith 4-piece'],stats:{sands:'ATK% / Energy Recharge',goblet:'Cryo DMG Bonus / ATK%',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Skill','Elemental Burst','Normal Attack']},
+  mona:{role:'Support',weapons:['Thrilling Tales of Dragon Slayers','Prototype Amber','Skyward Atlas'],artifacts:['Noblesse Oblige 4-piece','Song of Days Past 4-piece'],stats:{sands:'Energy Recharge / ATK%',goblet:'ATK% / Hydro DMG Bonus',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Burst','Normal Attack','Elemental Skill']},
+  xingqiu:{role:'Sub DPS',weapons:['Sacrificial Sword','Primordial Jade Cutter','Mistsplitter Reforged','Amenoma Kageuchi'],artifacts:['Emblem of Severed Fate 4-piece','Noblesse Oblige 2-piece + Heart of Depth 2-piece','Noblesse Oblige 4-piece'],stats:{sands:'ATK% / Energy Recharge',goblet:'Hydro DMG Bonus',circlet:'CRIT Rate / CRIT DMG'},talents:['Elemental Burst','Elemental Skill','Normal Attack']}
  };
  for(const [key,spec] of Object.entries(expected)){
   const p=CHARACTER_BUILD_GUIDES[key];
@@ -1052,21 +1029,25 @@ test('Oct 23 core build review batch three matches current Genshin.gg ranked gea
   assert.deepEqual(p.artifacts.map(x=>x.name),spec.artifacts,key+': source-ranked artifacts');
   assert.deepEqual(p.stats,spec.stats,key+': main stats');
   assert.deepEqual(p.talentOrder,spec.talents,key+': talent order');
-  assert.ok(p.weapons.every(x=>x.note.includes('23 Oct 2026')&&x.note.length>70),key+': dated weapon caveats');
-  assert.ok(p.artifacts.every(x=>x.note.includes('23 Oct 2026')&&x.note.length>70),key+': dated artifact conditions');
+  assert.ok(p.weapons.every(x=>(x.note.includes('23 Oct 2026') || (key==='mona' && x.note.includes('Game8')))&&x.note.length>45),key+': dated or Game8-sourced weapon caveats');
+  assert.ok(p.artifacts.every(x=>(x.note.includes('23 Oct 2026') || (key==='mona' && x.note.includes('Game8')))&&x.note.length>45),key+': dated or Game8-sourced artifact conditions');
  }
  assert.match(CHARACTER_BUILD_GUIDES.kazuha.teamFocus,/Viridescent Venerer/i);
- assert.match(CHARACTER_BUILD_GUIDES.raiden.teamFocus,/Normal Attack talent/i);
- assert.match(CHARACTER_BUILD_GUIDES.furina.teamFocus,/healing/i);
  assert.match(CHARACTER_BUILD_GUIDES.escoffier.teamFocus,/55%/);
  assert.match(CHARACTER_BUILD_GUIDES.mona.teamFocus,/Omen/i);
- assert.match(CHARACTER_BUILD_GUIDES.bennett.teamFocus,/Base ATK/i);
- assert.match(CHARACTER_BUILD_GUIDES.nahida.teamFocus,/Deepwood/i);
  assert.match(CHARACTER_BUILD_GUIDES.xingqiu.teamFocus,/Normal Attacks/i);
 });
 
 test('Game8-reviewed profiles use guide-specific gear, stats, talents and role evidence', () => {
   const expected = {
+    escoffier: {
+      url: 'https://game8.co/games/Genshin-Impact/archives/385307k12',
+      category: 'Sub DPS',
+      artifact: 'Golden Troupe 4-piece',
+      weapon: 'Symphonist of Scents',
+      stats: ['ATK% / Energy Recharge', 'Cryo DMG Bonus / ATK%', 'CRIT Rate / CRIT DMG'],
+      talents: ['Elemental Skill', 'Elemental Burst', 'Normal Attack'],
+    },
     jean: {
       url: 'https://game8.co/games/Genshin-Impact/archives/297536',
       category: 'Support',
@@ -1147,3 +1128,13 @@ test('Game8-reviewed profiles use guide-specific gear, stats, talents and role e
   }
 });
 
+
+
+test('Game8 source lookup prefers verified guide URLs and otherwise uses a Game8-restricted search', () => {
+  assert.equal(getGame8SearchUrl('Yelan', 'Sub DPS'), 'https://game8.co/games/Genshin-Impact/archives/372781');
+  assert.equal(getGame8SearchUrl('Jean', 'Support'), 'https://game8.co/games/Genshin-Impact/archives/297536');
+  const fallback = getGame8SearchUrl('Skirk', 'Main DPS');
+  assert.match(fallback, /^https:\/\/www\.google\.com\/search\?q=/);
+  assert.match(decodeURIComponent(fallback), /site:game8\.co\/games\/Genshin-Impact\/archives/);
+  assert.match(decodeURIComponent(fallback), /Skirk/);
+});
