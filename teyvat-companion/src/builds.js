@@ -3162,6 +3162,143 @@ const GAME8_REVIEWED_BUILD_OVERRIDES = {
       playstyle: "Triple EM is the reaction-oriented baseline; change main stats only when a tested team/weapon setup has different needs."
     }
   },
+
+  itto: {
+    primary: {
+      role: "Geo On-field Main DPS",
+      buildCategory: "Main DPS",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/345461",
+      sourceName: "Game8 — Arataki Itto Rating and Best Builds",
+      game8VerifiedAt: "2026-10-24",
+      sourceRoleVerified: true,
+      sourceNote: "Game8 build details verified 24 Oct 2026 against Itto's character build guide and Game8's indexed build table. Redhorn Stonethresher and Husk of Opulent Dreams 4-piece are the main damage pairing. DEF scaling and Burst uptime matter because swapping out ends his Burst window; build a Geo-focused team to support that window.",
+      artifacts: [
+        { name: "Husk of Opulent Dreams 4-piece", note: "Game8's standard DEF/Geo damage set for Itto; maintain stacks in the planned rotation." },
+        { name: "Husk of Opulent Dreams 2-piece + Archaic Petra 2-piece", note: "Geo/DEF transition mix when the full set has weaker substats." },
+        { name: "Archaic Petra 2-piece + DEF% 2-piece", note: "Transitional mix; compare actual substats and Burst damage before farming a complete new set." }
+      ],
+      stats: { sands: "DEF%", goblet: "Geo DMG Bonus", circlet: "CRIT Rate / CRIT DMG" },
+      substats: ["CRIT Rate / CRIT DMG", "DEF%", "Energy Recharge for Burst uptime", "ATK% as a lower-priority damage stat"],
+      weapons: [
+        { name: "Redhorn Stonethresher", note: "Game8's featured weapon; CRIT DMG and DEF-based Normal/Charged Attack value match Itto's Burst playstyle." },
+        { name: "Serpent Spine", note: "Strong CRIT Rate alternative; shield/defensive support helps preserve its stacks." },
+        { name: "Wolf's Gravestone", note: "High-ATK alternative, but compare its value with DEF scaling and the rest of the team." },
+        { name: "Whiteblind", note: "Craftable DEF option that fits his scaling." }
+      ],
+      talentOrder: ["Normal Attack", "Elemental Burst", "Elemental Skill"],
+      teamFocus: "Build around Itto's Geo damage window with Geo teammates for energy and team utility, plus defensive support as needed.",
+      playstyle: "Use Skill and teammates to prepare the Burst, then stay on field through his Charged Attack sequence. Switching out early wastes the window."
+    }
+  },
+  kokomi: {
+    primary: {
+      role: "Hydro Support / Healer",
+      buildCategory: "Support",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/337140",
+      sourceName: "Game8 — Sangonomiya Kokomi Rating and Best Builds",
+      game8VerifiedAt: "2026-10-24",
+      sourceRoleVerified: true,
+      sourceNote: "Game8 build details verified 24 Oct 2026 against Kokomi's guide and Game8's indexed build table. Everlasting Moonglow with Ocean-Hued Clam 4-piece is a source-listed healing/personal-damage pairing. Healing, Hydro application and the party's rotation determine whether this or a team-buffing weapon/set is better.",
+      artifacts: [
+        { name: "Ocean-Hued Clam 4-piece", note: "Game8's standard healing-to-damage set; use consistent healing to build its bubble damage." },
+        { name: "Tenacity of the Millelith 4-piece", note: "Team ATK support alternative when Kokomi's Skill can maintain the effect and the party benefits from ATK." },
+        { name: "Ocean-Hued Clam 2-piece + HP% 2-piece", note: "Healing-oriented mixed fallback if the full set's substats are much worse." }
+      ],
+      stats: { sands: "HP% / Energy Recharge", goblet: "HP% / Hydro DMG Bonus", circlet: "Healing Bonus / HP%" },
+      substats: ["Energy Recharge for Burst refresh and uptime", "HP%", "Flat HP", "Elemental Mastery only when she owns a relevant reaction"],
+      weapons: [
+        { name: "Everlasting Moonglow", note: "Game8's featured weapon; improves healing and can support personal damage/energy during her Burst." },
+        { name: "Prototype Amber", note: "Craftable HP weapon with Burst energy and party healing." },
+        { name: "Thrilling Tales of Dragon Slayers", note: "Low-rarity team-buff option; plan the swap so the intended ATK carry receives the buff." },
+        { name: "Hakushin Ring", note: "Electro-reaction team option when its elemental-damage buff fits the party and rotation." }
+      ],
+      talentOrder: ["Elemental Skill", "Elemental Burst", "Normal Attack"],
+      teamFocus: "Use the Skill for persistent Hydro and healing. Refresh the jellyfish with Burst when it is needed for uptime; her on-field damage window is a separate decision from off-field support.",
+      playstyle: "Kokomi cannot build CRIT Rate normally, so prioritize HP, Healing Bonus, Hydro application and ER instead of copying a standard CRIT carry sheet."
+    }
+  },
+  beidou: {
+    primary: {
+      role: "Off-field Electro Sub DPS",
+      buildCategory: "Sub DPS",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/297528",
+      sourceName: "Game8 — Beidou Rating and Best Builds",
+      game8VerifiedAt: "2026-10-24",
+      sourceRoleVerified: true,
+      sourceNote: "Game8 build details verified 24 Oct 2026 against Beidou's guide and Game8's indexed build table. Serpent Spine with 4-piece Emblem of Severed Fate is a highlighted damage pairing. Burst uptime is critical; the guide's off-field value depends on using her Burst with a Normal-Attack driver and targets that allow its lightning to bounce.",
+      artifacts: [
+        { name: "Emblem of Severed Fate 4-piece", note: "Game8's highlighted Burst set; improves her major off-field damage source and rewards Energy Recharge." },
+        { name: "Thundering Fury 2-piece + Noblesse Oblige 2-piece", note: "Electro/Burst mix when its substats beat the full set and ER remains sufficient." },
+        { name: "Noblesse Oblige 2-piece + ATK% 2-piece", note: "General damage transition option; compare against Emblem for the team's actual ER needs." }
+      ],
+      stats: { sands: "ATK% / Energy Recharge", goblet: "Electro DMG Bonus", circlet: "CRIT Rate / CRIT DMG" },
+      substats: ["Energy Recharge until Burst is available each rotation", "CRIT Rate / CRIT DMG", "ATK%"],
+      weapons: [
+        { name: "Serpent Spine", note: "Game8-highlighted damage weapon with CRIT Rate; preserve its stacks with defensive support if possible." },
+        { name: "Wolf's Gravestone", note: "High-ATK alternative that can add team utility at its passive threshold." },
+        { name: "Akuoumaru", note: "Burst-focused option whose value depends on the team's combined Elemental Burst costs and refinement." },
+        { name: "The Unforged", note: "ATK alternative; shield uptime helps maintain its offensive passive." },
+        { name: "Forest Regalia", note: "Craftable ER option to compare when energy is the bottleneck." }
+      ],
+      talentOrder: ["Elemental Burst", "Elemental Skill", "Normal Attack"],
+      teamFocus: "Use Beidou with an on-field Normal Attack driver and a second Electro unit or sufficient ER to cover her expensive Burst.",
+      playstyle: "Her Burst is most effective against multiple enemies because its lightning can bounce; do not judge single-target performance as if all hits were bouncing."
+    }
+  },
+  collei: {
+    primary: {
+      role: "Dendro Support / Sub DPS",
+      buildCategory: "Sub DPS",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/382079",
+      sourceName: "Game8 — Collei Rating and Best Builds",
+      game8VerifiedAt: "2026-10-24",
+      sourceRoleVerified: true,
+      sourceNote: "Game8 build details verified 24 Oct 2026 against Collei's guide and Game8's indexed build table. Elegy for the End and Deepwood Memories 4-piece are the referenced support/off-field pairing. Keep her Burst available for Dendro application and use Deepwood only when she can maintain its resistance reduction better than another Dendro teammate.",
+      artifacts: [
+        { name: "Deepwood Memories 4-piece", note: "Game8-highlighted Dendro support set; maintain its resistance reduction when the team relies on Dendro damage." },
+        { name: "Noblesse Oblige 4-piece", note: "Team ATK option if Deepwood is already covered and another party member is not carrying Noblesse." },
+        { name: "Emblem of Severed Fate 2-piece + Deepwood Memories 2-piece", note: "Energy/Dendro transition mix when the Burst rotation is difficult to maintain." }
+      ],
+      stats: { sands: "Energy Recharge / ATK%", goblet: "Dendro DMG Bonus", circlet: "CRIT Rate / CRIT DMG" },
+      substats: ["Energy Recharge for Burst uptime", "CRIT Rate / CRIT DMG", "ATK%", "Elemental Mastery when she triggers reactions"],
+      weapons: [
+        { name: "Elegy for the End", note: "Game8's indexed support weapon; provides team utility when the passive can be triggered." },
+        { name: "Favonius Warbow", note: "Team-energy option; build sufficient CRIT Rate for reliable passive procs." },
+        { name: "The Stringless", note: "Skill/Burst damage option with Elemental Mastery value for reaction teams." },
+        { name: "Sacrificial Bow", note: "Skill-reset alternative when the extra cast fits the rotation." }
+      ],
+      talentOrder: ["Elemental Burst", "Elemental Skill", "Normal Attack"],
+      teamFocus: "Use Skill and Burst to apply Dendro and support reactions. Her Burst area is relatively small, so pull or group enemies where possible.",
+      playstyle: "A support/sub-DPS build values application and Burst uptime more than on-field Normal Attacks; assign Deepwood to whichever teammate maintains it reliably."
+    }
+  },
+  lynette: {
+    primary: {
+      role: "Anemo Support / Swirl Debuffer",
+      buildCategory: "Support",
+      sourceUrl: "https://game8.co/games/Genshin-Impact/archives/345879",
+      sourceName: "Game8 — Lynette Rating and Best Builds",
+      game8VerifiedAt: "2026-10-24",
+      sourceRoleVerified: true,
+      sourceNote: "Game8 build details verified 24 Oct 2026 against Lynette's guide and Game8's indexed build table. Viridescent Venerer 4-piece is the standard Anemo support baseline; Freedom-Sworn is a listed premium support weapon. Keep enough ER for Burst and choose EM or direct-damage stats according to her field time and the team's reaction plan.",
+      artifacts: [
+        { name: "Viridescent Venerer 4-piece", note: "Game8's support set for Swirl and elemental resistance reduction; use it only when Lynette can Swirl the desired aura." },
+        { name: "Viridescent Venerer 2-piece + Elemental Mastery 2-piece", note: "Transitional Swirl mix before a strong four-piece set is available." },
+        { name: "Noblesse Oblige 4-piece", note: "Burst team-buff alternative only when the party benefits from it and another character is not already holding the set." }
+      ],
+      stats: { sands: "Energy Recharge / Elemental Mastery", goblet: "Elemental Mastery / Anemo DMG Bonus", circlet: "Elemental Mastery / CRIT Rate / CRIT DMG" },
+      substats: ["Energy Recharge for Burst uptime", "Elemental Mastery for Swirl", "CRIT Rate / CRIT DMG for direct damage"],
+      weapons: [
+        { name: "Freedom-Sworn", note: "Game8-listed premium support option; assess whether the party can trigger and benefit from its passive." },
+        { name: "Favonius Sword", note: "Team-energy option; build CRIT Rate to trigger the passive consistently." },
+        { name: "Sacrificial Sword", note: "Skill-reset option when it adds value to the rotation." },
+        { name: "Fleuve Cendre Ferryman", note: "Accessible ER/Skill-CRIT alternative if it improves the Burst loop." }
+      ],
+      talentOrder: ["Elemental Burst", "Elemental Skill", "Normal Attack"],
+      teamFocus: "Swirl the carry's element and make use of Lynette's taunt/Burst utility. Her buff value and personal damage depend on her constellation and team composition.",
+      playstyle: "Treat EM support and CRIT-focused direct damage as distinct targets. Do not farm a personal-damage build if the team mainly needs the four-piece resistance shred."
+    }
+  },
 };
 
 for (const [characterKey, update] of Object.entries(GAME8_REVIEWED_BUILD_OVERRIDES)) {
