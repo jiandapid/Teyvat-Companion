@@ -3337,7 +3337,7 @@ for (const [characterKey, profile] of Object.entries(CHARACTER_BUILD_GUIDES)) {
       alternate.sourceUrl = profile.sourceUrl;
       alternate.sourceName = 'Game8 — ' + titleCaseBuildKey(characterKey) + ' guide (alternate-role verification pending)';
       alternate.game8RoleReviewStatus = 'pending';
-      const roleCaveat = ' Game8 has not been checked for this exact alternate role/build. This linked character guide is a baseline reference only; the alternate remains experimental/reference-only and is not presented as a Game8-ranked role.';
+      const roleCaveat = ' Game8 alternate-role verification pending: the linked character guide is a baseline reference only; this exact alternate role/build has not been checked line-by-line and remains experimental/reference-only, not a Game8-ranked role.';
       alternate.sourceNote = String(alternate.sourceNote || 'Alternate build source details need review.') +
         (String(alternate.sourceNote || '').includes('alternate-role verification pending') ? '' : roleCaveat);
     }
